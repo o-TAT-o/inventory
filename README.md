@@ -42,3 +42,12 @@ inventory/
   "chat.useCustomizationsInParentRepositories": true
 }
 ```
+
+### コミットテンプレート
+
+リポジトリには [Conventional Commits](https://www.conventionalcommits.org/) 形式のコミットテンプレート（`.gitmessage`）が含まれています。  
+クローン後に以下を実行してテンプレートを有効化してください。
+
+```sh
+git config --local commit.template .gitmessage
+```

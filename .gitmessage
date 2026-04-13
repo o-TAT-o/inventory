@@ -1,0 +1,19 @@
+# <type>(<scope>): <subject>
+#
+# type:
+#   feat     新機能
+#   fix      バグ修正
+#   docs     ドキュメントのみ
+#   style    フォーマット変更（動作に影響なし）
+#   refactor リファクタリング
+#   test     テスト追加・修正
+#   chore    ビルド・ツール変更
+#
+# scope: ディレクトリ名（例: lab/typescript, apps）
+#        リポジトリ全体の場合は省略可
+#
+# 例:
+#   feat(lab/typescript): Zodバリデーションのサンプルを追加
+#   fix(apps): ログインページのリダイレクトループを修正
+#   docs: READMEにディレクトリ構成図を追加
+#   chore: .editorconfig を追加

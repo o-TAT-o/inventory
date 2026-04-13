@@ -35,16 +35,41 @@
 
 [Conventional Commits](https://www.conventionalcommits.org/) に従ってください。
 
+> **要約**: コミットメッセージに `type(scope): 説明` の形式を使い、変更内容を人間にもツールにも分かりやすくする規約。  
+> SemVer と連動し、`fix` → PATCH、`feat` → MINOR、`BREAKING CHANGE` → MAJOR に対応する。  
+> CHANGELOG の自動生成やバージョンバンプの自動化に活用できる。
+
+### フォーマット
+
 ```
 <type>(<scope>): <subject>
+
+[任意の本文]
+
+[任意のフッター]
 ```
 
-- `feat`: 新機能
-- `fix`: バグ修正
-- `docs`: ドキュメントのみの変更
-- `style`: コードの意味に影響しない変更（空白、フォーマット等）
-- `refactor`: バグ修正でも新機能でもないコード変更
-- `test`: テストの追加・修正
-- `chore`: ビルドプロセスや補助ツールの変更
+### type 一覧
 
-`scope` にはディレクトリ名を指定してください（例: `feat(lab/typescript): ...`）。
+| type | 意味 | 例 |
+|------|------|-----|
+| `feat` | 新機能 | `feat(lab/typescript): Zodバリデーションのサンプルを追加` |
+| `fix` | バグ修正 | `fix(apps): ログインページのリダイレクトループを修正` |
+| `docs` | ドキュメントのみ | `docs: READMEにディレクトリ構成図を追加` |
+| `style` | フォーマット変更（動作に影響なし） | `style(lab/python): Black でフォーマット適用` |
+| `refactor` | リファクタリング | `refactor(apps): API クライアントを共通モジュールに分離` |
+| `test` | テスト追加・修正 | `test(lab/go): ハンドラーのユニットテストを追加` |
+| `chore` | ビルド・ツール変更 | `chore: .editorconfig を追加` |
+
+### scope の付け方
+
+`scope` にはディレクトリ名を指定してください（例: `feat(lab/typescript): ...`）。  
+リポジトリ全体に関わる変更の場合は scope を省略してもOKです（例: `docs: READMEを更新`）。
+
+### 破壊的変更
+
+破壊的変更がある場合は、type の後に `!` を付けるか、フッターに `BREAKING CHANGE:` を記述してください。
+
+```
+feat(apps)!: 認証方式をJWTからOAuth2に変更
+```
