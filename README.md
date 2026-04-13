@@ -29,3 +29,16 @@ inventory/
 | `articles/` | ZennやQiitaなどの技術記事の原稿 |
 | `notes/` | 特定のアプリに依存しない汎用的な技術調査メモ |
 | `scripts/` | リポジトリ運用のための自動化スクリプト |
+
+## セットアップ
+
+### GitHub Copilot（モノレポ対応）
+
+サブディレクトリを単独で開いた場合でも、リポジトリルートのカスタマイズファイル（`AGENTS.md` 等）を検出させるには、以下の VS Code 設定を有効にしてください。
+
+```jsonc
+// settings.json
+{
+  "chat.useCustomizationsInParentRepositories": true
+}
+```
