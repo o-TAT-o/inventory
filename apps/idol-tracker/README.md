@@ -36,8 +36,8 @@ AIは「どこを探すか」には使わず、「取得したページから項
 
 このアプリは inventory モノレポの `apps/idol-tracker/` にあります。ワークフローはリポジトリ直下の `.github/workflows/idol-tracker-*.yml` に置いてあり、いずれも `apps/idol-tracker` をカレントディレクトリとして動きます。
 
-1. **Settings → Pages** で Source に「GitHub Actions」を選びます。`idol-tracker pages` ワークフローが `apps/idol-tracker/docs` だけを配信するので、数分で `https://<ユーザー名>.github.io/inventory/` が開けるようになります（モノレポではブランチ配信の `/docs` が使えないため、この方式にしています）。
-2. **Settings → Secrets and variables → Actions** に登録します。
+1. Pages は `idol-tracker pages` ワークフローが `apps/idol-tracker/docs` だけを配信します（モノレポではブランチ配信の `/docs` が使えないため、この方式です）。Source の設定はワークフローが自動で行うので、main にマージすれば数分で `https://<ユーザー名>.github.io/inventory/` が開けるようになります。うまくいかないときは **Settings → Pages** の Source が「GitHub Actions」になっているか確認してください。
+2. **Settings → Secrets and variables → Actions** に登録します（収集を動かすときだけ必要。表示だけなら不要）。
    - `ANTHROPIC_API_KEY`（AI抽出用）
    - `BRAVE_API_KEY`（検索用。Google を使う場合は `GOOGLE_API_KEY` と `GOOGLE_CSE_ID` を登録し、Variables に `SEARCH_PROVIDER=google`）
 3. **Settings → Actions → General** の一番下で「Allow GitHub Actions to create and approve pull requests」をオンにします。

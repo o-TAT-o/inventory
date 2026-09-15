@@ -2,7 +2,7 @@ name: idol-tracker pages
 
 # モノレポなので Pages の「Deploy from a branch（/docs）」は使えない。
 # apps/idol-tracker/docs だけをアーティファクトとして Pages に配信する。
-# Settings → Pages → Source を「GitHub Actions」にしておくこと。
+# Source（GitHub Actions）の有効化は configure-pages の enablement で自動的に行う。
 
 on:
   push:
@@ -30,6 +30,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+        with:
+          # Pages 未設定でも、このワークフローが build_type=workflow で有効化する
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/idol-tracker/docs
