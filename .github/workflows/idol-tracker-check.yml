@@ -1,0 +1,28 @@
+name: idol-tracker check
+
+on:
+  pull_request:
+    paths:
+      - "apps/idol-tracker/**"
+      - ".github/workflows/idol-tracker-*.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/idol-tracker/**"
+      - ".github/workflows/idol-tracker-*.yml"
+
+defaults:
+  run:
+    working-directory: apps/idol-tracker
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r pipeline/requirements.txt
+      - run: python -m unittest discover tests
+      - name: 表示用データを再生成できるか確認
+        run: python -m pipeline.build

@@ -1,0 +1,517 @@
+{
+  "slug": "rin_kawana",
+  "name": "川名凜",
+  "primary_group": "angerme",
+  "updated": "2026-09-15",
+  "profile": {
+    "name_kana": {
+      "value": "かわな りん",
+      "status": "confirmed",
+      "sources": [
+        "s7e8b55b4",
+        "sa24ceec4"
+      ]
+    },
+    "name_romaji": {
+      "value": "Rin Kawana",
+      "status": "confirmed",
+      "sources": [
+        "s7e8b55b4"
+      ]
+    },
+    "birthdate": {
+      "value": "2003-12-06",
+      "status": "confirmed",
+      "sources": [
+        "s43592ffa",
+        "s7e8b55b4",
+        "sa24ceec4",
+        "sbc3f22f6"
+      ]
+    },
+    "birthplace": {
+      "value": "千葉県",
+      "status": "confirmed",
+      "sources": [
+        "s7e8b55b4",
+        "sa24ceec4",
+        "sbc3f22f6"
+      ]
+    },
+    "blood_type": {
+      "value": "B",
+      "status": "unverified",
+      "sources": [
+        "s43592ffa",
+        "sa24ceec4",
+        "sbc3f22f6"
+      ]
+    },
+    "nicknames": {
+      "value": [
+        "ケロンヌ",
+        "ケロ",
+        "ケロちゃん",
+        "なりんちゃん"
+      ],
+      "items": [
+        {
+          "value": "ケロンヌ",
+          "status": "confirmed",
+          "sources": [
+            "s43592ffa",
+            "s7e8b55b4",
+            "sa24ceec4"
+          ]
+        },
+        {
+          "value": "ケロ",
+          "status": "confirmed",
+          "sources": [
+            "s7e8b55b4"
+          ]
+        },
+        {
+          "value": "ケロちゃん",
+          "status": "confirmed",
+          "sources": [
+            "s7e8b55b4"
+          ]
+        },
+        {
+          "value": "なりんちゃん",
+          "status": "unverified",
+          "sources": [
+            "s43592ffa",
+            "sa24ceec4"
+          ]
+        }
+      ],
+      "status": "confirmed",
+      "sources": [
+        "s43592ffa",
+        "s7e8b55b4",
+        "sa24ceec4"
+      ]
+    },
+    "member_color": {
+      "value": "グリーン",
+      "status": "confirmed",
+      "sources": [
+        "s43592ffa",
+        "sa24ceec4",
+        "sadd7a0f8"
+      ]
+    },
+    "generation": {
+      "value": "9期",
+      "status": "unverified",
+      "sources": [
+        "s43592ffa",
+        "sa24ceec4"
+      ]
+    },
+    "agency": {
+      "value": "アップフロントプロモーション",
+      "status": "unverified",
+      "sources": [
+        "s43592ffa",
+        "sa24ceec4"
+      ]
+    },
+    "hobbies": {
+      "value": [
+        "ハンコ作り",
+        "踊ること",
+        "音楽を聴くこと"
+      ],
+      "items": [
+        {
+          "value": "ハンコ作り",
+          "status": "unverified",
+          "sources": [
+            "s43592ffa",
+            "sa24ceec4"
+          ]
+        },
+        {
+          "value": "踊ること",
+          "status": "unverified",
+          "sources": [
+            "s43592ffa",
+            "sa24ceec4"
+          ]
+        },
+        {
+          "value": "音楽を聴くこと",
+          "status": "unverified",
+          "sources": [
+            "s43592ffa",
+            "sa24ceec4"
+          ]
+        }
+      ],
+      "status": "unverified",
+      "sources": [
+        "s43592ffa",
+        "sa24ceec4"
+      ]
+    }
+  },
+  "memberships": [
+    {
+      "group_id": "angerme",
+      "group": "アンジュルム",
+      "role": "9期メンバー",
+      "from": "2020-11-02",
+      "status": "confirmed",
+      "sources": [
+        "s46b868ea",
+        "sa24ceec4",
+        "sadd7a0f8"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "date": "2003-12-06",
+      "sort": "2003-12-06",
+      "type": "birth",
+      "type_label": "誕生",
+      "title": "誕生（千葉県）",
+      "status": "confirmed",
+      "sources": [
+        "s7e8b55b4",
+        "sa24ceec4"
+      ]
+    },
+    {
+      "date_label": "中学・高校時代",
+      "sort": "2016",
+      "type": "school",
+      "type_label": "学生時代",
+      "title": "吹奏楽・管弦楽でトロンボーンとヴァイオリン",
+      "status": "unverified",
+      "sources": [
+        "sa24ceec4"
+      ]
+    },
+    {
+      "date": "2020",
+      "sort": "2020",
+      "type": "audition",
+      "type_label": "オーディション",
+      "title": "アンジュルムONLY ONEオーディションに応募",
+      "status": "unverified",
+      "sources": [
+        "s43592ffa"
+      ]
+    },
+    {
+      "date": "2020-11-02",
+      "sort": "2020-11-02",
+      "type": "join",
+      "type_label": "加入",
+      "title": "アンジュルム加入発表（新メンバー3名）",
+      "group": "アンジュルム",
+      "status": "confirmed",
+      "sources": [
+        "s46b868ea",
+        "sadd7a0f8"
+      ]
+    },
+    {
+      "date": "2021-08-16",
+      "sort": "2021-08-16",
+      "type": "media",
+      "type_label": "メディア",
+      "title": "ソロフェス!2でトランペット演奏を披露",
+      "status": "confirmed",
+      "sources": [
+        "sa24ceec4",
+        "seaff297d"
+      ]
+    },
+    {
+      "date": "2022-01-27",
+      "sort": "2022-01-27",
+      "type": "media",
+      "type_label": "メディア",
+      "title": "J SPORTS 高円宮杯プレミアリーグ総集編でナレーション",
+      "status": "unverified",
+      "sources": [
+        "sa24ceec4"
+      ]
+    },
+    {
+      "date": "2022-04",
+      "sort": "2022-04",
+      "type": "appointment",
+      "type_label": "就任",
+      "title": "オール千葉おもてなし隊 オピニオンリーダー",
+      "status": "unverified",
+      "sources": [
+        "sbc3f22f6"
+      ]
+    },
+    {
+      "date": "2022-08-06",
+      "sort": "2022-08-06",
+      "type": "stage",
+      "type_label": "舞台",
+      "title": "STAGE VANGUARD「悪嬢転生」ゲスト出演",
+      "status": "confirmed",
+      "sources": [
+        "sa24ceec4",
+        "se6d1a9ac"
+      ]
+    },
+    {
+      "date": "2023-07-27",
+      "sort": "2023-07-27",
+      "type": "appearance",
+      "type_label": "出演",
+      "title": "青柳総本家 SHIBUYA109店 1日店長",
+      "status": "confirmed",
+      "sources": [
+        "s74134a6f",
+        "sa24ceec4"
+      ]
+    },
+    {
+      "date": "2024-04-19",
+      "sort": "2024-04-19",
+      "type": "sns",
+      "type_label": "SNS",
+      "title": "公式Instagram開設",
+      "status": "confirmed",
+      "sources": [
+        "sa24ceec4",
+        "sa6c3201f"
+      ]
+    },
+    {
+      "date": "2025-04-24",
+      "sort": "2025-04-24",
+      "type": "appointment",
+      "type_label": "就任",
+      "title": "習志野市PR大使に就任",
+      "status": "unverified",
+      "sources": [
+        "sa24ceec4",
+        "sbc3f22f6"
+      ]
+    }
+  ],
+  "sns": [
+    {
+      "service": "Instagram",
+      "handle": "@rin_kawana.official",
+      "url": "https://www.instagram.com/rin_kawana.official/",
+      "since": "2024-04-19",
+      "status": "confirmed",
+      "sources": [
+        "sa24ceec4",
+        "sa6c3201f"
+      ]
+    },
+    {
+      "service": "ブログ",
+      "handle": "アンジュルムメンバーオフィシャルブログ",
+      "url": "https://ameblo.jp/angerme-new/theme-10113863093.html",
+      "status": "unverified",
+      "sources": [
+        "sa24ceec4"
+      ]
+    }
+  ],
+  "sources": {
+    "seaff297d": {
+      "url": "https://ameblo.jp/angerme-new/entry-12692956142.html",
+      "title": "さささ、ソロフェスの話 川名凜",
+      "type": "official",
+      "domain": "ameblo.jp/angerme-new"
+    },
+    "s43592ffa": {
+      "url": "https://dic.pixiv.net/a/川名凜",
+      "title": "川名凜 - ピクシブ百科事典",
+      "type": "fan",
+      "domain": "dic.pixiv.net"
+    },
+    "sa24ceec4": {
+      "url": "https://ja.wikipedia.org/wiki/川名凜",
+      "title": "川名凜 - Wikipedia",
+      "type": "encyclopedia",
+      "domain": "ja.wikipedia.org"
+    },
+    "sbc3f22f6": {
+      "url": "https://talent-dictionary.com/川名凜(アンジュルム)",
+      "title": "川名凜(アンジュルム)の生い立ちから現在まで - タレント辞書",
+      "type": "fan",
+      "domain": "talent-dictionary.com"
+    },
+    "s74134a6f": {
+      "url": "https://www.aoyagiuirou.co.jp/news/post-203984/",
+      "title": "青柳総本家 1日店長イベント",
+      "type": "official",
+      "domain": "aoyagiuirou.co.jp"
+    },
+    "sadd7a0f8": {
+      "url": "https://www.barks.jp/news/?id=1000191697",
+      "title": "アンジュルム、新メンバー3名を動画でお披露目",
+      "type": "news",
+      "domain": "barks.jp"
+    },
+    "s7e8b55b4": {
+      "url": "https://www.helloproject.com/angerme/profile/rin_kawana/",
+      "title": "川名凜 - アンジュルム - ハロー!プロジェクト公式サイト",
+      "type": "official",
+      "domain": "helloproject.com"
+    },
+    "s46b868ea": {
+      "url": "https://www.helloproject.com/news/12513/",
+      "title": "アンジュルム 新メンバー決定!",
+      "type": "official",
+      "domain": "helloproject.com"
+    },
+    "se6d1a9ac": {
+      "url": "https://www.helloproject.com/news/14796/",
+      "title": "STAGE VANGUARD「悪嬢転生」8月公演ゲスト出演決定!",
+      "type": "official",
+      "domain": "helloproject.com"
+    },
+    "sa6c3201f": {
+      "url": "https://www.helloproject.com/news/17289/",
+      "title": "アンジュルム川名・為永 オフィシャルInstagramスタート!",
+      "type": "official",
+      "domain": "helloproject.com"
+    }
+  },
+  "coverage": {
+    "filled_required": 10,
+    "total_required": 10,
+    "items": [
+      {
+        "key": "profile.name_kana",
+        "label": "読み",
+        "required": true,
+        "filled": true,
+        "status": "confirmed"
+      },
+      {
+        "key": "profile.birthdate",
+        "label": "生年月日",
+        "required": true,
+        "filled": true,
+        "status": "confirmed"
+      },
+      {
+        "key": "profile.birthplace",
+        "label": "出身地",
+        "required": true,
+        "filled": true,
+        "status": "confirmed"
+      },
+      {
+        "key": "profile.blood_type",
+        "label": "血液型",
+        "required": false,
+        "filled": true,
+        "status": "unverified"
+      },
+      {
+        "key": "profile.nicknames",
+        "label": "ニックネーム",
+        "required": true,
+        "filled": true,
+        "status": "confirmed"
+      },
+      {
+        "key": "profile.member_color",
+        "label": "メンバーカラー",
+        "required": false,
+        "filled": true,
+        "status": "confirmed"
+      },
+      {
+        "key": "profile.generation",
+        "label": "期",
+        "required": true,
+        "filled": true,
+        "status": "unverified"
+      },
+      {
+        "key": "profile.agency",
+        "label": "事務所",
+        "required": false,
+        "filled": true,
+        "status": "unverified"
+      },
+      {
+        "key": "profile.hobbies",
+        "label": "趣味・特技",
+        "required": false,
+        "filled": true,
+        "status": "unverified"
+      },
+      {
+        "key": "career.join",
+        "label": "加入",
+        "required": true,
+        "filled": true,
+        "status": "confirmed",
+        "count": 1
+      },
+      {
+        "key": "career.before_join",
+        "label": "加入前",
+        "required": true,
+        "filled": true,
+        "status": "unverified",
+        "count": 2
+      },
+      {
+        "key": "career.trainee",
+        "label": "研修生・ジュニア時代",
+        "required": true,
+        "filled": true,
+        "status": "unverified",
+        "count": 1
+      },
+      {
+        "key": "career.activities",
+        "label": "主な活動",
+        "required": true,
+        "filled": true,
+        "status": "confirmed",
+        "count": 6
+      },
+      {
+        "key": "career.graduation",
+        "label": "卒業",
+        "required": false,
+        "filled": false,
+        "status": null,
+        "count": 0
+      },
+      {
+        "key": "sns",
+        "label": "SNS・ブログ",
+        "required": true,
+        "filled": true,
+        "count": 2,
+        "status": "confirmed"
+      }
+    ],
+    "missing_required": [],
+    "needs_verification": [
+      "profile.generation",
+      "career.before_join",
+      "career.trainee"
+    ],
+    "missing_source_types": [],
+    "conflicts": [],
+    "unverified_count": 9,
+    "source_count": 10
+  }
+}
