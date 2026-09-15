@@ -1,0 +1,61 @@
+# 取得したい項目のチェックリスト。
+# ここに書いた項目は毎回「埋まったか」を判定され、空欄なら retry_queries で追加検索が走る。
+# {name} = 人名, {group} = グループ名
+
+profile:
+  name_kana:     { label: 読み,         required: true,  queries: ["{name} {group} プロフィール"] }
+  birthdate:     { label: 生年月日,     required: true,  queries: ["{name} 生年月日"], retry_queries: ["{name} 誕生日"] }
+  birthplace:    { label: 出身地,       required: true,  queries: ["{name} 出身地"], retry_queries: ["{name} 出身 県"] }
+  blood_type:    { label: 血液型,       required: false, queries: [] }
+  nicknames:     { label: ニックネーム, required: true,  queries: ["{name} ニックネーム"], retry_queries: ["{name} 愛称"] }
+  member_color:  { label: メンバーカラー, required: false, queries: ["{name} メンバーカラー"] }
+  generation:    { label: 期,           required: true,  queries: ["{name} {group} 何期"] }
+  agency:        { label: 事務所,       required: false, queries: [] }
+  hobbies:       { label: 趣味・特技,   required: false, queries: ["{name} 趣味 特技"] }
+
+# 経歴系。値は memberships / events に入る。
+# event_types に挙げた種別のイベントが1件以上あれば「埋まった」とみなす。
+career:
+  join:
+    label: 加入
+    required: true
+    event_types: [join]
+    queries: ["{name} {group} 加入", "{group} 新メンバー {name}"]
+    retry_queries: ["{name} オーディション 合格", "{name} 加入 発表"]
+  before_join:
+    label: 加入前
+    required: true
+    event_types: [pre, audition, school]
+    queries: ["{name} 加入前 経歴"]
+    retry_queries: ["{name} 学生時代 部活", "{name} オーディション 応募", "{name} 子役 OR 読者モデル"]
+  trainee:
+    label: 研修生・ジュニア時代
+    required: true
+    event_types: [trainee_join, trainee_leave, audition]
+    queries: ["{name} 研修生", "{name} ハロプロ研修生 OR ジュニア"]
+    retry_queries: ["{name} 研修生 何期"]
+  activities:
+    label: 主な活動
+    required: true
+    event_types: [appearance, release, appointment, stage, media]
+    queries: ["{name} 出演", "{name} 就任", "{name} 写真集"]
+    retry_queries: ["{name} ソロ", "{name} ラジオ", "{name} 舞台 出演"]
+  graduation:
+    label: 卒業
+    required: false
+    event_types: [graduation]
+    queries: ["{name} 卒業"]
+
+sns:
+  label: SNS・ブログ
+  required: true
+  queries: ["{name} 公式 Instagram", "{name} 公式ブログ"]
+  retry_queries: ["{name} インスタ 開設", "{name} X 公式アカウント", "{name} TikTok"]
+
+# 1人あたり最低1件は欲しいソース種別。0件ならカバレッジで警告
+required_source_types: [official, news, encyclopedia]
+
+# 検索1クエリあたりの取得件数と、本文取得する最大ページ数
+search_results_per_query: 10
+max_pages_per_person: 40
+retry_rounds: 2

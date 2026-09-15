@@ -1,0 +1,51 @@
+# ドメイン（またはURL前方一致）ごとのソース種別。status 判定に使う。
+# official     公式サイト・公式ブログ・公式FC（1件で「確定」）
+# news         報道・プレスリリース
+# encyclopedia Wikipedia等（出典付きの二次情報）
+# fan          ファンWiki・まとめ（参考扱い。単独では確定にしない）
+# blocked      本文を取得しない（規約配慮。URLの記録だけする）
+
+types:
+  official:
+    - helloproject.com
+    - up-fc.jp
+    - ameblo.jp/angerme-new
+    - ameblo.jp/angerme-ss-shin
+    - ameblo.jp/angerme-amerika
+    - aoyagiuirou.co.jp
+  news:
+    - oricon.co.jp
+    - natalie.mu
+    - barks.jp
+    - daily.co.jp
+    - sponichi.co.jp
+    - sanspo.com
+    - nikkansports.com
+    - modelpress.jp
+    - prtimes.jp
+    - thetv.jp
+  encyclopedia:
+    - ja.wikipedia.org
+    - weblio.jp
+  fan:
+    - dic.pixiv.net
+    - wikiwiki.jp
+    - seesaawiki.jp
+    - note.com
+    - talent-dictionary.com
+  blocked:
+    - x.com
+    - twitter.com
+    - instagram.com
+    - tiktok.com
+    - facebook.com
+    - youtube.com
+
+# 矛盾したときの表示優先度
+weight: { official: 100, news: 60, encyclopedia: 40, fan: 10, unknown: 5 }
+
+# 「確定」にするルール
+confirm_rules:
+  official_single: true      # 公式1件で確定
+  min_independent_domains: 2 # 公式以外は異なるドメイン2件の一致で確定
+  fan_counts: false          # fan は一致数に数えない

@@ -1,0 +1,55 @@
+# 手入力データ。自動収集の結果と統合される。
+# 自動収集より優先して表示したい値には pin: true を付ける。
+# 初期データ: 2026-09-15 にWeb検索で確認した内容（出典URLつき）。
+name: 川名凜
+group: angerme
+
+sources:
+  - { id: hp_profile, url: "https://www.helloproject.com/angerme/profile/rin_kawana/", title: "川名凜 - アンジュルム - ハロー!プロジェクト公式サイト" }
+  - { id: hp_join, url: "https://www.helloproject.com/news/12513/", title: "アンジュルム 新メンバー決定!" }
+  - { id: hp_insta, url: "https://www.helloproject.com/news/17289/", title: "アンジュルム川名・為永 オフィシャルInstagramスタート!" }
+  - { id: hp_stage, url: "https://www.helloproject.com/news/14796/", title: "STAGE VANGUARD「悪嬢転生」8月公演ゲスト出演決定!" }
+  - { id: blog_solofes, url: "https://ameblo.jp/angerme-new/entry-12692956142.html", title: "さささ、ソロフェスの話 川名凜" }
+  - { id: aoyagi, url: "https://www.aoyagiuirou.co.jp/news/post-203984/", title: "青柳総本家 1日店長イベント" }
+  - { id: barks, url: "https://www.barks.jp/news/?id=1000191697", title: "アンジュルム、新メンバー3名を動画でお披露目" }
+  - { id: wiki, url: "https://ja.wikipedia.org/wiki/川名凜", title: "川名凜 - Wikipedia" }
+  - { id: pixiv, url: "https://dic.pixiv.net/a/川名凜", title: "川名凜 - ピクシブ百科事典" }
+  - { id: talentdic, url: "https://talent-dictionary.com/川名凜(アンジュルム)", title: "川名凜(アンジュルム)の生い立ちから現在まで - タレント辞書" }
+
+claims:
+  # プロフィール
+  - { kind: profile, field: name_kana, value: かわな りん, sources: [hp_profile, wiki] }
+  - { kind: profile, field: name_romaji, value: Rin Kawana, sources: [hp_profile] }
+  - { kind: profile, field: birthdate, value: "2003-12-06", sources: [hp_profile, wiki, pixiv, talentdic] }
+  - { kind: profile, field: birthplace, value: 千葉県, sources: [hp_profile, wiki, talentdic] }
+  - { kind: profile, field: blood_type, value: B, sources: [wiki, pixiv, talentdic] }
+  - { kind: profile, field: nicknames, value: ケロ, sources: [hp_profile] }
+  - { kind: profile, field: nicknames, value: ケロちゃん, sources: [hp_profile] }
+  - { kind: profile, field: nicknames, value: ケロンヌ, sources: [hp_profile, wiki, pixiv] }
+  - { kind: profile, field: nicknames, value: なりんちゃん, sources: [wiki, pixiv] }
+  - { kind: profile, field: member_color, value: グリーン, sources: [barks, wiki, pixiv] }
+  - { kind: profile, field: generation, value: 9期, sources: [wiki, pixiv] }
+  - { kind: profile, field: agency, value: アップフロントプロモーション, sources: [wiki, pixiv] }
+  - { kind: profile, field: hobbies, value: 音楽を聴くこと, sources: [wiki, pixiv] }
+  - { kind: profile, field: hobbies, value: 踊ること, sources: [wiki, pixiv] }
+  - { kind: profile, field: hobbies, value: ハンコ作り, sources: [wiki, pixiv] }
+
+  # 所属
+  - { kind: membership, group: angerme, role: 9期メンバー, date: "2020-11-02", sources: [hp_join, barks, wiki] }
+
+  # 出来事
+  - { kind: event, type: birth, date: "2003-12-06", title: 誕生（千葉県）, sources: [hp_profile, wiki] }
+  - { kind: event, type: school, date_label: 中学・高校時代, sort_hint: "2016", title: 吹奏楽・管弦楽でトロンボーンとヴァイオリン, sources: [wiki] }
+  - { kind: event, type: audition, date: "2020", title: アンジュルムONLY ONEオーディションに応募, sources: [pixiv] }
+  - { kind: event, type: join, date: "2020-11-02", group: angerme, title: アンジュルム加入発表（新メンバー3名）, sources: [hp_join, barks] }
+  - { kind: event, type: media, date: "2021-08-16", title: ソロフェス!2でトランペット演奏を披露, sources: [blog_solofes, wiki] }
+  - { kind: event, type: media, date: "2022-01-27", title: J SPORTS 高円宮杯プレミアリーグ総集編でナレーション, sources: [wiki] }
+  - { kind: event, type: appointment, date: "2022-04", title: オール千葉おもてなし隊 オピニオンリーダー, sources: [talentdic] }
+  - { kind: event, type: stage, date: "2022-08-06", title: STAGE VANGUARD「悪嬢転生」ゲスト出演, sources: [hp_stage, wiki] }
+  - { kind: event, type: appearance, date: "2023-07-27", title: 青柳総本家 SHIBUYA109店 1日店長, sources: [aoyagi, wiki] }
+  - { kind: event, type: sns, date: "2024-04-19", title: 公式Instagram開設, sources: [hp_insta, wiki] }
+  - { kind: event, type: appointment, date: "2025-04-24", title: 習志野市PR大使に就任, sources: [wiki, talentdic] }
+
+  # SNS
+  - { kind: sns, service: Instagram, handle: "@rin_kawana.official", url: "https://www.instagram.com/rin_kawana.official/", date: "2024-04-19", sources: [hp_insta, wiki] }
+  - { kind: sns, service: ブログ, handle: アンジュルムメンバーオフィシャルブログ, url: "https://ameblo.jp/angerme-new/theme-10113863093.html", sources: [wiki] }

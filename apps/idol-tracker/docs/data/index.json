@@ -1,0 +1,50 @@
+{
+  "updated": "2026-09-15",
+  "people": [
+    {
+      "slug": "rin_kawana",
+      "name": "川名凜",
+      "kana": "かわな りん",
+      "birthdate": "2003-12-06",
+      "birthplace": "千葉県",
+      "member_color": "グリーン",
+      "generation": "9期",
+      "group_id": "angerme",
+      "group": "アンジュルム",
+      "joined": "2020-11-02",
+      "memberships": [
+        {
+          "group_id": "angerme",
+          "group": "アンジュルム",
+          "role": "9期メンバー",
+          "from": "2020-11-02",
+          "to": null
+        }
+      ],
+      "coverage": [
+        10,
+        10
+      ],
+      "conflicts": 0,
+      "updated": "2026-09-15"
+    }
+  ],
+  "groups": [
+    {
+      "id": "angerme",
+      "name": "アンジュルム",
+      "kind": "group",
+      "org": "ハロー!プロジェクト",
+      "members": [
+        "rin_kawana"
+      ]
+    },
+    {
+      "id": "hello_pro_kenshusei",
+      "name": "ハロプロ研修生",
+      "kind": "trainee",
+      "org": "ハロー!プロジェクト",
+      "members": []
+    }
+  ]
+}

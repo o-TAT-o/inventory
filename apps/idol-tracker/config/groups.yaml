@@ -1,0 +1,17 @@
+# グループごとの設定。seed_urls は検索結果に出なくても必ず本文を取りに行くURL。
+# {slug} = 人物ID（例: rin_kawana）, {name} = 人名
+
+angerme:
+  name: アンジュルム
+  kind: group
+  org: ハロー!プロジェクト
+  seed_urls:
+    - https://www.helloproject.com/angerme/profile/{slug}/
+    - https://ja.wikipedia.org/wiki/{name}
+
+hello_pro_kenshusei:
+  name: ハロプロ研修生
+  kind: trainee
+  org: ハロー!プロジェクト
+  seed_urls:
+    - https://ja.wikipedia.org/wiki/ハロプロ研修生
