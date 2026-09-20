@@ -2,8 +2,34 @@
   "slug": "rin_kawana",
   "name": "川名凜",
   "primary_group": "angerme",
-  "updated": "2026-09-15",
+  "updated": "2026-09-20",
   "profile": {
+    "blood_type": {
+      "value": "B",
+      "status": "unverified",
+      "sources": [
+        "s43592ffa",
+        "sa24ceec4",
+        "sbc3f22f6"
+      ]
+    },
+    "member_color": {
+      "value": "グリーン",
+      "status": "conflict",
+      "sources": [
+        "s43592ffa",
+        "sa24ceec4",
+        "sadd7a0f8"
+      ],
+      "alternatives": [
+        {
+          "value": "グリーン[7]",
+          "sources": [
+            "sa24ceec4"
+          ]
+        }
+      ]
+    },
     "name_kana": {
       "value": "かわな りん",
       "status": "confirmed",
@@ -34,15 +60,6 @@
       "status": "confirmed",
       "sources": [
         "s7e8b55b4",
-        "sa24ceec4",
-        "sbc3f22f6"
-      ]
-    },
-    "blood_type": {
-      "value": "B",
-      "status": "unverified",
-      "sources": [
-        "s43592ffa",
         "sa24ceec4",
         "sbc3f22f6"
       ]
@@ -92,15 +109,6 @@
         "s43592ffa",
         "s7e8b55b4",
         "sa24ceec4"
-      ]
-    },
-    "member_color": {
-      "value": "グリーン",
-      "status": "confirmed",
-      "sources": [
-        "s43592ffa",
-        "sa24ceec4",
-        "sadd7a0f8"
       ]
     },
     "generation": {
@@ -431,7 +439,7 @@
         "label": "メンバーカラー",
         "required": false,
         "filled": true,
-        "status": "confirmed"
+        "status": "conflict"
       },
       {
         "key": "profile.generation",
@@ -510,7 +518,9 @@
       "career.trainee"
     ],
     "missing_source_types": [],
-    "conflicts": [],
+    "conflicts": [
+      "profile.member_color"
+    ],
     "unverified_count": 9,
     "source_count": 10
   }
