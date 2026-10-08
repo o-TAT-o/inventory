@@ -3,4 +3,4 @@ src/**
 tsconfig.json
 **/*.map
 .gitignore
-scripts/**
+**/_preview/**

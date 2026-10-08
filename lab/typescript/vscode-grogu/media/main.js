@@ -1,8 +1,9 @@
-// グローグーをパネル内で動かすスクリプト。
-//   - 何もしなければ、歩く・立ち止まる・演技（カエルを食べる等）を気ままに繰り返す
+// ペットをパネル内で動かすスクリプト。
+//   - 何もしなければ、歩く・立ち止まる・演技を気ままに繰り返す
 //   - パネルをクリックすると、その位置まで歩いてくる
-//   - グローグー自身をクリックするとジャンプする（演技中なら中断する）
-//   - ごくまれにシークレット演出が出る。グローグーを素早く5回クリックしても出せる
+//   - ペットをクリックすると反応する（click 用のアニメーションがあればそれ、無ければジャンプ）
+//   - ごくまれにシークレット演出が出る。ペットを素早く5回クリックしても出せる
+//   - 拡張機能から届くエディタ上の出来事（保存・エラーなど）に反応する
 (function () {
   'use strict';
 
@@ -10,14 +11,21 @@
   const pet = document.getElementById('pet');
   const sprite = document.getElementById('sprite');
   if (!stage || !pet || !sprite) {
-    return; // スプライトが無い場合は何もしない
+    return; // ペットを読み込めなかった場合は何もしない
   }
 
-  /** @type {Record<string, {url: string, kind: string, frames: number, delays: number[], repeat: number, travel: boolean, speed: number}>} */
-  const animations = JSON.parse(stage.dataset.animations || '{}');
+  /**
+   * @typedef {{url: string, cols: number, rows: number, cells: [number, number][], delays: number[],
+   *   kind: string, repeat: number, travel: boolean, speed: number, chance: number, on: string[], onChance: number}} Animation
+   * @type {{frameWidth: number, frameHeight: number, displayWidth: number, sideMarginRatio: number,
+   *   pixelated: boolean, float: boolean, animations: Record<string, Animation>}}
+   */
+  const data = JSON.parse(stage.dataset.pet || '{}');
+  const animations = data.animations;
   const namesOf = (kind) => Object.keys(animations).filter((name) => animations[name].kind === kind);
-  const IDLE = namesOf('idle')[0];
-  const WALK = namesOf('walk')[0];
+  const IDLES = namesOf('idle');
+  const WALKS = namesOf('walk');
+  const WALKS_LEFT = namesOf('walk-left'); // あれば左右反転せず、左向きの絵を使う
   const ACTIONS = namesOf('action');
   const SECRETS = namesOf('secret');
 
@@ -25,22 +33,33 @@
   const IDLE_MIN_MS = 1500;
   const IDLE_MAX_MS = 4500;
   const ACTION_CHANCE = 0.45; // 待機明けに、歩く代わりに演技をする確率
-  const SECRET_CHANCE = 0.04; // 待機明けに、シークレット演出が出る確率
   const SECRET_CLICKS = 5; // この回数だけ素早くクリックするとシークレット演出が出る
   const SECRET_CLICK_WINDOW_MS = 2000;
+  const EVENT_COOLDOWN_MS = 6000; // 同じ出来事に続けて反応しない時間
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-  sprite.style.aspectRatio = `${stage.dataset.frameWidth} / ${stage.dataset.frameHeight}`;
-
   const random = (min, max) => min + Math.random() * (max - min);
-  // スプライトの左右には小道具用の余白（幅の1/8ほど）がある。
+  const pick = (list) => list[Math.floor(Math.random() * list.length)];
+
+  // --- 見た目の初期設定 ------------------------------------------------------
+
+  pet.style.width = `min(${data.displayWidth}px, 70vw)`;
+  pet.classList.toggle('pixelated', data.pixelated);
+  pet.classList.toggle('float', data.float);
+  sprite.style.aspectRatio = `${data.frameWidth} / ${data.frameHeight}`;
+  const shadow = pet.querySelector('.shadow');
+  if (shadow) {
+    shadow.style.width = `${Math.round((1 - 2 * data.sideMarginRatio) * 62)}%`;
+  }
+
+  // スプライトの左右には小道具用の余白があることがある。
   // 左側は余白ぶんだけ画面外にはみ出してよいが、右側は小道具が出るので収める。
-  const minX = () => -pet.offsetWidth / 8;
+  const minX = () => -pet.offsetWidth * data.sideMarginRatio;
   const maxX = () => Math.max(minX(), stage.clientWidth - pet.offsetWidth);
 
   // 画像を先読みして、切り替え時のちらつきを防ぐ
-  for (const name of Object.keys(animations)) {
-    new Image().src = animations[name].url;
+  for (const url of new Set(Object.values(animations).map((animation) => animation.url))) {
+    new Image().src = url;
   }
 
   // --- スプライトシートの再生 ------------------------------------------------
@@ -48,13 +67,13 @@
   const player = { name: '', frame: 0, elapsed: 0, loopsLeft: Infinity, onDone: null };
 
   function showFrame() {
-    const { frames } = animations[player.name];
-    const position = frames > 1 ? (player.frame / (frames - 1)) * 100 : 0;
-    sprite.style.backgroundPositionX = `${position}%`;
+    const { cols, rows, cells } = animations[player.name];
+    const [col, row] = cells[player.frame];
+    sprite.style.backgroundPosition = `${cols > 1 ? (col / (cols - 1)) * 100 : 0}% ${rows > 1 ? (row / (rows - 1)) * 100 : 0}%`;
   }
 
   /**
-   * アニメーションを最初のフレームから再生する。
+   * アニメーションを最初のコマから再生する。
    * loops 回再生し終えると onDone を呼ぶ（Infinity ならループし続ける）。
    */
   function play(name, loops = Infinity, onDone = null) {
@@ -65,7 +84,7 @@
     player.loopsLeft = loops;
     player.onDone = onDone;
     sprite.style.backgroundImage = `url("${animation.url}")`;
-    sprite.style.backgroundSize = `${animation.frames * 100}% 100%`;
+    sprite.style.backgroundSize = `${animation.cols * 100}% ${animation.rows * 100}%`;
     showFrame();
   }
 
@@ -74,12 +93,12 @@
     player.elapsed += dtMs;
     while (player.elapsed >= animation.delays[player.frame]) {
       player.elapsed -= animation.delays[player.frame];
-      if (player.frame + 1 < animation.frames) {
+      if (player.frame + 1 < animation.cells.length) {
         player.frame += 1;
       } else if (--player.loopsLeft > 0) {
         player.frame = 0;
       } else {
-        // 最後のフレームで止めたまま、完了を通知する
+        // 最後のコマで止めたまま、完了を通知する
         const done = player.onDone;
         player.onDone = null;
         player.elapsed = 0;
@@ -100,10 +119,11 @@
   let targetX = x;
   let idleUntil = 0;
   let lastAction = '';
-  let speedScale = 1; // 乗り物に乗っている間の速さの倍率
+  let riding = ''; // 乗り物系（travel）のアニメーションで移動中なら、その名前
+  let speedScale = 1;
   let nextSecret = Math.floor(Math.random() * Math.max(SECRETS.length, 1));
   let clickTimes = [];
-  let lastTime = performance.now();
+  const lastEventAt = {};
 
   function setMode(next) {
     mode = next;
@@ -112,9 +132,21 @@
 
   function startIdle(now, wait = random(IDLE_MIN_MS, IDLE_MAX_MS)) {
     setMode('idle');
+    riding = '';
     speedScale = 1;
     idleUntil = now + wait;
-    play(IDLE);
+    play(pick(IDLES));
+  }
+
+  /** 進む向きに合わせて、歩行の絵と左右反転を決める */
+  function faceAndWalkAnimation(goingLeft) {
+    if (goingLeft && WALKS_LEFT.length > 0) {
+      pet.classList.remove('facing-left');
+      return WALKS_LEFT[0];
+    }
+    // 絵は右向きなので、左へ進むときは反転させる
+    pet.classList.toggle('facing-left', goingLeft);
+    return WALKS[0];
   }
 
   function walkTo(destination) {
@@ -122,56 +154,84 @@
     if (Math.abs(targetX - x) < 1) {
       return false;
     }
-    // 絵は右向きなので、左へ進むときは反転させる
-    pet.classList.toggle('facing-left', targetX < x);
-    if (mode !== 'walk' || speedScale !== 1) {
+    const name = faceAndWalkAnimation(targetX < x);
+    if (mode !== 'walk' || riding || player.name !== name) {
       setMode('walk');
+      riding = '';
       speedScale = 1;
-      play(WALK);
+      play(name);
     }
     return true;
+  }
+
+  /** 演技・リアクション・シークレットを再生する */
+  function perform(name) {
+    const animation = animations[name];
+    if (animation.travel) {
+      // 乗り物系: その絵のまま、遠いほうの端まで移動する
+      const left = minX();
+      const right = maxX();
+      targetX = x - left > right - x ? left : right;
+      pet.classList.toggle('facing-left', targetX < x);
+      setMode('walk');
+      riding = name;
+      speedScale = animation.speed;
+      play(name);
+      return;
+    }
+    setMode('action');
+    riding = '';
+    // 小道具は絵の右側に出るので、右向きに直してから始める
+    pet.classList.remove('facing-left');
+    play(name, animation.repeat, () => startIdle(performance.now()));
   }
 
   function startAction() {
     // 同じ演技が続かないように選ぶ
     const candidates = ACTIONS.length > 1 ? ACTIONS.filter((name) => name !== lastAction) : ACTIONS;
-    const name = candidates[Math.floor(Math.random() * candidates.length)];
-    lastAction = name;
-    setMode('action');
-    // 小道具は絵の右側に出るので、右向きに直してから始める
-    pet.classList.remove('facing-left');
-    play(name, animations[name].repeat, () => startIdle(performance.now()));
+    lastAction = pick(candidates);
+    perform(lastAction);
   }
 
   /** シークレット演出を順番に1つ再生する */
   function startSecret() {
     const name = SECRETS[nextSecret % SECRETS.length];
     nextSecret += 1;
-    const animation = animations[name];
-    if (!animation.travel) {
-      setMode('action');
-      pet.classList.remove('facing-left');
-      play(name, animation.repeat, () => startIdle(performance.now()));
-      return;
-    }
-    // 乗り物系: その絵のまま、遠いほうの端まで移動する
-    const left = minX();
-    const right = maxX();
-    targetX = x - left > right - x ? left : right;
-    pet.classList.toggle('facing-left', targetX < x);
-    setMode('walk');
-    speedScale = animation.speed;
-    play(name);
+    perform(name);
   }
 
   function decideNext(now) {
-    if (SECRETS.length > 0 && Math.random() < SECRET_CHANCE) {
-      startSecret();
+    // シークレットは、それぞれの出現確率で抽選する
+    const secret = SECRETS.find((name) => Math.random() < animations[name].chance);
+    if (secret) {
+      perform(secret);
     } else if (ACTIONS.length > 0 && Math.random() < ACTION_CHANCE) {
       startAction();
     } else if (!walkTo(random(minX(), maxX()))) {
       startIdle(now);
     }
+  }
+
+  /**
+   * 出来事に対応するアニメーションがあれば再生する。
+   * @returns {boolean} 再生したかどうか
+   */
+  function react(eventName) {
+    const now = performance.now();
+    if (eventName !== 'click' && now - (lastEventAt[eventName] || -Infinity) < EVENT_COOLDOWN_MS) {
+      return false;
+    }
+    const candidates = Object.keys(animations).filter((name) => {
+      const animation = animations[name];
+      return animation.on.includes(eventName) && Math.random() < animation.onChance;
+    });
+    if (candidates.length === 0) {
+      return false;
+    }
+    lastEventAt[eventName] = now;
+    pet.classList.remove('jumping');
+    perform(pick(candidates));
+    return true;
   }
 
   function tick(now) {
@@ -196,6 +256,7 @@
     pet.style.transform = `translateX(${x}px)`;
     requestAnimationFrame(tick);
   }
+  let lastTime = performance.now();
 
   // パネルをクリックした位置まで歩く（演技中なら中断する）
   stage.addEventListener('click', (event) => {
@@ -205,7 +266,6 @@
     }
   });
 
-  // グローグーをクリックするとジャンプする（演技中なら中断して起こす）
   pet.addEventListener('click', (event) => {
     event.stopPropagation();
     const now = performance.now();
@@ -216,6 +276,10 @@
       clickTimes = [];
       pet.classList.remove('jumping');
       startSecret();
+      return;
+    }
+    // click 用のアニメーションがあればそれを再生し、無ければジャンプする
+    if (react('click')) {
       return;
     }
     if (mode === 'action') {
@@ -231,10 +295,35 @@
     }
   });
 
+  // 拡張機能からの通知（エディタ上の出来事、確認用の再生指示）
+  window.addEventListener('message', (event) => {
+    const message = event.data;
+    if (!message || typeof message.name !== 'string') {
+      return;
+    }
+    if (message.type === 'event') {
+      if (message.name === 'back' && mode === 'action' && animations[player.name].on.includes('away')) {
+        // 居眠りなど、離席中の演技をしていたら起こす
+        startIdle(performance.now(), 500);
+      }
+      react(message.name);
+    } else if (message.type === 'play' && animations[message.name]) {
+      const kind = animations[message.name].kind;
+      if (kind === 'idle') {
+        startIdle(performance.now(), 6000);
+        play(message.name);
+      } else if (kind === 'walk' || kind === 'walk-left') {
+        walkTo(kind === 'walk-left' || x > (minX() + maxX()) / 2 ? minX() : maxX());
+      } else {
+        perform(message.name);
+      }
+    }
+  });
+
   // パネル幅が変わったら、はみ出さないように位置を補正する
   window.addEventListener('resize', () => {
-    x = Math.min(x, maxX());
-    targetX = Math.min(targetX, maxX());
+    x = Math.min(Math.max(x, minX()), maxX());
+    targetX = Math.min(Math.max(targetX, minX()), maxX());
   });
 
   startIdle(performance.now(), 1000);

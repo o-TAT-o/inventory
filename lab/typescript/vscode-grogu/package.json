@@ -1,12 +1,12 @@
 {
-  "name": "vscode-grogu",
-  "displayName": "Grogu",
-  "description": "エクスプローラーにグローグーを表示するVS Code拡張機能",
+  "name": "pixel-pal",
+  "displayName": "Pixel Pal",
+  "description": "エクスプローラーに好きなドット絵ペットを表示する拡張機能。素材フォルダを差し替えて自作キャラクターにでき、AIでペットを作るスキルも同梱。",
   "version": "0.0.1",
   "private": true,
   "publisher": "local",
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.93.0"
   },
   "categories": [
     "Other"
@@ -18,21 +18,87 @@
       "explorer": [
         {
           "type": "webview",
-          "id": "grogu.view",
-          "name": "Grogu"
+          "id": "pixelPal.view",
+          "name": "Pixel Pal"
         }
       ]
+    },
+    "commands": [
+      {
+        "command": "pixelPal.selectPet",
+        "title": "ペットを選ぶ",
+        "category": "Pixel Pal"
+      },
+      {
+        "command": "pixelPal.playAnimation",
+        "title": "アニメーションを再生（確認用）",
+        "category": "Pixel Pal"
+      },
+      {
+        "command": "pixelPal.reload",
+        "title": "ペットを読み込み直す",
+        "category": "Pixel Pal"
+      },
+      {
+        "command": "pixelPal.installSkill",
+        "title": "ペット作成スキルをワークスペースに導入",
+        "category": "Pixel Pal"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "pixelPal.selectPet",
+          "when": "view == pixelPal.view"
+        },
+        {
+          "command": "pixelPal.playAnimation",
+          "when": "view == pixelPal.view"
+        },
+        {
+          "command": "pixelPal.installSkill",
+          "when": "view == pixelPal.view"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Pixel Pal",
+      "properties": {
+        "pixelPal.petPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "表示するペットのフォルダ。絶対パス、`~/` から始まるパス、ワークスペースからの相対パス、同梱ペットの名前のいずれかで指定します。空なら同梱の `mochi` を表示します。"
+        },
+        "pixelPal.scale": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0.25,
+          "maximum": 4,
+          "description": "ペットの表示倍率。"
+        },
+        "pixelPal.reactToEditor": {
+          "type": "boolean",
+          "default": true,
+          "description": "保存・エラー・タスクの成否など、エディタ上の出来事にペットが反応するかどうか。"
+        },
+        "pixelPal.awayMinutes": {
+          "type": "number",
+          "default": 5,
+          "minimum": 0.5,
+          "description": "操作が無い状態がこの分数だけ続くと、ペットに「離席」を伝えます（居眠りなど）。"
+        }
+      }
     }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "sprites": "node scripts/generate-sprites.js"
+    "pet:sample": "node skills/pixel-pet-creator/scripts/build-pet.js skills/pixel-pet-creator/examples/mochi --out pets/mochi"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "@types/vscode": "^1.85.0",
+    "@types/vscode": "~1.93.0",
     "typescript": "^5.4.0"
   }
 }

@@ -12,7 +12,7 @@ body {
   font-size: var(--vscode-font-size);
 }
 
-/* グローグーが歩き回る舞台（パネル全体） */
+/* ペットが歩き回る舞台（パネル全体） */
 .stage {
   position: relative;
   width: 100%;
@@ -36,8 +36,7 @@ body {
   position: absolute;
   left: 0;
   bottom: 6px;
-  /* スプライトは小道具用の余白込みなので、グローグー本体はこの幅の約2/3になる */
-  width: min(144px, 70vw);
+  /* 幅は main.js がペットの設定に合わせて指定する */
   z-index: 1;
 }
 
@@ -51,11 +50,15 @@ body {
   width: 100%;
   background-repeat: no-repeat;
   transform-origin: bottom center;
+}
+
+/* ドット絵は拡大してもぼかさない */
+.pet.pixelated .sprite {
   image-rendering: pixelated;
 }
 
-/* 立ち止まっている間は、ふわふわと上下に揺れる */
-.pet[data-mode='idle']:not(.jumping) .sprite {
+/* float を有効にしたペットは、立ち止まっている間ふわふわと上下に揺れる */
+.pet.float[data-mode='idle']:not(.jumping) .sprite {
   animation: float 3s ease-in-out infinite;
 }
 
@@ -65,7 +68,6 @@ body {
 
 /* 足元の影 */
 .shadow {
-  width: 42%;
   height: 6px;
   margin: 2px auto 0;
   border-radius: 50%;
@@ -73,7 +75,7 @@ body {
   opacity: 0.18;
 }
 
-.pet[data-mode='idle']:not(.jumping) .shadow {
+.pet.float[data-mode='idle']:not(.jumping) .shadow {
   animation: shadow 3s ease-in-out infinite;
 }
 
@@ -81,8 +83,10 @@ body {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   margin: 0;
   padding: 16px;
   text-align: center;
@@ -91,8 +95,8 @@ body {
   cursor: default;
 }
 
-.placeholder code {
-  font-family: var(--vscode-editor-font-family);
+.placeholder p {
+  margin: 0;
 }
 
 @keyframes float {

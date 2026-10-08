@@ -1,0 +1,145 @@
+{
+  "format": 1,
+  "name": "もち",
+  "frameWidth": 40,
+  "frameHeight": 44,
+  "displayWidth": 120,
+  "sideMargin": 8,
+  "float": false,
+  "animations": {
+    "idle": {
+      "file": "idle.png",
+      "kind": "idle",
+      "frames": 5,
+      "delays": [
+        1600,
+        350,
+        1400,
+        120,
+        350
+      ]
+    },
+    "walk": {
+      "file": "walk.png",
+      "kind": "walk",
+      "frames": 4,
+      "delays": [
+        140,
+        140,
+        140,
+        140
+      ]
+    },
+    "snack": {
+      "file": "snack.png",
+      "kind": "action",
+      "frames": 10,
+      "delays": [
+        500,
+        300,
+        220,
+        200,
+        200,
+        220,
+        200,
+        200,
+        200,
+        600
+      ]
+    },
+    "nap": {
+      "file": "nap.png",
+      "kind": "action",
+      "frames": 4,
+      "delays": [
+        600,
+        600,
+        600,
+        600
+      ],
+      "repeat": 4,
+      "on": [
+        "away"
+      ]
+    },
+    "cheer": {
+      "file": "cheer.png",
+      "kind": "reaction",
+      "frames": 7,
+      "delays": [
+        140,
+        120,
+        160,
+        160,
+        120,
+        140,
+        500
+      ],
+      "on": [
+        "success",
+        "errorsCleared"
+      ]
+    },
+    "oops": {
+      "file": "oops.png",
+      "kind": "reaction",
+      "frames": 7,
+      "delays": [
+        200,
+        90,
+        90,
+        90,
+        90,
+        700,
+        500
+      ],
+      "on": [
+        "fail",
+        "error"
+      ]
+    },
+    "nod": {
+      "file": "nod.png",
+      "kind": "reaction",
+      "frames": 4,
+      "delays": [
+        140,
+        140,
+        140,
+        600
+      ],
+      "on": [
+        "save"
+      ],
+      "onChance": 0.5
+    },
+    "boing": {
+      "file": "boing.png",
+      "kind": "reaction",
+      "frames": 5,
+      "delays": [
+        90,
+        90,
+        90,
+        90,
+        300
+      ],
+      "on": [
+        "click"
+      ]
+    },
+    "balloon": {
+      "file": "balloon.png",
+      "kind": "secret",
+      "frames": 4,
+      "delays": [
+        220,
+        220,
+        220,
+        220
+      ],
+      "travel": true,
+      "speed": 1.3
+    }
+  }
+}
