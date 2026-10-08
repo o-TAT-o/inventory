@@ -1,0 +1,11 @@
+node_modules/
+out/
+*.vsix
+
+# 既存キャラクターを描いたファンアートにあたるため、公開リポジトリには含めない
+# （スプライト画像と、その絵をドット単位で定義している生成スクリプト）
+media/sprites/
+scripts/generate-sprites.js
+
+# F5 デバッグ用の設定はリポジトリに含める（ルートの .gitignore で除外されているため）
+!.vscode/
