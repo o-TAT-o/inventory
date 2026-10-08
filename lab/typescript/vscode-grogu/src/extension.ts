@@ -245,51 +245,114 @@ async function selectPet(provider: PetViewProvider): Promise<void> {
   await config().update('petPath', dir, vscode.ConfigurationTarget.Global);
 }
 
-/** コマンド: ペット作成用のスキルを、ワークスペースのAIエージェント用フォルダへコピーする */
-async function installSkill(extensionUri: vscode.Uri): Promise<void> {
-  const folder = vscode.workspace.workspaceFolders?.[0];
-  if (!folder) {
-    void vscode.window.showWarningMessage('スキルの導入先となるフォルダを、先に VS Code で開いてください。');
-    return;
+// スキルの導入先。主要なAI開発ツールは、次の2か所のどちらかを読む。
+//   .claude/skills … Claude Code / Cursor / GitHub Copilot
+//   .agents/skills … Codex / Cursor / GitHub Copilot
+const SKILL_ROOTS = ['.claude/skills', '.agents/skills'] as const;
+/** 導入したスキルの版を記録するファイル（拡張機能の更新時に入れ替えるため） */
+const SKILL_VERSION_FILE = '.pixel-pal-version';
+const SKILL_PROMPTED_KEY = 'skillInstallPrompted';
+
+function skillTargets(base: string): string[] {
+  return SKILL_ROOTS.map((root) => path.join(base, root, SKILL_NAME));
+}
+
+/** スキルを base 配下の各AIツール用フォルダへコピーする */
+function copySkill(context: vscode.ExtensionContext, base: string): void {
+  const source = vscode.Uri.joinPath(context.extensionUri, 'skills', SKILL_NAME).fsPath;
+  const version = String(context.extension.packageJSON.version);
+  for (const target of skillTargets(base)) {
+    fs.rmSync(target, { recursive: true, force: true });
+    fs.cpSync(source, target, { recursive: true });
+    fs.writeFileSync(path.join(target, SKILL_VERSION_FILE), version);
   }
-  const picked = await vscode.window.showQuickPick(
-    [
-      { label: '.claude/skills', description: 'Claude Code' },
-      { label: '.github/skills', description: 'GitHub Copilot' },
-      { label: '.agents/skills', description: 'Codex など' },
-    ],
-    { placeHolder: 'お使いのAIエージェントに合わせて、スキルの導入先を選んでください' },
-  );
-  if (!picked) {
+}
+
+/** ホームフォルダに導入済みのスキルが古ければ、拡張機能に同梱の版へ入れ替える */
+function refreshInstalledSkill(context: vscode.ExtensionContext): void {
+  const version = String(context.extension.packageJSON.version);
+  const stale = skillTargets(os.homedir()).some((target) => {
+    const stamp = path.join(target, SKILL_VERSION_FILE);
+    return fs.existsSync(stamp) && fs.readFileSync(stamp, 'utf8').trim() !== version;
+  });
+  if (stale) {
+    try {
+      copySkill(context, os.homedir());
+    } catch {
+      // 入れ替えに失敗しても、ペットの表示には影響しないので無視する
+    }
+  }
+}
+
+/** コマンド: ペット作成用のスキルを、AI開発ツールが読むフォルダへ導入する */
+async function installSkill(context: vscode.ExtensionContext): Promise<void> {
+  interface Item extends vscode.QuickPickItem {
+    base?: string;
+  }
+  const items: Item[] = [
+    {
+      label: 'すべてのプロジェクトで使う',
+      description: 'ホームフォルダに導入',
+      detail: `${SKILL_ROOTS.map((root) => `~/${root}`).join(' と ')} にコピーします。`,
+      base: os.homedir(),
+    },
+  ];
+  const folder = vscode.workspace.workspaceFolders?.[0];
+  if (folder) {
+    items.push({
+      label: 'このワークスペースだけで使う',
+      description: folder.name,
+      detail: `ワークスペースの ${SKILL_ROOTS.join(' と ')} にコピーします。`,
+      base: folder.uri.fsPath,
+    });
+  }
+  const picked = await vscode.window.showQuickPick(items, {
+    placeHolder: 'ペット作成スキルの導入先（Claude Code / Cursor / GitHub Copilot / Codex が読み込みます）',
+  });
+  if (!picked?.base) {
     return;
   }
 
-  const source = vscode.Uri.joinPath(extensionUri, 'skills', SKILL_NAME).fsPath;
-  const target = path.join(folder.uri.fsPath, picked.label, SKILL_NAME);
-  if (fs.existsSync(target)) {
-    const answer = await vscode.window.showWarningMessage(
-      `${picked.label}/${SKILL_NAME} は既にあります。上書きしますか？`,
-      { modal: true },
-      '上書きする',
-    );
-    if (answer !== '上書きする') {
-      return;
-    }
+  try {
+    copySkill(context, picked.base);
+  } catch (error) {
+    void vscode.window.showErrorMessage(`スキルの導入に失敗しました: ${(error as Error).message}`);
+    return;
   }
-  fs.cpSync(source, target, { recursive: true });
+  await context.globalState.update(SKILL_PROMPTED_KEY, true);
 
   const open = 'SKILL.md を開く';
   const answer = await vscode.window.showInformationMessage(
-    `スキルを ${picked.label}/${SKILL_NAME} に導入しました。AIエージェントに「ペットを作って」と頼んでみてください。`,
+    'ペット作成スキルを導入しました。AIに「Pixel Pal のペットを作って」と頼んでみてください。',
     open,
   );
   if (answer === open) {
-    await vscode.window.showTextDocument(vscode.Uri.file(path.join(target, 'SKILL.md')));
+    await vscode.window.showTextDocument(vscode.Uri.file(path.join(skillTargets(picked.base)[0], 'SKILL.md')));
+  }
+}
+
+/** 初回だけ、スキルを導入するかを尋ねる */
+async function promptSkillInstallOnce(context: vscode.ExtensionContext): Promise<void> {
+  if (context.globalState.get<boolean>(SKILL_PROMPTED_KEY)) {
+    return;
+  }
+  await context.globalState.update(SKILL_PROMPTED_KEY, true);
+  const install = '導入する';
+  const answer = await vscode.window.showInformationMessage(
+    'Pixel Pal: AIでペットを作れるスキルを、お使いのAI開発ツール（Claude Code / Cursor / Copilot / Codex）に導入しますか？',
+    install,
+    'あとで',
+  );
+  if (answer === install) {
+    await installSkill(context);
   }
 }
 
 export function activate(context: vscode.ExtensionContext): void {
   const provider = new PetViewProvider(context.extensionUri);
+
+  refreshInstalledSkill(context);
+  void promptSkillInstallOnce(context);
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(PetViewProvider.viewType, provider),
@@ -304,7 +367,7 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
     vscode.commands.registerCommand('pixelPal.selectPet', () => selectPet(provider)),
     vscode.commands.registerCommand('pixelPal.reload', () => provider.render()),
-    vscode.commands.registerCommand('pixelPal.installSkill', () => installSkill(context.extensionUri)),
+    vscode.commands.registerCommand('pixelPal.installSkill', () => installSkill(context)),
     vscode.commands.registerCommand('pixelPal.playAnimation', async () => {
       const name = await vscode.window.showQuickPick(provider.animationNames, { placeHolder: '再生するアニメーションを選んでください' });
       if (name) {

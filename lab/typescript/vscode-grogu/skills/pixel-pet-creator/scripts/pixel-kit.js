@@ -307,4 +307,4 @@ function buildPet(def, outDir) {
   return { warnings, summary, previewDir };
 }
 
-module.exports = { createCanvas, buildPet, KINDS, EVENTS };
+module.exports = { createCanvas, composeSheet, buildPet, KINDS, EVENTS };

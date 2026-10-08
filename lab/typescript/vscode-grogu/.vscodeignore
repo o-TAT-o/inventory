@@ -3,4 +3,18 @@ src/**
 tsconfig.json
 **/*.map
 .gitignore
+
+# 開発用のファイル
+scripts/**
+DEVELOPMENT.md
+
+# 同梱するペットはサンプルだけ。ローカル専用のペットをパッケージに含めない
+pets/**
+!pets/mochi/manifest.json
+!pets/mochi/*.png
+
+# 目視確認用の画像は含めない
 **/_preview/**
+
+# README の画像は GitHub から読み込むので、パッケージには含めない
+media/demo.gif

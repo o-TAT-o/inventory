@@ -3,8 +3,7 @@
   "displayName": "Pixel Pal",
   "description": "エクスプローラーに好きなドット絵ペットを表示する拡張機能。素材フォルダを差し替えて自作キャラクターにでき、AIでペットを作るスキルも同梱。",
   "version": "0.0.1",
-  "private": true,
-  "publisher": "local",
+  "publisher": "p-ota-q",
   "engines": {
     "vscode": "^1.93.0"
   },
@@ -41,7 +40,7 @@
       },
       {
         "command": "pixelPal.installSkill",
-        "title": "ペット作成スキルをワークスペースに導入",
+        "title": "ペット作成スキルをAIツールに導入",
         "category": "Pixel Pal"
       }
     ],
@@ -88,17 +87,43 @@
           "description": "操作が無い状態がこの分数だけ続くと、ペットに「離席」を伝えます（居眠りなど）。"
         }
       }
-    }
+    },
+    "chatSkills": [
+      {
+        "path": "./skills/pixel-pet-creator/SKILL.md"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pet:sample": "node skills/pixel-pet-creator/scripts/build-pet.js skills/pixel-pet-creator/examples/mochi --out pets/mochi"
+    "pet:sample": "node skills/pixel-pet-creator/scripts/build-pet.js skills/pixel-pet-creator/examples/mochi --out pets/mochi",
+    "icon": "node scripts/make-icon.js",
+    "package": "vsce package --no-dependencies --baseContentUrl https://github.com/o-TAT-o/inventory/blob/main/lab/typescript/vscode-grogu --baseImagesUrl https://github.com/o-TAT-o/inventory/raw/main/lab/typescript/vscode-grogu",
+    "demo": "node scripts/make-demo-gif.js"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/vscode": "~1.93.0",
+    "@vscode/vsce": "^3.0.0",
+    "gifenc": "^1.0.3",
     "typescript": "^5.4.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/o-TAT-o/inventory.git",
+    "directory": "lab/typescript/vscode-grogu"
+  },
+  "icon": "media/icon.png",
+  "keywords": [
+    "pet",
+    "pixel art",
+    "sprite",
+    "mascot",
+    "agent skills",
+    "ai",
+    "fun"
+  ],
+  "license": "MIT"
 }
