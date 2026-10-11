@@ -16,11 +16,11 @@ Pixel Pal は、VS Code のエクスプローラーにドット絵のペット�
 
 | パス | 内容 |
 |------|------|
-| `scripts/build-pet.js` | `pet.js` をビルドするコマンド |
-| `scripts/pixel-kit.js` | 描画ライブラリ（ビルドスクリプトが使う。直接編集しない） |
-| `examples/mochi/pet.js` | 完成済みの手本。構成をまねて書く |
-| `references/drawing-guide.md` | 描画APIと、ドット絵をうまく描くコツ。**描き始める前に読む** |
-| `references/format.md` | `pet.js` と `manifest.json` の全項目、きっかけ（イベント）の一覧 |
+| [scripts/build-pet.js](./scripts/build-pet.js) | `pet.js` をビルドするコマンド |
+| [scripts/pixel-kit.js](./scripts/pixel-kit.js) | 描画ライブラリ（ビルドスクリプトが使う。直接編集しない） |
+| [examples/mochi/pet.js](./examples/mochi/pet.js) | 完成済みの手本。構成をまねて書く |
+| [references/drawing-guide.md](./references/drawing-guide.md) | 描画APIと、ドット絵をうまく描くコツ。**描き始める前に読む** |
+| [references/format.md](./references/format.md) | `pet.js` と `manifest.json` の全項目、きっかけ（イベント）の一覧 |
 
 Node.js（v22 以降）だけで動く。追加のパッケージは不要。
 
@@ -41,14 +41,14 @@ Node.js（v22 以降）だけで動く。追加のパッケージは不要。
 ここに置いたペットは、拡張機能の「ペットを選ぶ」の一覧に自動で出る。
 ユーザーが別の場所を指定したら、そちらに従う。
 
-`examples/mochi/pet.js` をコピーして `pet.js` とし、これを書き換えていく。
+[examples/mochi/pet.js](./examples/mochi/pet.js) をコピーして `pet.js` とし、これを書き換えていく。
 
 ### 3. まず立ち姿だけを仕上げる
 
 **いきなり全部のアニメーションを描かない。** 最初は `idle` と `walk` だけにして、立ち姿が「そのキャラクターに見える」まで直す。
 土台の絵が決まる前に演技を描くと、あとで全部描き直すことになる。
 
-1. `references/drawing-guide.md` を読む。
+1. [references/drawing-guide.md](./references/drawing-guide.md) を読む。
 2. キャンバスの大きさ・原点・色を決め、ポーズを引数で変えられる描画関数を1つ書く。
 3. ビルドする。
 

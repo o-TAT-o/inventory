@@ -307,7 +307,7 @@ async function installSkill(context: vscode.ExtensionContext): Promise<void> {
     });
   }
   const picked = await vscode.window.showQuickPick(items, {
-    placeHolder: 'ペット作成スキルの導入先（Claude Code / Cursor / GitHub Copilot / Codex が読み込みます）',
+    placeHolder: 'ペット作成スキルの導入先（Claude Code / Cursor / Codex 向け。GitHub Copilot は導入不要）',
   });
   if (!picked?.base) {
     return;
@@ -339,7 +339,7 @@ async function promptSkillInstallOnce(context: vscode.ExtensionContext): Promise
   await context.globalState.update(SKILL_PROMPTED_KEY, true);
   const install = '導入する';
   const answer = await vscode.window.showInformationMessage(
-    'Pixel Pal: AIでペットを作れるスキルを、お使いのAI開発ツール（Claude Code / Cursor / Copilot / Codex）に導入しますか？',
+    'Pixel Pal: Claude Code / Cursor / Codex でペットを作る場合は、スキルの導入が必要です。導入しますか？（GitHub Copilot は導入なしで使えます）',
     install,
     'あとで',
   );

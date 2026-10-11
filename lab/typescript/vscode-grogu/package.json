@@ -2,7 +2,7 @@
   "name": "pixel-pal",
   "displayName": "Pixel Pal",
   "description": "エクスプローラーに好きなドット絵ペットを表示する拡張機能。素材フォルダを差し替えて自作キャラクターにでき、AIでペットを作るスキルも同梱。",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "p-ota-q",
   "engines": {
     "vscode": "^1.93.0"

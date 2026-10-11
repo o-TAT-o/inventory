@@ -131,9 +131,20 @@ code --install-extension pixel-pal-0.0.1.vsix
 
 ### 公開の手順
 
+1. `package.json` の `version` を上げ、`CHANGELOG.md` に変更点を書く。同じ版番号では上書きできない。
+2. 変更をコミットしてプッシュする。
+3. `npm run package` で `.vsix` を作る。
+4. https://marketplace.visualstudio.com/manage で発行者 `p-ota-q` を開き、拡張機能の「…」メニューから更新版の `.vsix` をアップロードする。
+
+コマンドでの公開（`vsce publish`）に使うアクセストークンは、2026年12月1日に廃止される。
+
+`main` にマージする前に公開する場合は、README の画像とリンクが切れないよう、基準 URL をプッシュ済みのコミットに向けてパッケージ化する。
+
 ```sh
-npx vsce login <発行者ID>
-npx vsce publish --no-dependencies --baseContentUrl <基準URL> --baseImagesUrl <基準URL>
+SHA=$(git rev-parse HEAD)
+BASE=https://github.com/o-TAT-o/inventory
+DIR=lab/typescript/vscode-grogu
+npx vsce package --no-dependencies --baseContentUrl $BASE/blob/$SHA/$DIR --baseImagesUrl $BASE/raw/$SHA/$DIR
 ```
 
 Cursor などの VS Code 派生エディタは Open VSX を参照します。そちらにも公開する場合は `ovsx` を使います。
