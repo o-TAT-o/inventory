@@ -1,0 +1,129 @@
+{
+  "name": "pixel-pal",
+  "displayName": "Pixel Pal",
+  "description": "エクスプローラーに好きなドット絵ペットを表示する拡張機能。素材フォルダを差し替えて自作キャラクターにでき、AIでペットを作るスキルも同梱。",
+  "version": "0.0.2",
+  "publisher": "p-ota-q",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "pixelPal.view",
+          "name": "Pixel Pal"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "pixelPal.selectPet",
+        "title": "ペットを選ぶ",
+        "category": "Pixel Pal"
+      },
+      {
+        "command": "pixelPal.playAnimation",
+        "title": "アニメーションを再生（確認用）",
+        "category": "Pixel Pal"
+      },
+      {
+        "command": "pixelPal.reload",
+        "title": "ペットを読み込み直す",
+        "category": "Pixel Pal"
+      },
+      {
+        "command": "pixelPal.installSkill",
+        "title": "ペット作成スキルをAIツールに導入",
+        "category": "Pixel Pal"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "pixelPal.selectPet",
+          "when": "view == pixelPal.view"
+        },
+        {
+          "command": "pixelPal.playAnimation",
+          "when": "view == pixelPal.view"
+        },
+        {
+          "command": "pixelPal.installSkill",
+          "when": "view == pixelPal.view"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Pixel Pal",
+      "properties": {
+        "pixelPal.petPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "表示するペットのフォルダ。絶対パス、`~/` から始まるパス、ワークスペースからの相対パス、同梱ペットの名前のいずれかで指定します。空なら同梱の `mochi` を表示します。"
+        },
+        "pixelPal.scale": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0.25,
+          "maximum": 4,
+          "description": "ペットの表示倍率。"
+        },
+        "pixelPal.reactToEditor": {
+          "type": "boolean",
+          "default": true,
+          "description": "保存・エラー・タスクの成否など、エディタ上の出来事にペットが反応するかどうか。"
+        },
+        "pixelPal.awayMinutes": {
+          "type": "number",
+          "default": 5,
+          "minimum": 0.5,
+          "description": "操作が無い状態がこの分数だけ続くと、ペットに「離席」を伝えます（居眠りなど）。"
+        }
+      }
+    },
+    "chatSkills": [
+      {
+        "path": "./skills/pixel-pet-creator/SKILL.md"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pet:sample": "node skills/pixel-pet-creator/scripts/build-pet.js skills/pixel-pet-creator/examples/mochi --out pets/mochi",
+    "icon": "node scripts/make-icon.js",
+    "package": "vsce package --no-dependencies --baseContentUrl https://github.com/o-TAT-o/inventory/blob/main/lab/typescript/vscode-grogu --baseImagesUrl https://github.com/o-TAT-o/inventory/raw/main/lab/typescript/vscode-grogu",
+    "demo": "node scripts/make-demo-gif.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "~1.93.0",
+    "@vscode/vsce": "^3.0.0",
+    "gifenc": "^1.0.3",
+    "typescript": "^5.4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/o-TAT-o/inventory.git",
+    "directory": "lab/typescript/vscode-grogu"
+  },
+  "icon": "media/icon.png",
+  "keywords": [
+    "pet",
+    "pixel art",
+    "sprite",
+    "mascot",
+    "agent skills",
+    "ai",
+    "fun"
+  ],
+  "license": "MIT"
+}
