@@ -22,3 +22,4 @@ notes/
 | [models-google-gemini.md](coding-ai/models-google-gemini.md) | Google Gemini モデル比較（2.5 Pro / 3 Flash / 3.1 Pro） |
 | [ai-coding-tools-comparison.md](coding-ai/ai-coding-tools-comparison.md) | AI コーディングツール比較（Copilot / Cursor / Claude Code） |
 | [claude-code-meeting-questions.md](coding-ai/claude-code-meeting-questions.md) | Claude Code 導入検討 — AWS営業打ち合わせ質問集 |
+| [github-copilot-harness.md](coding-ai/github-copilot-harness.md) | VS Code の Copilot ハーネス調査（Local と Copilot の違い・組み込み GitHub MCP・セキュリティ） |
