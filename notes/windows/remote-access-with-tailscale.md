@@ -1,4 +1,4 @@
-# 据え置き PC にスマホ・ノート PC からリモート接続する（Tailscale + RDP）
+# 据え置き PC にスマホ・ノート PC からリモート接続する（Tailscale + RDP + Remote Control）
 
 ## 概要
 
@@ -6,7 +6,7 @@
 
 - 端末どうしは **Tailscale** でつなぐ。ルーターのポートを開けずに、家の外からでも自分の端末だけで閉じたネットワークを作れる
 - PC の画面そのものは、**Windows 11 Pro 標準のリモートデスクトップ（RDP）** で操作する。受け付けるのは Tailscale からの接続だけにしてある
-- Claude のセッションは **Remote Control** で、スマホやノート PC からそのまま続ける
+- Claude のセッションは **Remote Control** で、スマホやノート PC からそのまま続ける。`claude remote-control` を常駐させてあるので、スマホから新しいセッションも始められる
 
 > このリポジトリは公開されているため、Tailscale の IP アドレス、tailnet 名、アカウントのメールアドレスはここに書かない。
 > 必要なときは Tailscale の管理画面（Machines）か、各端末で `tailscale status` を実行して確認する。
@@ -240,6 +240,7 @@ Remote Control につながっているセッションは、スマホの Claude 
 | やりたいこと | ノート PC から | スマホから |
 |---|---|---|
 | Claude のセッションを続ける | Claude アプリ / claude.ai/code | Claude アプリ |
+| Claude の新しいセッションを始める（`C:\dev\inv`） | Claude アプリ / claude.ai/code | Claude アプリ |
 | PC の画面を操作する | リモート デスクトップ接続 / Windows App | Windows App |
 
 スマホで Claude を使うだけなら、リモートデスクトップより Claude アプリ（Remote Control）のほうがずっと操作しやすい。
@@ -316,8 +317,8 @@ Windows 11 Home は標準のリモートデスクトップ（RDP）で接続さ�
 | RDP で「ユーザー名またはパスワードが正しくありません」 | 据え置き PC で一度パスワードでサインインしたか。ユーザー名に `MicrosoftAccount\` を付けているか。「Windows Hello サインインのみ」がオンに戻っていないか |
 | RDP で「リモート コンピューターに接続できません」 | 接続する側の Tailscale がつながっているか。PC 名の代わりに Tailscale の IP アドレス（`tailscale status` で確認）でも試す |
 | 再起動後に Claude が動いていない | Claude アプリはサインインして起動するまで動かない（上の「あとでやること」を参照） |
-| スマホのアプリにフォルダが出ない | `Get-ScheduledTask -TaskName 'Claude Remote Control (inv)'` が Running か。`launcher.log` に終了が並んでいたら、最小化されたウィンドウを開いてエラーを見る（未サインインなら `claude auth login`） |
-| スマホで Remote Control が切れた | デスクトップアプリのセッションなら、アプリの自動更新による再起動の可能性が高い（アプリが起動し直せばつながり直す）。`claude remote-control` の待ち受けなら、5 分以内に自動で起動し直す（つながっている間は、サーバーへの接続が常に 1 本残るので、それがなくなったら切れたとみなしている）。`launcher.log` に「接続が 5 分ない」と出ていれば、それが働いた記録。何度も並んでいたら、ウィンドウを開いて確認や エラーが出ていないか見る |
+| スマホのアプリにフォルダが出ない | `Get-ScheduledTask -TaskName 'Claude Remote Control (inv)'` が Running か。`launcher.log` に終了や「接続が 5 分ない」が並んでいたら、最小化されたウィンドウを開いて見る（未サインインなら `claude auth login`、`Enable Remote Control? (y/n)` が出ていたら `y` と Enter） |
+| スマホで Remote Control が切れた | デスクトップアプリのセッションなら、アプリの自動更新による再起動の可能性が高い（アプリが起動し直せばつながり直す）。`claude remote-control` の待ち受けなら、5 分以内に自動で起動し直す（つながっている間は、サーバーへの接続が常に 1 本残るので、それがなくなったら切れたとみなしている）。`launcher.log` に「接続が 5 分ない」と出ていれば、それが働いた記録。何度も並んでいたら、ウィンドウを開いて確認やエラーが出ていないか見る |
 | 半年ほどたって急につながらない | key expiry が切れている。管理画面で再認証し、Disable key expiry にする |
 
 ## 参考

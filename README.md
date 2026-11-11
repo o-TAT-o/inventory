@@ -19,6 +19,7 @@ inventory/
 ├── articles/      # ブログ・記事原稿
 ├── notes/         # 技術調査メモ
 └── scripts/       # 自動化スクリプト
+    └── windows/   # Windows の運用（Remote Control の常駐など）
 ```
 
 | ディレクトリ | 用途 |
@@ -28,7 +29,7 @@ inventory/
 | `learning/` | Azure資格（AZ-104, AZ-204等）や英語学習用のコード・メモ |
 | `articles/` | ZennやQiitaなどの技術記事の原稿 |
 | `notes/` | 特定のアプリに依存しない汎用的な技術調査メモ |
-| `scripts/` | リポジトリ運用のための自動化スクリプト |
+| `scripts/` | リポジトリや開発環境の運用のための自動化スクリプト |
 
 ## セットアップ
 
