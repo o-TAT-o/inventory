@@ -133,6 +133,8 @@ object WorkoutUiMapper {
             finishedAt = detail.workout.finishedAt,
             routineMemo = routineMemo?.takeIf { it.isNotBlank() },
             unit = unit,
+            soundOn = settings.soundOn,
+            vibrationOn = settings.vibrationOn,
             exercises = exercises,
             dock = dock,
             allDone = allSets.isNotEmpty() && allSets.all { it.completed },

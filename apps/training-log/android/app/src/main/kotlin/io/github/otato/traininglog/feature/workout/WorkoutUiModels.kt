@@ -24,6 +24,9 @@ data class WorkoutUiState(
     val finishedAt: Instant? = null,
     val routineMemo: String? = null,
     val unit: WeightUnit = WeightUnit.Kg,
+    /** 休憩が終わったときに、音・バイブで知らせるか（設定） */
+    val soundOn: Boolean = true,
+    val vibrationOn: Boolean = true,
     val exercises: List<ExerciseUi> = emptyList(),
     /** 下のパネルで入力するセット。null なら、入力するセットがない */
     val dock: DockUi? = null,

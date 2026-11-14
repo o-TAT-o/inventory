@@ -288,10 +288,17 @@ class WorkoutViewModel(
                 local.update { it.copy(selectedSetId = null) }
                 return@launch
             }
-            workouts.updateSetValues(currentDraft(target).toValues())
+            val values = currentDraft(target).toValues()
+            workouts.updateSetValues(values)
             workouts.setCompleted(target.set.id, true, clock.instant())
 
             val exercise = target.exercise
+            // 次のセットには、いま入力した値を引き継ぐ。そのまま「完了」を押せば記録できる（F-WO-03）
+            exercise.sets.filter { !it.completed && it.id != target.set.id }.minByOrNull { it.sortOrder }?.let { next ->
+                val carried = values.copy(setId = next.id)
+                workouts.updateSetValues(carried)
+                draft.value = Draft(carried.setId, carried.weightKg, carried.reps, carried.durationSec, carried.distanceM)
+            }
             val remainingHere = exercise.sets.count { !it.completed && it.id != target.set.id }
             val remainingElsewhere = detail.exercises.any {
                 it.workoutExercise.id != exercise.workoutExercise.id && it.currentSet != null
