@@ -44,6 +44,7 @@ fun PrimaryButton(
     enabled: Boolean = true,
     minHeight: Dp = 56.dp,
     textStyle: TextStyle = AppTheme.typography.button,
+    horizontalPadding: Dp = 20.dp,
 ) {
     val colors = AppTheme.colors
     ButtonBody(
@@ -52,6 +53,7 @@ fun PrimaryButton(
         icon = icon,
         enabled = enabled,
         textStyle = textStyle,
+        horizontalPadding = horizontalPadding,
         contentColor = colors.onPrimary,
         modifier = modifier
             .defaultMinSize(minHeight = minHeight)
@@ -70,6 +72,7 @@ fun OutlineButton(
     enabled: Boolean = true,
     minHeight: Dp = 56.dp,
     textStyle: TextStyle = AppTheme.typography.button,
+    horizontalPadding: Dp = 20.dp,
 ) {
     val colors = AppTheme.colors
     ButtonBody(
@@ -78,6 +81,7 @@ fun OutlineButton(
         icon = icon,
         enabled = enabled,
         textStyle = textStyle,
+        horizontalPadding = horizontalPadding,
         contentColor = colors.fg,
         modifier = modifier
             .defaultMinSize(minHeight = minHeight)
@@ -93,6 +97,7 @@ private fun ButtonBody(
     icon: ImageVector?,
     enabled: Boolean,
     textStyle: TextStyle,
+    horizontalPadding: Dp,
     contentColor: Color,
     modifier: Modifier,
 ) {
@@ -100,7 +105,7 @@ private fun ButtonBody(
         modifier = modifier
             .alpha(if (enabled) 1f else 0.4f)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = horizontalPadding),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {

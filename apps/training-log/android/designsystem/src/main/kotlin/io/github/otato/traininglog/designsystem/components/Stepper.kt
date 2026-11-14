@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.otato.traininglog.designsystem.icons.AppIcons
 import io.github.otato.traininglog.designsystem.theme.AppTheme
 import kotlinx.coroutines.coroutineScope
@@ -142,7 +143,7 @@ fun CompactStepper(
         SmallStepButton(AppIcons.Minus, minusLabel, onMinus)
         Text(
             valueText,
-            style = AppTheme.typography.heading.copy(fontSize = androidx.compose.ui.unit.TextUnit.Unspecified),
+            style = AppTheme.typography.number.copy(fontSize = 18.sp),
             color = AppTheme.colors.fg,
             textAlign = TextAlign.Center,
             modifier = Modifier.width(60.dp),
