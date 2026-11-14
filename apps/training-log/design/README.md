@@ -1,6 +1,6 @@
 # training-log 画面デザイン
 
-筋トレ記録アプリ（仮称 training-log）の画面デザインです。[要件定義](../docs/requirements.md)（v1.5）と[デザインの指示書](../docs/design-brief.md)をもとに、Claude Design で作りました。案C「ドック型」を採用しています。
+筋トレ記録アプリ（仮称 training-log）の画面デザインです。[要件定義](../docs/requirements.md)（v1.6）と[デザインの指示書](../docs/design-brief.md)をもとに、Claude Design で作りました。案C「ドック型」を採用しています。
 
 ## デザインの考え方
 

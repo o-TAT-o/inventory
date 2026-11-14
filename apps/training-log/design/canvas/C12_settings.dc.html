@@ -11,7 +11,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
-.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:1920px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:2000px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
 .app.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
 .i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .sub{color:var(--sub)}
@@ -77,6 +77,7 @@ button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cu
   <div class="grp">
     <div class="col"><b class="h2" style="margin-bottom:8px">テーマ</b><div class="seg full" role="group" aria-label="テーマ"><button type="button" aria-pressed="false">ライト</button><button type="button" aria-pressed="false">ダーク</button><button type="button" aria-pressed="true">端末に合わせる</button></div></div>
     <div class="row"><span class="t"><b>履歴カレンダーの週の始まり</b></span><div class="seg" role="group" aria-label="週の始まり"><button type="button" aria-pressed="false">日曜</button><button type="button" aria-pressed="true">月曜</button></div></div>
+    <div class="row"><span class="t"><b>1日の区切り</b><small>4:00 までは前の日</small></span><button type="button" class="pm" aria-label="区切りを早くする"><svg class="i" aria-hidden="true"><use href="#minus"></use></svg></button><span class="val">4:00</span><button type="button" class="pm" aria-label="区切りを遅くする"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg></button></div>
     <div class="col" style="padding-bottom:6px"><b class="h2">ホームの日付の帯</b><small class="sm" style="margin-bottom:0">日付をタップすると、その日の記録を開きます</small></div>
     <div role="radiogroup" aria-label="ホームの日付の帯">
       <label class="orow"><input type="radio" name="band" checked><span class="t"><b>その週</b><small>週の始まりに合わせて 7 日を並べる</small></span></label>
@@ -116,7 +117,7 @@ button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cu
   <div class="ad" role="img" aria-label="広告バナーの枠">広告バナーの枠（広告を消すと、ここは詰まります）</div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":1920}}'>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":2000}}'>
 class Component extends DCLogic {
   renderVals() {
     return { themeClass: this.props.dark ? 'dark' : '' };
