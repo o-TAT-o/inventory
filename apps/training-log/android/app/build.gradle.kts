@@ -66,7 +66,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.sqldelight.android.driver)
 
-    testImplementation(kotlin("test"))
+    testImplementation(testFixtures(project(":data")))
+    // Android のモジュールでは、テストの枠組み（JUnit4）を自動では選ばないので、明示する
+    testImplementation(kotlin("test-junit"))
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.sqldelight.sqlite.driver)

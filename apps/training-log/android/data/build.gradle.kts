@@ -5,6 +5,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.sqldelight)
+    // メモリ上のデータベースを作るテスト用の部品を、app のテストからも使えるようにする
+    `java-test-fixtures`
 }
 
 java {
@@ -34,6 +36,10 @@ dependencies {
     implementation(libs.sqldelight.coroutines)
     implementation(libs.kotlinx.coroutines.core)
 
+    testFixturesApi(libs.kotlinx.coroutines.core)
+    testFixturesImplementation(libs.sqldelight.sqlite.driver)
+
+    testImplementation(testFixtures(project(":data")))
     testImplementation(kotlin("test"))
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
