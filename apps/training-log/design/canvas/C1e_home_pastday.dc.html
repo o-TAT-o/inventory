@@ -32,9 +32,19 @@ button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cu
 .nav .on span{background:var(--con);color:var(--oncon)}
 .h{font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.04em}
 .grow{flex:1}
-.info{padding:12px 20px 0;display:flex;flex-direction:column;gap:14px}
+.info{padding:12px 20px 0}
+.info .e{margin-top:8px}
 .info .e small{display:block;font-size:12px;color:var(--sub)}
 .info .e b{display:block;font-size:16px;margin:1px 0}
+.next{margin:24px 16px 0;background:var(--sf);border:1px solid var(--line);border-radius:20px;padding:16px 16px 0}
+.next .seq{display:flex;align-items:center;gap:2px;margin:8px 0 12px;font-size:14px;color:var(--sub)}
+.next .seq span{padding:4px 6px}
+.next .seq .on{padding:4px 12px;border-radius:999px;background:var(--con);color:var(--oncon);font-weight:700}
+.next .ex{display:flex;align-items:center;gap:12px;min-height:60px;border-top:1px solid var(--line)}
+.next .ex .t{flex:1;min-width:0}
+.next .ex .t b{display:block;font-size:15px}
+.next .ex .t small{font-size:12px;color:var(--sub)}
+.next .ex .n{font-size:13px;color:var(--sub);white-space:nowrap}
 .week{display:grid;grid-template-columns:repeat(7,1fr);margin:0 12px 4px}
 .week button{min-height:64px;padding:6px 0;border-radius:10px;color:var(--sub);text-align:center;font-size:12px}
 .week b{display:block;font-size:15px;color:var(--fg)}
@@ -78,6 +88,12 @@ button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cu
     <div class="info">
       <div class="h">前回のワークアウト</div>
       <div class="e"><small>11/12（木）</small><b>Legs　48 分 · 5 セット · 1,920 kg</b><small>スクワット 80 kg <i class="tag">合計</i> × 8 を 3 セット ほか</small></div>
+    </div>
+    <div class="next">
+      <div class="h">次のルーティン</div>
+      <div class="seq"><span class="on">Push</span><svg class="i s" aria-hidden="true"><use href="#right"></use></svg><span>Pull</span><svg class="i s" aria-hidden="true"><use href="#right"></use></svg><span>Legs</span></div>
+      <div class="ex"><div class="t"><b>ベンチプレス</b><small>前回 11/7　60 kg <i class="tag">合計</i> × 10 · 9 · 8</small></div><span class="n">3 セット</span></div>
+      <div class="ex"><div class="t"><b>インクラインダンベルプレス</b><small>前回 11/7　20 kg <i class="tag">片手</i> × 10 を 3 セット</small></div><span class="n">3 セット</span></div>
     </div>
     <div class="grow"></div>
     <div class="week">

@@ -1,6 +1,6 @@
 # training-log 画面デザイン
 
-筋トレ記録アプリ（仮称 training-log）の画面デザインです。[要件定義](../docs/requirements.md)（v1.4）と[デザインの指示書](../docs/design-brief.md)をもとに、Claude Design で作りました。案C「ドック型」を採用しています。
+筋トレ記録アプリ（仮称 training-log）の画面デザインです。[要件定義](../docs/requirements.md)（v1.5）と[デザインの指示書](../docs/design-brief.md)をもとに、Claude Design で作りました。案C「ドック型」を採用しています。
 
 ## デザインの考え方
 
@@ -32,10 +32,11 @@
 
 ### ホーム
 
-読むだけの「前回のワークアウト」は上に、操作する日付の帯と開始ボタンは下に置く。日付の帯は、設定で「その週」「今日を真ん中」「直近7日」から選べる。
+読むだけの「前回のワークアウト」と「次のルーティンの中身」は上に、操作する日付の帯と開始ボタンは下に置く。中身は、種目ごとの前回の記録と予定のセット数で、行は最大 3 行（4 種目以上は先頭の 2 種目と「ほか N 種目」）。日付の帯は、設定で「その週」「今日を真ん中」「直近7日」から選べる。
 
 <table>
 <tr><td align="center" valign="top"><a href="images/light/C1_home.png"><img src="images/light/C1_home.png" width="160" alt="ホーム（今日）"></a><br><sub>ホーム（今日）</sub></td><td align="center" valign="top"><a href="images/light/C1b_home_resume.png"><img src="images/light/C1b_home_resume.png" width="160" alt="ホーム（途中のワークアウトあり）"></a><br><sub>ホーム（途中のワークアウトあり）</sub></td><td align="center" valign="top"><a href="images/light/C1c_home_empty.png"><img src="images/light/C1c_home_empty.png" width="160" alt="ホーム（はじめて）"></a><br><sub>ホーム（はじめて）</sub></td><td align="center" valign="top"><a href="images/light/C1d_home_centered.png"><img src="images/light/C1d_home_centered.png" width="160" alt="ホーム（今日を真ん中）"></a><br><sub>ホーム（今日を真ん中）</sub></td><td align="center" valign="top"><a href="images/light/C1e_home_pastday.png"><img src="images/light/C1e_home_pastday.png" width="160" alt="ホーム（過去の日を始める）"></a><br><sub>ホーム（過去の日を始める）</sub></td></tr>
+<tr><td align="center" valign="top"><a href="images/light/C1f_home_long.png"><img src="images/light/C1f_home_long.png" width="160" alt="ホーム（種目が多いとき）"></a><br><sub>ホーム（種目が多いとき）</sub></td></tr>
 </table>
 
 <details>
@@ -43,6 +44,7 @@
 
 <table>
 <tr><td align="center" valign="top"><a href="images/dark/C1_home.png"><img src="images/dark/C1_home.png" width="160" alt="ホーム（今日）"></a><br><sub>ホーム（今日）</sub></td><td align="center" valign="top"><a href="images/dark/C1b_home_resume.png"><img src="images/dark/C1b_home_resume.png" width="160" alt="ホーム（途中のワークアウトあり）"></a><br><sub>ホーム（途中のワークアウトあり）</sub></td><td align="center" valign="top"><a href="images/dark/C1c_home_empty.png"><img src="images/dark/C1c_home_empty.png" width="160" alt="ホーム（はじめて）"></a><br><sub>ホーム（はじめて）</sub></td><td align="center" valign="top"><a href="images/dark/C1d_home_centered.png"><img src="images/dark/C1d_home_centered.png" width="160" alt="ホーム（今日を真ん中）"></a><br><sub>ホーム（今日を真ん中）</sub></td><td align="center" valign="top"><a href="images/dark/C1e_home_pastday.png"><img src="images/dark/C1e_home_pastday.png" width="160" alt="ホーム（過去の日を始める）"></a><br><sub>ホーム（過去の日を始める）</sub></td></tr>
+<tr><td align="center" valign="top"><a href="images/dark/C1f_home_long.png"><img src="images/dark/C1f_home_long.png" width="160" alt="ホーム（種目が多いとき）"></a><br><sub>ホーム（種目が多いとき）</sub></td></tr>
 </table>
 
 </details>
