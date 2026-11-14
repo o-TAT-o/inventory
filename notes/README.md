@@ -45,4 +45,4 @@ notes/
 | ドキュメント | 概要 |
 |-------------|------|
 | [keyboard-layout-per-device.md](windows/keyboard-layout-per-device.md) | 内蔵キーボードと外付けキーボードで配列（JIS / US）を分ける方法 |
-| [remote-access-with-tailscale.md](windows/remote-access-with-tailscale.md) | 据え置き PC にスマホ・ノート PC から接続する（Tailscale・電源設定・Pro + RDP・Remote Control の常駐と通知・方式の比較） |
+| [remote-access-with-tailscale.md](windows/remote-access-with-tailscale.md) | 据え置き PC にスマホ・ノート PC から接続する（Tailscale・電源設定・Pro + RDP・Remote Control の常駐と通知・Windows Update の自動再起動の止め方・方式の比較） |
