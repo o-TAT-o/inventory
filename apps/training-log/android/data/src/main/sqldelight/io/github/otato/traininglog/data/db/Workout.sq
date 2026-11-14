@@ -1,0 +1,222 @@
+-- ワークアウト・ワークアウトの種目・セット・使ったギア
+CREATE TABLE workout (
+    id TEXT NOT NULL PRIMARY KEY,
+    -- ユーザーが選んだ日（始めた日）。yyyy-MM-dd
+    date TEXT NOT NULL,
+    routine_id TEXT REFERENCES routine(id) ON DELETE SET NULL,
+    -- 実際の開始・終了の時刻（エポックミリ秒）。finished_at が NULL なら記録中
+    started_at INTEGER NOT NULL,
+    finished_at INTEGER,
+    memo TEXT NOT NULL DEFAULT ''
+);
+
+CREATE INDEX workout_date ON workout(date);
+
+CREATE TABLE workout_exercise (
+    id TEXT NOT NULL PRIMARY KEY,
+    workout_id TEXT NOT NULL REFERENCES workout(id) ON DELETE CASCADE,
+    exercise_id TEXT NOT NULL REFERENCES exercise(id),
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    -- 記録したときの数え方（種目の設定を後で変えても、過去の記録は変わらない）
+    weight_mode TEXT NOT NULL,
+    rep_mode TEXT NOT NULL,
+    memo TEXT NOT NULL DEFAULT '',
+    rest_seconds INTEGER,
+    rest_after_seconds INTEGER
+);
+
+CREATE INDEX workout_exercise_workout ON workout_exercise(workout_id);
+CREATE INDEX workout_exercise_exercise ON workout_exercise(exercise_id);
+
+CREATE TABLE set_record (
+    id TEXT NOT NULL PRIMARY KEY,
+    workout_exercise_id TEXT NOT NULL REFERENCES workout_exercise(id) ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    weight_kg REAL NOT NULL DEFAULT 0,
+    reps INTEGER NOT NULL DEFAULT 0,
+    duration_sec INTEGER,
+    distance_m REAL,
+    completed INTEGER NOT NULL DEFAULT 0,
+    set_type TEXT NOT NULL DEFAULT 'Normal',
+    completed_at INTEGER
+);
+
+CREATE INDEX set_record_workout_exercise ON set_record(workout_exercise_id);
+
+CREATE TABLE workout_exercise_gear (
+    workout_exercise_id TEXT NOT NULL REFERENCES workout_exercise(id) ON DELETE CASCADE,
+    gear_id TEXT NOT NULL REFERENCES gear(id),
+    PRIMARY KEY (workout_exercise_id, gear_id)
+);
+
+-- ---- ワークアウト ----
+
+selectWorkout:
+SELECT * FROM workout WHERE id = ?;
+
+selectActive:
+SELECT * FROM workout WHERE finished_at IS NULL ORDER BY started_at DESC LIMIT 1;
+
+selectBetween:
+SELECT * FROM workout WHERE date BETWEEN :from AND :to ORDER BY date, started_at;
+
+selectLastFinished:
+SELECT * FROM workout WHERE finished_at IS NOT NULL ORDER BY date DESC, started_at DESC LIMIT 1;
+
+selectLastRoutineId:
+SELECT routine_id FROM workout
+WHERE finished_at IS NOT NULL AND routine_id IS NOT NULL
+ORDER BY date DESC, started_at DESC
+LIMIT 1;
+
+insertWorkout:
+INSERT INTO workout (id, date, routine_id, started_at, finished_at, memo) VALUES (?, ?, ?, ?, ?, ?);
+
+updateDate:
+UPDATE workout SET date = :date WHERE id = :id;
+
+updateMemo:
+UPDATE workout SET memo = :memo WHERE id = :id;
+
+updateFinishedAt:
+UPDATE workout SET finished_at = :finishedAt WHERE id = :id;
+
+deleteWorkout:
+DELETE FROM workout WHERE id = ?;
+
+-- ---- ワークアウトの種目 ----
+
+selectExercisesOf:
+SELECT * FROM workout_exercise WHERE workout_id = ? ORDER BY sort_order;
+
+selectExercisesBetween:
+SELECT we.* FROM workout_exercise we
+JOIN workout w ON w.id = we.workout_id
+WHERE w.date BETWEEN :from AND :to
+ORDER BY we.workout_id, we.sort_order;
+
+insertWorkoutExercise:
+INSERT INTO workout_exercise (
+    id, workout_id, exercise_id, sort_order, weight_mode, rep_mode, memo, rest_seconds, rest_after_seconds
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteWorkoutExercise:
+DELETE FROM workout_exercise WHERE id = ?;
+
+updateWorkoutExerciseMemo:
+UPDATE workout_exercise SET memo = :memo WHERE id = :id;
+
+updateWorkoutExerciseModes:
+UPDATE workout_exercise SET weight_mode = :weightMode, rep_mode = :repMode WHERE id = :id;
+
+-- 完了したセットのない種目を消す（ワークアウトを終えるとき）
+deleteEmptyExercises:
+DELETE FROM workout_exercise
+WHERE workout_id = ?
+  AND id NOT IN (SELECT workout_exercise_id FROM set_record);
+
+-- ---- セット ----
+
+selectSetsOfWorkout:
+SELECT s.* FROM set_record s
+JOIN workout_exercise we ON we.id = s.workout_exercise_id
+WHERE we.workout_id = ?
+ORDER BY we.sort_order, s.sort_order;
+
+selectSetsBetween:
+SELECT s.* FROM set_record s
+JOIN workout_exercise we ON we.id = s.workout_exercise_id
+JOIN workout w ON w.id = we.workout_id
+WHERE w.date BETWEEN :from AND :to
+ORDER BY we.workout_id, we.sort_order, s.sort_order;
+
+insertSet:
+INSERT INTO set_record (
+    id, workout_exercise_id, sort_order, weight_kg, reps, duration_sec, distance_m, completed, set_type, completed_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateSetValues:
+UPDATE set_record SET weight_kg = :weightKg, reps = :reps, duration_sec = :durationSec, distance_m = :distanceM WHERE id = :id;
+
+updateSetCompleted:
+UPDATE set_record SET completed = :completed, completed_at = :completedAt WHERE id = :id;
+
+deleteSet:
+DELETE FROM set_record WHERE id = ?;
+
+-- 完了していないセットを消す（ワークアウトを終えるとき）
+deleteIncompleteSets:
+DELETE FROM set_record
+WHERE completed = 0
+  AND workout_exercise_id IN (SELECT id FROM workout_exercise WHERE workout_id = ?);
+
+countCompletedSets:
+SELECT COUNT(*) FROM set_record s
+JOIN workout_exercise we ON we.id = s.workout_exercise_id
+WHERE we.workout_id = ? AND s.completed = 1;
+
+-- ---- ギア ----
+
+selectGearOfWorkout:
+SELECT g.* FROM workout_exercise_gear g
+JOIN workout_exercise we ON we.id = g.workout_exercise_id
+WHERE we.workout_id = ?;
+
+insertWorkoutExerciseGear:
+INSERT OR IGNORE INTO workout_exercise_gear (workout_exercise_id, gear_id) VALUES (?, ?);
+
+deleteWorkoutExerciseGear:
+DELETE FROM workout_exercise_gear WHERE workout_exercise_id = ?;
+
+-- ---- 前回の記録・自己ベスト・履歴 ----
+
+-- 同じ種目の、直近の（終えた）ワークアウトの種目。excludeWorkoutId は NULL でもよい
+selectPreviousExercise:
+SELECT we.id AS workout_exercise_id, we.weight_mode, we.rep_mode, w.date
+FROM workout_exercise we
+JOIN workout w ON w.id = we.workout_id
+WHERE we.exercise_id = :exerciseId
+  AND w.finished_at IS NOT NULL
+  AND (:excludeWorkoutId IS NULL OR w.id != :excludeWorkoutId)
+  AND EXISTS (SELECT 1 FROM set_record s WHERE s.workout_exercise_id = we.id AND s.completed = 1)
+ORDER BY w.date DESC, w.started_at DESC
+LIMIT 1;
+
+selectCompletedSetsOfExercise:
+SELECT * FROM set_record WHERE workout_exercise_id = ? AND completed = 1 ORDER BY sort_order;
+
+selectGearOfExercise:
+SELECT gear_id FROM workout_exercise_gear WHERE workout_exercise_id = ?;
+
+selectBest:
+SELECT
+    MAX(s.weight_kg) AS best_weight,
+    MAX(s.reps) AS best_reps,
+    MAX(s.duration_sec) AS best_duration,
+    MAX(s.distance_m) AS best_distance
+FROM set_record s
+JOIN workout_exercise we ON we.id = s.workout_exercise_id
+JOIN workout w ON w.id = we.workout_id
+WHERE we.exercise_id = :exerciseId
+  AND s.completed = 1
+  AND w.finished_at IS NOT NULL
+  AND (:excludeWorkoutId IS NULL OR w.id != :excludeWorkoutId);
+
+selectHistoryExercises:
+SELECT we.id AS workout_exercise_id, we.weight_mode, we.rep_mode, w.date
+FROM workout_exercise we
+JOIN workout w ON w.id = we.workout_id
+WHERE we.exercise_id = ? AND w.finished_at IS NOT NULL
+ORDER BY w.date DESC, w.started_at DESC;
+
+selectHistorySets:
+SELECT s.* FROM set_record s
+JOIN workout_exercise we ON we.id = s.workout_exercise_id
+JOIN workout w ON w.id = we.workout_id
+WHERE we.exercise_id = ? AND s.completed = 1 AND w.finished_at IS NOT NULL
+ORDER BY s.workout_exercise_id, s.sort_order;
+
+selectHistoryGear:
+SELECT g.workout_exercise_id, g.gear_id FROM workout_exercise_gear g
+JOIN workout_exercise we ON we.id = g.workout_exercise_id
+WHERE we.exercise_id = ?;

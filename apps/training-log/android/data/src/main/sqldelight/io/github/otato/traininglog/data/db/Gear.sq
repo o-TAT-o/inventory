@@ -1,0 +1,25 @@
+-- ギア（ベルト・パワーグリップなど）
+CREATE TABLE gear (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    hidden INTEGER NOT NULL DEFAULT 0
+);
+
+selectAll:
+SELECT * FROM gear ORDER BY sort_order, name;
+
+selectVisible:
+SELECT * FROM gear WHERE hidden = 0 ORDER BY sort_order, name;
+
+selectById:
+SELECT * FROM gear WHERE id = ?;
+
+insertGear:
+INSERT INTO gear (id, name, sort_order, hidden) VALUES (?, ?, ?, ?);
+
+updateGear:
+UPDATE gear SET name = :name, sort_order = :sortOrder, hidden = :hidden WHERE id = :id;
+
+count:
+SELECT COUNT(*) FROM gear;

@@ -1,0 +1,71 @@
+-- ルーティンと、その中の種目（目標・休憩つき）
+CREATE TABLE routine (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    memo TEXT NOT NULL DEFAULT '',
+    sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE routine_item (
+    id TEXT NOT NULL PRIMARY KEY,
+    routine_id TEXT NOT NULL REFERENCES routine(id) ON DELETE CASCADE,
+    exercise_id TEXT NOT NULL REFERENCES exercise(id),
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    target_sets INTEGER,
+    target_weight_kg REAL,
+    target_reps INTEGER,
+    rest_seconds INTEGER,
+    rest_after_seconds INTEGER
+);
+
+CREATE INDEX routine_item_routine ON routine_item(routine_id);
+
+selectRoutines:
+SELECT * FROM routine ORDER BY sort_order, name;
+
+selectRoutineById:
+SELECT * FROM routine WHERE id = ?;
+
+insertRoutine:
+INSERT INTO routine (id, name, memo, sort_order) VALUES (?, ?, ?, ?);
+
+updateRoutine:
+UPDATE routine SET name = :name, memo = :memo, sort_order = :sortOrder WHERE id = :id;
+
+deleteRoutine:
+DELETE FROM routine WHERE id = ?;
+
+maxRoutineSortOrder:
+SELECT COALESCE(MAX(sort_order), -1) FROM routine;
+
+selectAllItems:
+SELECT * FROM routine_item ORDER BY routine_id, sort_order;
+
+selectItemsOf:
+SELECT * FROM routine_item WHERE routine_id = ? ORDER BY sort_order;
+
+selectItemById:
+SELECT * FROM routine_item WHERE id = ?;
+
+insertItem:
+INSERT INTO routine_item (
+    id, routine_id, exercise_id, sort_order,
+    target_sets, target_weight_kg, target_reps, rest_seconds, rest_after_seconds
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateItem:
+UPDATE routine_item SET
+    exercise_id = :exerciseId,
+    sort_order = :sortOrder,
+    target_sets = :targetSets,
+    target_weight_kg = :targetWeightKg,
+    target_reps = :targetReps,
+    rest_seconds = :restSeconds,
+    rest_after_seconds = :restAfterSeconds
+WHERE id = :id;
+
+deleteItem:
+DELETE FROM routine_item WHERE id = ?;
+
+maxItemSortOrder:
+SELECT COALESCE(MAX(sort_order), -1) FROM routine_item WHERE routine_id = ?;
