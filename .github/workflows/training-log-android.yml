@@ -1,0 +1,97 @@
+name: training-log (Android)
+
+# apps/training-log/android の変更があったときだけ動く。
+# - check: ユニットテスト・Lint・デバッグ APK のビルド
+# - publish-dev-build: main へのプッシュのとき、動作確認用のデバッグ APK を GitHub のリリース（プレリリース）に置く
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/training-log/android/**'
+      - '.github/workflows/training-log-android.yml'
+  pull_request:
+    paths:
+      - 'apps/training-log/android/**'
+      - '.github/workflows/training-log-android.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: training-log-android-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: テストとビルド
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/training-log/android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: ユニットテスト（ドメイン・データ・アプリ）
+        run: ./gradlew :domain:test :data:test :app:testDebugUnitTest --stacktrace
+
+      - name: Lint
+        run: ./gradlew :app:lintDebug --stacktrace
+
+      - name: デバッグ APK をビルド
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: ビルドした APK の大きさ
+        run: ls -l app/build/outputs/apk/debug/*.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: training-log-debug-apk
+          path: apps/training-log/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: 失敗したときのレポート
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: |
+            apps/training-log/android/**/build/reports/
+            apps/training-log/android/**/build/test-results/
+          retention-days: 7
+
+  publish-dev-build:
+    name: 開発ビルドを配布
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: training-log-debug-apk
+          path: apk
+
+      - name: 開発ビルドのリリース（プレリリース）を更新
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp apk/app-debug.apk training-log-debug.apk
+          gh release delete training-log-dev --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" || true
+          gh release create training-log-dev training-log-debug.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "training-log 開発ビルド" \
+            --notes "main の最新（${GITHUB_SHA::7}）から自動でビルドした、動作確認用のデバッグ版です。公開版ではありません。"
