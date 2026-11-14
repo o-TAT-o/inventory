@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ダンベルの絵（仮のアイコン） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,44h4v20h-4z M29,38h6v32h-6z M35,52h38v4h-38z M73,38h6v32h-6z M80,44h4v20h-4z" />
+</vector>

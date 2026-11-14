@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- アプリ名は仮（要件定義 Q-03）。決まったらここだけ変える -->
+    <string name="app_name">training-log</string>
+</resources>

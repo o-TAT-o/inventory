@@ -1,0 +1,17 @@
+# Gradle / Android Studio
+.gradle/
+build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+*.iml
+.idea/
+
+# 実機・エミュレーターの確認で出る一時ファイル
+/screenshots-tmp/
+
+# リリース署名の鍵（デバッグ用の鍵 app/debug.keystore だけはコミットする）
+*.jks
+*.keystore
+!app/debug.keystore
