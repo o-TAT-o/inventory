@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>C ドック — 種目選択</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
+.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:780px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
+.scr{flex:1;min-height:0;overflow:hidden}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.i.s{width:18px;height:18px}
+.sub{color:var(--sub)}
+.bar{height:56px;flex:none;display:flex;align-items:center;padding:0 4px;gap:4px}
+.bar .ttl{font-size:20px;font-weight:600;flex:1;padding-left:4px}
+.ib{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;flex:none}
+.tb{min-height:48px;padding:0 12px;display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--pri);border-radius:999px;white-space:nowrap}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border-radius:16px;font-size:16px;font-weight:700;padding:0 20px;text-align:center}
+.btn.fill{background:var(--pri);color:var(--onpri)}
+.tag{font-size:11px;font-style:normal;border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--sub);white-space:nowrap}
+.gh{font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.04em;padding:10px 16px 4px}
+.it{display:flex;align-items:center;gap:4px;width:100%;min-height:60px;padding:0 8px 0 16px;border-bottom:1px solid var(--line)}
+.it.sub2{padding-left:44px;min-height:52px;background:var(--sf2)}
+.it .t{flex:1;min-width:0}
+.it .t b{display:block;font-size:15px}
+.it .t small{font-size:12px;color:var(--sub)}
+.ck{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none;margin:0 12px}
+.ck.on{background:var(--pri);border-color:var(--pri);color:var(--onpri)}
+.ck .i{width:16px;height:16px;stroke-width:3}
+.dock{flex:none;background:var(--sf);border-top:1px solid var(--line);border-radius:24px 24px 0 0;box-shadow:0 -4px 16px rgba(0,0,0,.12);padding:12px 12px 14px;display:flex;flex-direction:column;gap:8px}
+.chips{display:flex;gap:8px;overflow:hidden}
+.chip{display:inline-flex;align-items:center;height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;font-size:14px;white-space:nowrap;flex:none}
+.chip[aria-pressed="true"]{background:var(--con);color:var(--oncon);border-color:transparent;font-weight:600}
+.s1{display:flex;align-items:center;gap:4px}
+.srch{flex:1;display:flex;align-items:center;gap:8px;height:48px;padding:0 12px;border:1.5px solid var(--line);border-radius:12px;color:var(--sub)}
+.srch input{flex:1;min-width:0;border:0;background:transparent;font:inherit;color:var(--fg)}
+.srch input::placeholder{color:var(--sub)}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"></path></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+  <symbol id="down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"></circle><path d="M16 16l4 4"></path></symbol>
+</svg>
+<div class="app {{themeClass}}">
+  <div class="bar">
+    <button type="button" class="ib" aria-label="戻る"><svg class="i" aria-hidden="true"><use href="#back"></use></svg></button>
+    <div class="ttl">種目を選ぶ</div>
+  </div>
+  <div class="scr">
+    <div class="gh">胸</div>
+    <button type="button" class="it" aria-pressed="true"><span class="t"><b>ベンチプレス</b><small>バーベル · 重量は合計</small></span><span class="ck on"><svg class="i" aria-hidden="true"><use href="#check"></use></svg></span></button>
+    <button type="button" class="it" aria-pressed="true"><span class="t"><b>インクラインダンベルプレス</b><small>ダンベル · 重量は片手 · 調整項目 ベンチ角度</small></span><span class="ck on"><svg class="i" aria-hidden="true"><use href="#check"></use></svg></span></button>
+    <button type="button" class="it" aria-pressed="false"><span class="t"><b>ダンベルフライ</b><small>ダンベル · 重量は片手</small></span><span class="ck"></span></button>
+    <div class="gh">背中</div>
+    <button type="button" class="it" aria-pressed="false"><span class="t"><b>ラットプルダウン</b><small>マシン · 重量は合計 · 調整項目 シート位置</small></span><span class="ck"></span></button>
+    <div class="it" style="padding-right:0">
+      <button type="button" class="t" style="min-height:60px;display:flex;flex-direction:column;justify-content:center"><b style="font-size:15px">ワンハンドダンベルロウ</b><small style="font-size:12px;color:var(--sub)">ダンベル · 片手 · バリエーション 2</small></button>
+      <button type="button" class="ib" aria-label="バリエーションをたたむ"><svg class="i" aria-hidden="true"><use href="#down"></use></svg></button>
+    </div>
+    <button type="button" class="it sub2" aria-pressed="false"><span class="t"><b>膝をベンチにつく</b></span><span class="ck"></span></button>
+    <button type="button" class="it sub2" aria-pressed="false"><span class="t"><b>立って背もたれに手をつく</b></span><span class="ck"></span></button>
+    <button type="button" class="it" aria-pressed="false"><span class="t"><b>懸垂</b><small>自重 · 回数のみ</small></span><span class="ck"></span></button>
+  </div>
+  <div class="dock">
+    <div class="chips" aria-label="部位">
+      <button type="button" class="chip" aria-pressed="true">すべて</button><button type="button" class="chip" aria-pressed="false">胸</button><button type="button" class="chip" aria-pressed="false">背中</button><button type="button" class="chip" aria-pressed="false">脚</button><button type="button" class="chip" aria-pressed="false">肩</button><button type="button" class="chip" aria-pressed="false">腕</button><button type="button" class="chip" aria-pressed="false">腹</button>
+    </div>
+    <div class="chips" aria-label="器具">
+      <button type="button" class="chip" aria-pressed="false">バーベル</button><button type="button" class="chip" aria-pressed="false">ダンベル</button><button type="button" class="chip" aria-pressed="false">マシン</button><button type="button" class="chip" aria-pressed="false">ケーブル</button><button type="button" class="chip" aria-pressed="false">自重</button>
+    </div>
+    <div class="s1">
+      <label class="srch"><svg class="i s" aria-hidden="true"><use href="#search"></use></svg><input type="search" placeholder="種目名で検索" aria-label="種目名で検索"></label>
+      <button type="button" class="tb"><svg class="i s" aria-hidden="true"><use href="#plus"></use></svg>新しい種目</button>
+    </div>
+    <button type="button" class="btn fill">2 種目を追加</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

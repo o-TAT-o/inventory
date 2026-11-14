@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>C ドック — 履歴</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
+.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:780px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
+.scr{flex:1;min-height:0;overflow:hidden}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.sub{color:var(--sub)}
+.bar{height:56px;flex:none;display:flex;align-items:center;padding:0 4px;gap:4px}
+.bar .ttl{font-size:20px;font-weight:600;flex:1;padding-left:16px}
+.ib{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;flex:none}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border-radius:16px;font-size:15px;font-weight:700;padding:0 12px;text-align:center}
+.btn.fill{background:var(--pri);color:var(--onpri)}
+.btn.line{border:1.5px solid var(--line)}
+.tag{font-size:11px;font-style:normal;border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--sub);white-space:nowrap}
+.mh{display:flex;align-items:center;padding:0 4px 0 20px;min-height:48px}
+.mh b{flex:1;font-size:18px}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);margin:0 12px;text-align:center;font-size:12px;color:var(--sub)}
+.wk span{padding:4px 0}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);margin:0 12px}
+.cal button{min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px;text-align:center}
+.cal b{font-size:15px;font-weight:600}
+.cal small{font-size:10px;font-weight:700;height:12px;line-height:12px}
+.cal .out{color:var(--sub)}
+.cal .today{outline:2px solid var(--pri);outline-offset:-2px}
+.cal .sel{background:var(--con);color:var(--oncon)}
+.det{flex:none;background:var(--sf);border-top:1px solid var(--line);border-radius:24px 24px 0 0;box-shadow:0 -4px 16px rgba(0,0,0,.1);padding:14px 16px 12px;margin-top:8px}
+.det .hd{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.det .hd b{font-size:17px}
+.det .hd span{font-size:13px;color:var(--sub)}
+.det p{font-size:13px;margin-bottom:2px}
+.det .two{display:grid;grid-template-columns:1fr 1.3fr;gap:8px;margin-top:10px}
+.ad{flex:none;margin:6px 16px;height:50px;border:1.5px dashed var(--line);border-radius:8px;display:grid;place-items:center;color:var(--sub);font-size:12px}
+.nav{height:72px;flex:none;display:flex;background:var(--sf);border-top:1px solid var(--line)}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--sub);text-align:center}
+.nav button span{width:56px;height:30px;border-radius:15px;display:grid;place-items:center}
+.nav .on{color:var(--fg);font-weight:700}
+.nav .on span{background:var(--con);color:var(--oncon)}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="left" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"></path></symbol>
+  <symbol id="right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></symbol>
+  <symbol id="home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"></path></symbol>
+  <symbol id="list" viewBox="0 0 24 24"><path d="M9 7h11M9 12h11M9 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01"></path></symbol>
+  <symbol id="cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M4 10h16M8 3v4M16 3v4"></path></symbol>
+</svg>
+<div class="app {{themeClass}}">
+  <div class="bar"><div class="ttl">履歴</div></div>
+  <div class="mh"><b>2026年11月</b>
+    <button type="button" class="ib" aria-label="前の月"><svg class="i" aria-hidden="true"><use href="#left"></use></svg></button>
+    <button type="button" class="ib" aria-label="次の月"><svg class="i" aria-hidden="true"><use href="#right"></use></svg></button>
+  </div>
+  <div class="wk"><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span><span>日</span></div>
+  <div class="scr">
+    <div class="cal">
+      <button type="button" class="out" aria-label="10月26日"><b>26</b><small></small></button><button type="button" class="out" aria-label="10月27日"><b>27</b><small></small></button><button type="button" class="out" aria-label="10月28日"><b>28</b><small></small></button><button type="button" class="out" aria-label="10月29日"><b>29</b><small></small></button><button type="button" class="out" aria-label="10月30日"><b>30</b><small></small></button><button type="button" class="out" aria-label="10月31日"><b>31</b><small></small></button><button type="button" aria-label="11月1日"><b>1</b><small></small></button>
+      <button type="button" aria-label="11月2日 胸"><b>2</b><small>胸</small></button><button type="button" aria-label="11月3日"><b>3</b><small></small></button><button type="button" aria-label="11月4日 背中"><b>4</b><small>背</small></button><button type="button" aria-label="11月5日 脚"><b>5</b><small>脚</small></button><button type="button" aria-label="11月6日"><b>6</b><small></small></button><button type="button" aria-label="11月7日 胸"><b>7</b><small>胸</small></button><button type="button" aria-label="11月8日"><b>8</b><small></small></button>
+      <button type="button" aria-label="11月9日"><b>9</b><small></small></button><button type="button" aria-label="11月10日"><b>10</b><small></small></button><button type="button" aria-label="11月11日 背中"><b>11</b><small>背</small></button><button type="button" class="sel" aria-label="11月12日 脚 選択中"><b>12</b><small>脚</small></button><button type="button" aria-label="11月13日"><b>13</b><small></small></button><button type="button" class="today" aria-label="11月14日 今日"><b>14</b><small></small></button><button type="button" aria-label="11月15日"><b>15</b><small></small></button>
+      <button type="button" aria-label="11月16日"><b>16</b><small></small></button><button type="button" aria-label="11月17日"><b>17</b><small></small></button><button type="button" aria-label="11月18日"><b>18</b><small></small></button><button type="button" aria-label="11月19日"><b>19</b><small></small></button><button type="button" aria-label="11月20日"><b>20</b><small></small></button><button type="button" aria-label="11月21日"><b>21</b><small></small></button><button type="button" aria-label="11月22日"><b>22</b><small></small></button>
+      <button type="button" aria-label="11月23日"><b>23</b><small></small></button><button type="button" aria-label="11月24日"><b>24</b><small></small></button><button type="button" aria-label="11月25日"><b>25</b><small></small></button><button type="button" aria-label="11月26日"><b>26</b><small></small></button><button type="button" aria-label="11月27日"><b>27</b><small></small></button><button type="button" aria-label="11月28日"><b>28</b><small></small></button><button type="button" aria-label="11月29日"><b>29</b><small></small></button>
+      <button type="button" aria-label="11月30日"><b>30</b><small></small></button><button type="button" class="out" aria-label="12月1日"><b>1</b><small></small></button><button type="button" class="out" aria-label="12月2日"><b>2</b><small></small></button><button type="button" class="out" aria-label="12月3日"><b>3</b><small></small></button><button type="button" class="out" aria-label="12月4日"><b>4</b><small></small></button><button type="button" class="out" aria-label="12月5日"><b>5</b><small></small></button><button type="button" class="out" aria-label="12月6日"><b>6</b><small></small></button>
+    </div>
+    <div class="det">
+      <div class="hd"><b>11月12日（木）</b><span>Legs · 48 分</span></div>
+      <p>スクワット　80 kg <i class="tag">合計</i> × 8 · 8 · 8　ベルト</p>
+      <p>プランク　60 秒 × 2</p>
+      <div class="two">
+        <button type="button" class="btn line">開く・直す</button>
+        <button type="button" class="btn fill">コピーして今日やる</button>
+      </div>
+    </div>
+  </div>
+  <div class="ad" role="img" aria-label="広告バナーの枠">広告バナーの枠（広告を消すと、ここは詰まります）</div>
+  <div class="nav">
+    <button type="button"><span><svg class="i" aria-hidden="true"><use href="#home"></use></svg></span>今日</button>
+    <button type="button"><span><svg class="i" aria-hidden="true"><use href="#list"></use></svg></span>ルーティン</button>
+    <button type="button" class="on"><span><svg class="i" aria-hidden="true"><use href="#cal"></use></svg></span>履歴</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

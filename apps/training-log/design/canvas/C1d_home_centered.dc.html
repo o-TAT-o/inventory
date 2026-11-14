@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>C ドック — ホーム（今日を真ん中）</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
+.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:780px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
+.scr{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.i.f{fill:currentColor;stroke:none}
+.i.s{width:18px;height:18px}
+.sub{color:var(--sub)}
+.bar{height:56px;flex:none;display:flex;align-items:center;padding:0 4px;gap:4px}
+.bar .ttl{font-size:20px;font-weight:600;flex:1;padding-left:16px}
+.ib{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;flex:none}
+.tag{font-size:11px;font-style:normal;border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--sub);white-space:nowrap}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border-radius:16px;font-size:16px;font-weight:700;padding:0 20px;text-align:center}
+.btn.fill{background:var(--pri);color:var(--onpri)}
+.btn.line{border:1.5px solid var(--line)}
+.nav{height:72px;flex:none;display:flex;background:var(--sf);border-top:1px solid var(--line)}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--sub);text-align:center}
+.nav button span{width:56px;height:30px;border-radius:15px;display:grid;place-items:center}
+.nav .on{color:var(--fg);font-weight:700}
+.nav .on span{background:var(--con);color:var(--oncon)}
+.h{font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.04em}
+.grow{flex:1}
+.info{padding:12px 20px 0;display:flex;flex-direction:column;gap:14px}
+.info .e small{display:block;font-size:12px;color:var(--sub)}
+.info .e b{display:block;font-size:16px;margin:1px 0}
+.week{display:grid;grid-template-columns:repeat(7,1fr);margin:0 12px 4px}
+.week button{min-height:64px;padding:6px 0;border-radius:10px;color:var(--sub);text-align:center;font-size:12px}
+.week b{display:block;font-size:15px;color:var(--fg)}
+.week i{display:block;font-style:normal;font-size:10px;height:14px;font-weight:700;color:var(--fg)}
+.week .today{outline:2px solid var(--pri);outline-offset:-2px}
+.cyc{display:flex;align-items:center;gap:4px;margin:6px 16px 10px;font-size:14px}
+.cyc span{padding:4px 12px;border-radius:999px;border:1px solid var(--line);color:var(--sub)}
+.cyc .on{background:var(--con);color:var(--oncon);border-color:transparent;font-weight:700}
+.cyc .i{color:var(--sub)}
+.pad16{margin:0 16px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></symbol>
+  <symbol id="play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"></path></symbol>
+  <symbol id="home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"></path></symbol>
+  <symbol id="list" viewBox="0 0 24 24"><path d="M9 7h11M9 12h11M9 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01"></path></symbol>
+  <symbol id="cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M4 10h16M8 3v4M16 3v4"></path></symbol>
+  <symbol id="tune" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"></path><circle cx="15" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></symbol>
+</svg>
+<div class="app {{themeClass}}">
+  <div class="bar"><div class="ttl">今日</div><button type="button" class="ib" aria-label="設定"><svg class="i" aria-hidden="true"><use href="#tune"></use></svg></button></div>
+  <div class="scr">
+    <div class="info">
+      <div class="h">前回のワークアウト</div>
+      <div class="e"><small>11/12（木）</small><b>Legs　48 分 · 5 セット · 1,920 kg</b><small>スクワット 80 kg <i class="tag">合計</i> × 8 を 3 セット ほか</small></div>
+      <div class="e"><small>前回の Push · 11/7（土）</small><b>ベンチプレス 60 kg <i class="tag">合計</i> × 10 · 9 · 8</b></div>
+    </div>
+    <div class="grow"></div>
+    <div class="week">
+      <button type="button" aria-label="11月11日 Pull">水<b>11</b><i>Pull</i></button>
+      <button type="button" aria-label="11月12日 Legs">木<b>12</b><i>Legs</i></button>
+      <button type="button" aria-label="11月13日">金<b>13</b><i></i></button>
+      <button type="button" class="today" aria-label="11月14日 今日">土<b>14</b><i>今日</i></button>
+      <button type="button" aria-label="11月15日">日<b>15</b><i></i></button>
+      <button type="button" aria-label="11月16日">月<b>16</b><i></i></button>
+      <button type="button" aria-label="11月17日">火<b>17</b><i></i></button>
+    </div>
+    <div class="pad16 h" style="margin-top:12px">次のルーティン</div>
+    <div class="cyc"><span class="on">Push</span><svg class="i s" aria-hidden="true"><use href="#right"></use></svg><span>Pull</span><svg class="i s" aria-hidden="true"><use href="#right"></use></svg><span>Legs</span></div>
+    <div class="pad16" style="margin-bottom:12px">
+      <button type="button" class="btn fill" style="min-height:64px;font-size:18px"><svg class="i f" aria-hidden="true"><use href="#play"></use></svg>Push を始める</button>
+      <div class="two">
+        <button type="button" class="btn line" style="font-size:14px">ほかのルーティン</button>
+        <button type="button" class="btn line" style="font-size:14px">自由に記録</button>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <button type="button" class="on"><span><svg class="i" aria-hidden="true"><use href="#home"></use></svg></span>今日</button>
+    <button type="button"><span><svg class="i" aria-hidden="true"><use href="#list"></use></svg></span>ルーティン</button>
+    <button type="button"><span><svg class="i" aria-hidden="true"><use href="#cal"></use></svg></span>履歴</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

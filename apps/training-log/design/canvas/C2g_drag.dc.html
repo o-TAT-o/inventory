@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>C ドック — 記録（並べ替え中）</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
+.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:780px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
+.scr{flex:1;min-height:0;overflow:hidden;position:relative}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.i.s{width:18px;height:18px}
+.sub{color:var(--sub)}
+.bar{height:56px;flex:none;display:flex;align-items:center;padding:0 4px;gap:4px}
+.bar .ttl{font-size:20px;font-weight:600;flex:1;padding-left:4px}
+.bar .time{font-size:15px;color:var(--sub);padding-right:4px}
+.ib{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;flex:none}
+.tb{min-height:48px;padding:0 14px;display:inline-flex;align-items:center;font-weight:700;color:var(--pri);border-radius:999px;white-space:nowrap}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border-radius:16px;font-size:16px;font-weight:700;padding:0 20px;text-align:center}
+.btn.fill{background:var(--pri);color:var(--onpri)}
+.btn.line{border:1.5px solid var(--line)}
+.hint{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;background:var(--con);color:var(--oncon);font-size:13px;font-weight:700}
+.xr{display:flex;align-items:center;height:64px;padding:0 12px 0 4px;border-bottom:1px solid var(--line)}
+.xr .nm{flex:1;min-width:0}
+.xr .nm b{display:block;font-size:15px}
+.xr .nm small{font-size:12px;color:var(--sub)}
+.ghost{height:56px;margin:4px 12px;padding:0 12px;border:1.5px dashed var(--line);border-radius:12px;color:var(--sub);font-size:12px;border-bottom:1.5px dashed var(--line)}
+.drop{position:absolute;left:12px;right:12px;top:190px;height:4px;border-radius:2px;background:var(--pri)}
+.lift{position:absolute;left:8px;right:8px;top:206px;height:68px;display:flex;align-items:center;padding:0 12px 0 4px;background:var(--sf);border:2px solid var(--pri);border-radius:16px;box-shadow:0 12px 28px rgba(0,0,0,.28)}
+.lift .nm{flex:1;min-width:0}
+.lift .nm b{display:block;font-size:15px}
+.lift .nm small{font-size:12px;color:var(--sub)}
+.edge{position:absolute;left:0;right:0;bottom:0;height:48px;display:grid;place-items:center;background:linear-gradient(to bottom,transparent,var(--con));color:var(--oncon)}
+.dock{flex:none;background:var(--sf);border-top:1px solid var(--line);border-radius:24px 24px 0 0;box-shadow:0 -4px 16px rgba(0,0,0,.12);overflow:hidden;opacity:.4}
+.ctx{display:flex;align-items:center;padding:4px 4px 0}
+.ctx .t{flex:1;min-width:0;text-align:center}
+.ctx .t b{display:block;font-size:15px}
+.ctx .t small{font-size:12px;color:var(--sub)}
+.dock .body{padding:4px 12px 14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.stp{display:flex;align-items:center}
+.stp .pm{width:48px;height:56px;border-radius:16px;background:var(--sf2);display:grid;place-items:center;flex:none}
+.stp .val{flex:1;text-align:center;line-height:1.15}
+.stp .val b{font-size:24px;font-weight:700}
+.stp .val small{display:block;font-size:12px;color:var(--sub)}
+.row2{display:flex;gap:8px}
+.row2 .more{width:64px;flex:none;min-height:60px;flex-direction:column;gap:0;font-size:11px;padding:0}
+.row2 .go{flex:1;width:auto;min-height:60px;font-size:18px}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"></path></symbol>
+  <symbol id="drag" viewBox="0 0 24 24"><path d="M5 9h14M5 15h14"></path></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+  <symbol id="minus" viewBox="0 0 24 24"><path d="M5 12h14"></path></symbol>
+  <symbol id="down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></symbol>
+  <symbol id="up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"></path></symbol>
+</svg>
+<div class="app {{themeClass}}">
+  <div class="bar">
+    <button type="button" class="ib" aria-label="戻る"><svg class="i" aria-hidden="true"><use href="#back"></use></svg></button>
+    <div class="ttl">Pull</div><div class="time">12:40</div>
+    <button type="button" class="tb">終える</button>
+  </div>
+  <div class="hint"><svg class="i s" aria-hidden="true"><use href="#drag"></use></svg>並べ替え中　指を離すと、そこに置きます</div>
+  <div class="scr">
+    <div class="xr">
+      <span class="ib"><svg class="i sub" aria-hidden="true"><use href="#drag"></use></svg></span>
+      <div class="nm"><b>ラットプルダウン</b><small>マシン · 目標 3 セット</small></div>
+    </div>
+    <div class="xr ghost"><span>元の場所</span></div>
+    <div class="xr">
+      <span class="ib"><svg class="i sub" aria-hidden="true"><use href="#drag"></use></svg></span>
+      <div class="nm"><b>懸垂</b><small>自重 · 目標 3 セット</small></div>
+    </div>
+    <div class="drop"></div>
+    <div class="lift">
+      <span class="ib"><svg class="i" aria-hidden="true"><use href="#drag"></use></svg></span>
+      <div class="nm"><b>ワンハンドダンベルロウ</b><small>ダンベル · 目標 3 セット</small></div>
+    </div>
+    <div class="edge"><svg class="i" aria-hidden="true"><use href="#down"></use></svg></div>
+  </div>
+  <div class="dock" aria-hidden="true">
+    <div class="ctx"><div class="t"><b>ラットプルダウン　1 セット目</b><small>前回 55 kg × 12</small></div></div>
+    <div class="body">
+      <div class="two">
+        <div class="stp"><span class="pm"><svg class="i" aria-hidden="true"><use href="#minus"></use></svg></span><div class="val"><b>55</b><small>kg 合計</small></div><span class="pm"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg></span></div>
+        <div class="stp"><span class="pm"><svg class="i" aria-hidden="true"><use href="#minus"></use></svg></span><div class="val"><b>12</b><small>回</small></div><span class="pm"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg></span></div>
+      </div>
+      <div class="row2">
+        <span class="btn line more"><svg class="i" aria-hidden="true"><use href="#up"></use></svg>詳細</span>
+<span class="btn line more"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg>セット</span>
+        <span class="btn fill go"><svg class="i" aria-hidden="true"><use href="#check"></use></svg>完了</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

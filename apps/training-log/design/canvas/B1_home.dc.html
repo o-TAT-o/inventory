@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>B フォーカス — ホーム</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.app{width:360px;height:780px;overflow:hidden;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app.dB{--bg:#F7F7F8;--sf:#FFFFFF;--sf2:#EAEAEE;--fg:#18181B;--sub:#55555E;--pri:#B5321A;--onpri:#FFFFFF;--con:#FFDAD2;--oncon:#3D0A02;--line:#CFCFD6}
+.app.dB.dark{--bg:#111113;--sf:#1C1C1F;--sf2:#2A2A2E;--fg:#ECECEF;--sub:#A6A6B0;--pri:#FFB4A3;--onpri:#5C1408;--con:#7A2413;--oncon:#FFDAD2;--line:#3A3A40}
+.scr{flex:1;overflow:hidden;min-height:0}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.i.f{fill:currentColor;stroke:none}
+.i.s{width:18px;height:18px}
+.sub{color:var(--sub)}
+.tag{font-size:11px;font-style:normal;border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--sub);white-space:nowrap}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;border-radius:16px;font-size:16px;font-weight:700;padding:0 20px}
+.btn.line{border:1.5px solid var(--line);color:var(--fg)}
+.nav{height:72px;flex:none;display:flex;background:var(--sf);border-top:1px solid var(--line)}
+.nav div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--sub)}
+.nav div span{width:56px;height:30px;border-radius:15px;display:grid;place-items:center}
+.nav .on{color:var(--fg);font-weight:700}
+.nav .on span{background:var(--con);color:var(--oncon)}
+.h{font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.04em}
+.hint{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sub);min-height:48px}
+.hint u{color:var(--pri);font-weight:700;text-decoration:none;margin-left:auto;white-space:nowrap}
+.dB .date{padding:8px 20px 0}
+.dB .date h3{font-size:34px;line-height:1.15}
+.dB .blk{margin:14px 20px 0}
+.dB .last{border-left:4px solid var(--fg);padding:2px 0 2px 12px;margin-top:6px}
+.dB .last b{font-size:18px}
+.dB .start{margin:0 16px;background:var(--pri);color:var(--onpri);border-radius:28px;padding:20px;min-height:148px;display:flex;flex-direction:column;justify-content:space-between}
+.dB .start small{font-size:13px}
+.dB .start .big{display:flex;align-items:center;justify-content:space-between;font-size:34px;font-weight:800}
+.dB .start .big .i{width:44px;height:44px}
+.dB .two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 16px 12px}
+.dB .home{display:flex;flex-direction:column;height:100%}
+.dB .home .grow{flex:1}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="play" viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"></path></symbol>
+  <symbol id="export" viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4M5 14v5h14v-5"></path></symbol>
+  <symbol id="home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"></path></symbol>
+  <symbol id="list" viewBox="0 0 24 24"><path d="M9 7h11M9 12h11M9 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01"></path></symbol>
+  <symbol id="cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M4 10h16M8 3v4M16 3v4"></path></symbol>
+  <symbol id="tune" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"></path><circle cx="15" cy="7" r="2"></circle><circle cx="9" cy="17" r="2"></circle></symbol>
+</svg>
+<div class="app dB {{themeClass}}">
+  <div class="scr"><div class="home">
+    <div class="date"><div class="sub">11月14日</div><h3>土曜日</h3></div>
+    <div class="blk">
+      <div class="h">前回のワークアウト</div>
+      <div class="last">
+        <b>Legs</b> <span class="sub">11/12（木）・48 分</span>
+        <div style="font-size:13px" class="sub">スクワット 80 kg <i class="tag">合計</i> × 8 を 3 セット<br>プランク 60 秒 を 2 セット</div>
+        <div style="font-size:13px">2 種目・5 セット・ボリューム 1,920 kg</div>
+      </div>
+    </div>
+    <div class="blk hint"><svg class="i s"><use href="#export"></use></svg>最後の書き出しから 32 日<u>書き出す</u></div>
+    <div class="grow"></div>
+    <div class="start">
+      <small>次のルーティン・2 種目・前回 11/7（土）</small>
+      <div class="big"><span>Push を始める</span><svg class="i f"><use href="#play"></use></svg></div>
+    </div>
+    <div class="two">
+      <div class="btn line" style="font-size:14px">ほかのルーティン</div>
+      <div class="btn line" style="font-size:14px">自由に記録</div>
+    </div>
+  </div></div>
+  <div class="nav">
+    <div class="on"><span><svg class="i"><use href="#home"></use></svg></span>今日</div>
+    <div><span><svg class="i"><use href="#list"></use></svg></span>ルーティン</div>
+    <div><span><svg class="i"><use href="#cal"></use></svg></span>履歴</div>
+    <div><span><svg class="i"><use href="#tune"></use></svg></span>設定</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

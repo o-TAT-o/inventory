@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>C ドック — 記録（初めての種目）</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
+.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:780px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
+.scr{flex:1;min-height:0;overflow:hidden}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.i.s{width:18px;height:18px}
+.sub{color:var(--sub)}
+.bar{height:56px;flex:none;display:flex;align-items:center;padding:0 4px;gap:4px}
+.bar .ttl{font-size:20px;font-weight:600;flex:1;padding-left:4px}
+.bar .time{font-size:15px;color:var(--sub);padding-right:4px}
+.ib{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;flex:none}
+.tb{min-height:48px;padding:0 14px;display:inline-flex;align-items:center;font-weight:700;color:var(--pri);border-radius:999px;white-space:nowrap}
+.tag{font-size:11px;font-style:normal;border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--sub);white-space:nowrap}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border-radius:16px;font-size:16px;font-weight:700;padding:0 20px;text-align:center}
+.btn.fill{background:var(--pri);color:var(--onpri)}
+.btn.line{border:1.5px solid var(--line)}
+.btn.off{background:var(--sf2);color:var(--sub)}
+.sum{display:flex;align-items:center;padding:0 12px 0 4px;border-bottom:1px solid var(--line)}
+.sum .sb{flex:1;min-width:0;min-height:56px;display:flex;flex-direction:column;justify-content:center}
+.sum .sb b{font-size:15px}
+.sum .sb small{font-size:12px;color:var(--sub)}
+.sum .ok{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--sub)}
+.eh{display:flex;align-items:center;padding:6px 0 2px 4px}
+.eh .nm{flex:1;min-width:0}
+.eh .nm b{font-size:15px;display:block}
+.eh .nm small{font-size:12px;color:var(--sub);display:block}
+.r{display:grid;grid-template-columns:28px 1fr auto;align-items:center;width:calc(100% - 24px);min-height:44px;margin:0 12px;padding:0 8px;font-size:15px;border-radius:10px}
+.r .no{color:var(--sub);font-size:13px}
+.r.sel{background:var(--con);color:var(--oncon);font-weight:700}
+.r.sel .no{color:inherit}
+.help{margin:6px 20px 0;font-size:12px;color:var(--sub)}
+.add{display:flex;align-items:center;justify-content:center;gap:6px;width:calc(100% - 24px);min-height:48px;margin:10px 12px 0;border:1.5px dashed var(--line);border-radius:12px;color:var(--sub);font-weight:600}
+.dock{flex:none;background:var(--sf);border-top:1px solid var(--line);border-radius:24px 24px 0 0;box-shadow:0 -4px 16px rgba(0,0,0,.12);overflow:hidden}
+.ctx{display:flex;align-items:center;padding:4px 4px 0}
+.ctx .t{flex:1;min-width:0;text-align:center}
+.ctx .t b{display:block;font-size:15px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ctx .t small{font-size:12px;color:var(--sub)}
+.dock .body{padding:4px 12px 14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+.stp{display:flex;align-items:center}
+.stp .pm{width:48px;height:56px;border-radius:16px;background:var(--sf2);display:grid;place-items:center;flex:none}
+.stp .val{flex:1;text-align:center;line-height:1.15}
+.stp .val b{font-size:24px;font-weight:700}
+.stp .val b.ph{color:var(--sub);font-weight:400}
+.stp .val small{display:block;font-size:12px;color:var(--sub)}
+.note{text-align:center;font-size:12px;color:var(--sub);margin-bottom:8px}
+.row2{display:flex;gap:8px}
+.row2 .more{width:64px;flex:none;min-height:60px;flex-direction:column;gap:0;font-size:11px;padding:0}
+.row2 .go{flex:1;width:auto;min-height:60px;font-size:18px}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"></path></symbol>
+  <symbol id="more" viewBox="0 0 24 24"><path d="M12 5h.01M12 12h.01M12 19h.01" stroke-width="3"></path></symbol>
+  <symbol id="drag" viewBox="0 0 24 24"><path d="M5 9h14M5 15h14"></path></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+  <symbol id="minus" viewBox="0 0 24 24"><path d="M5 12h14"></path></symbol>
+  <symbol id="up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"></path></symbol>
+  <symbol id="left" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"></path></symbol>
+  <symbol id="right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></symbol>
+</svg>
+<div class="app {{themeClass}}">
+  <div class="bar">
+    <button type="button" class="ib" aria-label="戻る"><svg class="i" aria-hidden="true"><use href="#back"></use></svg></button>
+    <div class="ttl">Push</div><div class="time">31:05</div>
+    <button type="button" class="tb">終える</button>
+  </div>
+  <div class="scr">
+    <div class="sum">
+      <button type="button" class="ib" aria-label="ベンチプレスを並べ替える"><svg class="i sub" aria-hidden="true"><use href="#drag"></use></svg></button>
+      <button type="button" class="sb"><b>ベンチプレス</b><small>62.5 kg 合計 × 10 · 9 · 9</small></button>
+      <span class="ok"><svg class="i s" aria-hidden="true"><use href="#check"></use></svg>3/3</span>
+    </div>
+    <div class="sum">
+      <button type="button" class="ib" aria-label="インクラインダンベルプレスを並べ替える"><svg class="i sub" aria-hidden="true"><use href="#drag"></use></svg></button>
+      <button type="button" class="sb"><b>インクラインダンベルプレス</b><small>20 kg 片手 × 10 · 10 · 9</small></button>
+      <span class="ok"><svg class="i s" aria-hidden="true"><use href="#check"></use></svg>3/3</span>
+    </div>
+    <div class="eh">
+      <button type="button" class="ib" aria-label="ダンベルフライを並べ替える"><svg class="i sub" aria-hidden="true"><use href="#drag"></use></svg></button>
+      <div class="nm"><b>ダンベルフライ</b><small>ダンベル · 重量は片手</small><small>前回の記録はありません</small></div>
+      <button type="button" class="ib" aria-label="ダンベルフライのメニュー"><svg class="i" aria-hidden="true"><use href="#more"></use></svg></button>
+    </div>
+    <button type="button" class="r sel"><span class="no">1</span><span>— kg × — 回</span><span class="st" style="font-size:12px">入力中</span></button>
+    <p class="help">最初のセットを入れると、次のセットはその値で用意されます。</p>
+    <button type="button" class="add"><svg class="i s" aria-hidden="true"><use href="#plus"></use></svg>種目を追加</button>
+  </div>
+  <div class="dock">
+    <div class="ctx">
+      <button type="button" class="ib" aria-label="前の種目へ"><svg class="i" aria-hidden="true"><use href="#left"></use></svg></button>
+      <div class="t"><b>ダンベルフライ　1 セット目</b><small>前回の記録なし</small></div>
+      <button type="button" class="ib" aria-label="次の種目へ"><svg class="i" aria-hidden="true"><use href="#right"></use></svg></button>
+    </div>
+    <div class="body">
+      <div class="two">
+        <div class="stp"><button type="button" class="pm" aria-label="重量を下げる"><svg class="i" aria-hidden="true"><use href="#minus"></use></svg></button><div class="val"><b class="ph">—</b><small>kg 片手</small></div><button type="button" class="pm" aria-label="重量を上げる"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg></button></div>
+        <div class="stp"><button type="button" class="pm" aria-label="回数を減らす"><svg class="i" aria-hidden="true"><use href="#minus"></use></svg></button><div class="val"><b class="ph">—</b><small>回</small></div><button type="button" class="pm" aria-label="回数を増やす"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg></button></div>
+      </div>
+      <p class="note">重量と回数を入れると、完了できます</p>
+      <div class="row2">
+        <button type="button" class="btn line more"><svg class="i" aria-hidden="true"><use href="#up"></use></svg>詳細</button>
+<button type="button" class="btn line more"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg>セット</button>
+        <button type="button" class="btn off go" aria-disabled="true"><svg class="i" aria-hidden="true"><use href="#check"></use></svg>完了</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

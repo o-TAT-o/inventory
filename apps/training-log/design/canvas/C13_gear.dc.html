@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>C ドック — ギアの管理</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
+.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:780px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
+.scr{flex:1;min-height:0;overflow:hidden}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.sub{color:var(--sub)}
+.bar{height:56px;flex:none;display:flex;align-items:center;padding:0 4px;gap:4px}
+.bar .ttl{font-size:20px;font-weight:600;flex:1;padding-left:4px}
+.ib{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;flex:none}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:60px;border-radius:16px;font-size:18px;font-weight:700;padding:0 20px;text-align:center}
+.btn.fill{background:var(--pri);color:var(--onpri)}
+.intro{padding:0 20px 10px;font-size:13px;color:var(--sub)}
+.list{border-top:1px solid var(--line)}
+.row{display:flex;align-items:center;min-height:64px;padding:0 0 0 4px;border-bottom:1px solid var(--line)}
+.row .t{flex:1;min-width:0;min-height:56px;display:flex;flex-direction:column;justify-content:center}
+.row .t b{font-size:15px}
+.row .t small{font-size:12px;color:var(--sub)}
+.row.hidden .t b{color:var(--sub)}
+.swb{display:grid;place-items:center;width:72px;height:56px;flex:none}
+.sw{width:52px;height:32px;border-radius:16px;background:var(--pri);position:relative}
+.sw::after{content:'';position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:var(--onpri)}
+.sw.off{background:var(--sf2);border:2px solid var(--sub)}
+.sw.off::after{right:auto;left:2px;top:2px;background:var(--sub)}
+.foot{flex:none;padding:8px 16px 16px}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"></path></symbol>
+  <symbol id="drag" viewBox="0 0 24 24"><path d="M5 9h14M5 15h14"></path></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+</svg>
+<div class="app {{themeClass}}">
+  <div class="bar">
+    <button type="button" class="ib" aria-label="戻る"><svg class="i" aria-hidden="true"><use href="#back"></use></svg></button>
+    <div class="ttl">ギアの管理</div>
+  </div>
+  <p class="intro">記録画面で付け外しできる道具の一覧です。使わないものは非表示にできます（過去の記録は残ります）。</p>
+  <div class="scr">
+    <div class="list">
+      <div class="row"><button type="button" class="ib" aria-label="ベルトを並べ替える"><svg class="i sub" aria-hidden="true"><use href="#drag"></use></svg></button><button type="button" class="t"><b>ベルト</b><small>使用 31 回</small></button><button type="button" class="swb" role="switch" aria-checked="true" aria-label="ベルトを表示する"><span class="sw"></span></button></div>
+      <div class="row"><button type="button" class="ib" aria-label="パワーグリップを並べ替える"><svg class="i sub" aria-hidden="true"><use href="#drag"></use></svg></button><button type="button" class="t"><b>パワーグリップ</b><small>使用 8 回</small></button><button type="button" class="swb" role="switch" aria-checked="true" aria-label="パワーグリップを表示する"><span class="sw"></span></button></div>
+      <div class="row"><button type="button" class="ib" aria-label="リストストラップを並べ替える"><svg class="i sub" aria-hidden="true"><use href="#drag"></use></svg></button><button type="button" class="t"><b>リストストラップ</b><small>使用 19 回</small></button><button type="button" class="swb" role="switch" aria-checked="true" aria-label="リストストラップを表示する"><span class="sw"></span></button></div>
+      <div class="row"><button type="button" class="ib" aria-label="リストラップを並べ替える"><svg class="i sub" aria-hidden="true"><use href="#drag"></use></svg></button><button type="button" class="t"><b>リストラップ</b><small>使用 42 回</small></button><button type="button" class="swb" role="switch" aria-checked="true" aria-label="リストラップを表示する"><span class="sw"></span></button></div>
+      <div class="row"><button type="button" class="ib" aria-label="ニースリーブを並べ替える"><svg class="i sub" aria-hidden="true"><use href="#drag"></use></svg></button><button type="button" class="t"><b>ニースリーブ</b><small>使用 12 回</small></button><button type="button" class="swb" role="switch" aria-checked="true" aria-label="ニースリーブを表示する"><span class="sw"></span></button></div>
+      <div class="row hidden"><button type="button" class="ib" aria-label="エルボースリーブを並べ替える"><svg class="i sub" aria-hidden="true"><use href="#drag"></use></svg></button><button type="button" class="t"><b>エルボースリーブ</b><small>非表示 · 使用 0 回</small></button><button type="button" class="swb" role="switch" aria-checked="false" aria-label="エルボースリーブを表示する"><span class="sw off"></span></button></div>
+      <div class="row"><button type="button" class="ib" aria-label="チョークを並べ替える"><svg class="i sub" aria-hidden="true"><use href="#drag"></use></svg></button><button type="button" class="t"><b>チョーク</b><small>自分で追加 · 使用 6 回</small></button><button type="button" class="swb" role="switch" aria-checked="true" aria-label="チョークを表示する"><span class="sw"></span></button></div>
+    </div>
+  </div>
+  <div class="foot"><button type="button" class="btn fill"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg>ギアを追加</button></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

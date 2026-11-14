@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>C ドック — 記録（全セット完了）</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
+.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:780px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
+.scr{flex:1;min-height:0;overflow:hidden}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.i.f{fill:currentColor;stroke:none}
+.i.s{width:18px;height:18px}
+.sub{color:var(--sub)}
+.bar{height:56px;flex:none;display:flex;align-items:center;padding:0 4px;gap:4px}
+.bar .ttl{font-size:20px;font-weight:600;flex:1;padding-left:4px}
+.bar .time{font-size:15px;color:var(--sub);padding-right:4px}
+.ib{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;flex:none}
+.tb{min-height:48px;padding:0 14px;display:inline-flex;align-items:center;font-weight:700;color:var(--pri);border-radius:999px;white-space:nowrap}
+.pb{display:inline-flex;align-items:center;gap:2px;font-style:normal;font-size:11px;font-weight:700;border:1.5px solid var(--fg);border-radius:999px;padding:1px 7px 1px 4px;white-space:nowrap}
+.pb .i{width:13px;height:13px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border-radius:16px;font-size:16px;font-weight:700;padding:0 20px;text-align:center}
+.btn.fill{background:var(--pri);color:var(--onpri)}
+.btn.line{border:1.5px solid var(--line)}
+.sum{display:flex;align-items:center;padding:0 12px 0 4px;border-bottom:1px solid var(--line)}
+.sum .sb{flex:1;min-width:0;min-height:56px;display:flex;flex-direction:column;justify-content:center}
+.sum .sb b{font-size:15px}
+.sum .sb small{font-size:12px;color:var(--sub)}
+.sum .ok{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--sub)}
+.add{display:flex;align-items:center;justify-content:center;gap:6px;width:calc(100% - 24px);min-height:48px;margin:10px 12px 0;border:1.5px dashed var(--line);border-radius:12px;color:var(--sub);font-weight:600}
+.dock{flex:none;background:var(--sf);border-top:1px solid var(--line);border-radius:24px 24px 0 0;box-shadow:0 -4px 16px rgba(0,0,0,.12);overflow:hidden}
+.fin{padding:16px 16px 4px;text-align:center}
+.fin b{display:block;font-size:17px}
+.fin small{font-size:13px;color:var(--sub)}
+.dock .body{padding:12px 12px 16px}
+.row2{display:flex;gap:8px}
+.row2 .more{width:112px;flex:none;min-height:60px;font-size:15px;padding:0}
+.row2 .go{flex:1;width:auto;min-height:60px;font-size:17px}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"></path></symbol>
+  <symbol id="drag" viewBox="0 0 24 24"><path d="M5 9h14M5 15h14"></path></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+  <symbol id="star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.2 6.1-5.5-3-5.5 3 1.2-6.1-4.5-4.2 6.1-.8z"></path></symbol>
+</svg>
+<div class="app {{themeClass}}">
+  <div class="bar">
+    <button type="button" class="ib" aria-label="戻る"><svg class="i" aria-hidden="true"><use href="#back"></use></svg></button>
+    <div class="ttl">Push</div><div class="time">27:12</div>
+    <button type="button" class="tb">終える</button>
+  </div>
+  <div class="scr">
+    <div class="sum">
+      <button type="button" class="ib" aria-label="ベンチプレスを並べ替える"><svg class="i sub" aria-hidden="true"><use href="#drag"></use></svg></button>
+      <button type="button" class="sb"><b>ベンチプレス</b><small>62.5 kg 合計 × 10 · 9 · 9</small></button>
+      <span class="ok"><em class="pb"><svg class="i f" aria-hidden="true"><use href="#star"></use></svg>自己ベスト</em><svg class="i s" aria-hidden="true"><use href="#check"></use></svg>3/3</span>
+    </div>
+    <div class="sum">
+      <button type="button" class="ib" aria-label="インクラインダンベルプレスを並べ替える"><svg class="i sub" aria-hidden="true"><use href="#drag"></use></svg></button>
+      <button type="button" class="sb"><b>インクラインダンベルプレス</b><small>20 kg 片手 × 10 · 10 · 9</small></button>
+      <span class="ok"><svg class="i s" aria-hidden="true"><use href="#check"></use></svg>3/3</span>
+    </div>
+    <button type="button" class="add"><svg class="i s" aria-hidden="true"><use href="#plus"></use></svg>種目を追加</button>
+  </div>
+  <div class="dock">
+    <div class="fin"><b>すべてのセットが終わりました</b><small>2 種目 · 6 セット · 27 分</small></div>
+    <div class="body">
+      <div class="row2">
+        <button type="button" class="btn line more">もう1セット</button>
+        <button type="button" class="btn fill go"><svg class="i" aria-hidden="true"><use href="#check"></use></svg>ワークアウトを終える</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

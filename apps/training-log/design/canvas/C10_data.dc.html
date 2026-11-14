@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>C ドック — データ管理</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
+.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:780px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
+.scr{flex:1;min-height:0;overflow:hidden}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.sub{color:var(--sub)}
+.bar{height:56px;flex:none;display:flex;align-items:center;padding:0 4px;gap:4px}
+.bar .ttl{font-size:20px;font-weight:600;flex:1;padding-left:4px}
+.ib{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;flex:none}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:60px;border-radius:16px;font-size:18px;font-weight:700;padding:0 20px;text-align:center}
+.btn.fill{background:var(--pri);color:var(--onpri)}
+.st{margin:4px 16px 12px;padding:14px 16px;background:var(--con);color:var(--oncon);border-radius:16px}
+.st b{display:block;font-size:16px}
+.st span{display:block;font-size:13px;margin-top:2px}
+.list{border-top:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:12px;width:100%;min-height:72px;padding:0 8px 0 16px;border-bottom:1px solid var(--line)}
+.row .ic{width:40px;height:40px;border-radius:50%;background:var(--sf2);display:grid;place-items:center;flex:none}
+.row .t{flex:1;min-width:0}
+.row .t b{display:block;font-size:15px}
+.row .t small{font-size:12px;color:var(--sub)}
+.sw{width:52px;height:32px;border-radius:16px;background:var(--pri);position:relative;flex:none;margin-right:8px}
+.sw::after{content:'';position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:var(--onpri)}
+.swb{display:grid;place-items:center;width:64px;height:48px;flex:none}
+.foot{flex:none;padding:8px 16px 16px}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"></path></symbol>
+  <symbol id="right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></symbol>
+  <symbol id="export" viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4M5 14v5h14v-5"></path></symbol>
+  <symbol id="import" viewBox="0 0 24 24"><path d="M12 4v11M8 11l4 4 4-4M5 19h14"></path></symbol>
+  <symbol id="table" viewBox="0 0 24 24"><path d="M5 4h14v16H5zM5 10h14M5 15h14M11 4v16"></path></symbol>
+  <symbol id="file" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7zM14 3v4h4"></path></symbol>
+  <symbol id="swap" viewBox="0 0 24 24"><path d="M7 7h11l-3-3M17 17H6l3 3"></path></symbol>
+</svg>
+<div class="app {{themeClass}}">
+  <div class="bar">
+    <button type="button" class="ib" aria-label="戻る"><svg class="i" aria-hidden="true"><use href="#back"></use></svg></button>
+    <div class="ttl">データ管理</div>
+  </div>
+  <div class="st"><b>最後の書き出し　10月13日（32日前）</b><span>データはこの端末の中だけにあります。機種変更の前に書き出してください。</span></div>
+  <div class="scr">
+    <div class="list">
+      <button type="button" class="row"><span class="ic"><svg class="i" aria-hidden="true"><use href="#import"></use></svg></span><span class="t"><b>ファイルから復元する</b><small>読み込む前に、上書きするかを確認します</small></span><svg class="i sub" aria-hidden="true"><use href="#right"></use></svg></button>
+      <button type="button" class="row"><span class="ic"><svg class="i" aria-hidden="true"><use href="#table"></use></svg></span><span class="t"><b>CSV で書き出す</b><small>表計算ソフトで見られます</small></span><svg class="i sub" aria-hidden="true"><use href="#right"></use></svg></button>
+      <button type="button" class="row"><span class="ic"><svg class="i" aria-hidden="true"><use href="#file"></use></svg></span><span class="t"><b>決まった形式のファイルを取り込む</b><small>列の決まりは「取り込み形式」で確認できます</small></span><svg class="i sub" aria-hidden="true"><use href="#right"></use></svg></button>
+      <button type="button" class="row"><span class="ic"><svg class="i" aria-hidden="true"><use href="#swap"></use></svg></span><span class="t"><b>乗り換え用の初期設定</b><small>種目ごとの直近の値をまとめて入れます</small></span><svg class="i sub" aria-hidden="true"><use href="#right"></use></svg></button>
+      <div class="row"><span class="t" style="padding-left:4px"><b>端末内に自動でバックアップを残す</b><small>直近 3 回分。データの不具合のときの復旧用です</small></span><button type="button" class="swb" role="switch" aria-checked="true" aria-label="自動バックアップ"><span class="sw"></span></button></div>
+    </div>
+  </div>
+  <div class="foot"><button type="button" class="btn fill"><svg class="i" aria-hidden="true"><use href="#export"></use></svg>全データを書き出す</button></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

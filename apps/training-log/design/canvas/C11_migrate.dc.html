@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>C ドック — 乗り換え用の初期設定</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
+.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:780px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
+.scr{flex:1;min-height:0;overflow:hidden}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.i.s{width:18px;height:18px}
+.sub{color:var(--sub)}
+.bar{height:56px;flex:none;display:flex;align-items:center;padding:0 4px;gap:4px}
+.bar .ttl{font-size:20px;font-weight:600;flex:1;padding-left:4px}
+.ib{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;flex:none}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:60px;border-radius:16px;font-size:18px;font-weight:700;padding:0 20px;text-align:center}
+.btn.fill{background:var(--pri);color:var(--onpri)}
+.intro{padding:0 20px 10px;font-size:13px;color:var(--sub)}
+.th,.tr{display:grid;grid-template-columns:1fr 64px 52px 64px;gap:6px;align-items:center;padding:0 12px 0 20px}
+.th{position:relative;min-height:28px;font-size:11px;font-weight:700;color:var(--sub);background:var(--sf2);text-align:center}
+.th span:first-child{text-align:left}
+.tr{min-height:64px;border-bottom:1px solid var(--line)}
+.tr .nm b{display:block;font-size:14px;line-height:1.25}
+.tr .nm small{font-size:11px;color:var(--sub)}
+.c{width:100%;height:48px;border:1.5px solid var(--line);border-radius:10px;background:var(--sf);text-align:center;font:inherit;font-size:16px;font-weight:700;color:var(--fg)}
+.c:disabled{border-style:dashed;background:transparent;color:var(--sub);font-weight:400}
+.addr{display:flex;align-items:center;gap:6px;min-height:52px;padding:0 20px;color:var(--pri);font-weight:700}
+.foot{flex:none;padding:8px 16px 16px;border-top:1px solid var(--line);background:var(--sf)}
+.foot p{font-size:12px;color:var(--sub);text-align:center;margin-bottom:6px}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"></path></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+</svg>
+<div class="app {{themeClass}}">
+  <div class="bar">
+    <button type="button" class="ib" aria-label="戻る"><svg class="i" aria-hidden="true"><use href="#back"></use></svg></button>
+    <div class="ttl">乗り換え用の初期設定</div>
+  </div>
+  <p class="intro">前のアプリの画面を見ながら、種目ごとの直近の値を入れます。入れた値は、はじめのワークアウトで「前回の記録」になり、次のセットの初期値にもなります。</p>
+  <div class="th"><span>種目</span><span>重量 kg</span><span>回数</span><span>自己ベスト</span></div>
+  <div class="scr">
+    <div class="tr"><div class="nm"><b>ベンチプレス</b><small>バーベル · 合計</small></div><input class="c" type="text" inputmode="decimal" value="60" aria-label="ベンチプレスの重量（kg）"><input class="c" type="text" inputmode="numeric" value="10" aria-label="ベンチプレスの回数"><input class="c" type="text" inputmode="decimal" value="60" aria-label="ベンチプレスの自己ベスト（kg）"></div>
+    <div class="tr"><div class="nm"><b>インクラインダンベルプレス</b><small>ダンベル · 片手</small></div><input class="c" type="text" inputmode="decimal" value="20" aria-label="インクラインダンベルプレスの重量（kg）"><input class="c" type="text" inputmode="numeric" value="10" aria-label="インクラインダンベルプレスの回数"><input class="c" type="text" inputmode="decimal" value="22" aria-label="インクラインダンベルプレスの自己ベスト（kg）"></div>
+    <div class="tr"><div class="nm"><b>ワンハンドダンベルロウ</b><small>ダンベル · 片手 · 片側</small></div><input class="c" type="text" inputmode="decimal" value="26" aria-label="ワンハンドダンベルロウの重量（kg）"><input class="c" type="text" inputmode="numeric" value="10" aria-label="ワンハンドダンベルロウの回数"><input class="c" type="text" inputmode="decimal" value="26" aria-label="ワンハンドダンベルロウの自己ベスト（kg）"></div>
+    <div class="tr"><div class="nm"><b>ラットプルダウン</b><small>マシン · 合計</small></div><input class="c" type="text" inputmode="decimal" value="55" aria-label="ラットプルダウンの重量（kg）"><input class="c" type="text" inputmode="numeric" value="12" aria-label="ラットプルダウンの回数"><input class="c" type="text" inputmode="decimal" value="60" aria-label="ラットプルダウンの自己ベスト（kg）"></div>
+    <div class="tr"><div class="nm"><b>スクワット</b><small>バーベル · 合計</small></div><input class="c" type="text" inputmode="decimal" value="80" aria-label="スクワットの重量（kg）"><input class="c" type="text" inputmode="numeric" value="8" aria-label="スクワットの回数"><input class="c" type="text" inputmode="decimal" value="90" aria-label="スクワットの自己ベスト（kg）"></div>
+    <div class="tr"><div class="nm"><b>懸垂</b><small>自重 · 回数のみ</small></div><input class="c" type="text" value="—" disabled aria-label="懸垂の重量（なし）"><input class="c" type="text" inputmode="numeric" value="8" aria-label="懸垂の回数"><input class="c" type="text" inputmode="numeric" value="10" aria-label="懸垂の自己ベスト（回）"></div>
+    <div class="tr"><div class="nm"><b>プランク</b><small>自重 · 時間（秒）</small></div><input class="c" type="text" value="—" disabled aria-label="プランクの重量（なし）"><input class="c" type="text" inputmode="numeric" value="60" aria-label="プランクの秒数"><input class="c" type="text" inputmode="numeric" value="90" aria-label="プランクの自己ベスト（秒）"></div>
+    <button type="button" class="addr"><svg class="i s" aria-hidden="true"><use href="#plus"></use></svg>種目を足す</button>
+  </div>
+  <div class="foot">
+    <p>7 種目を入力済み · いつでも直せます</p>
+    <button type="button" class="btn fill">保存する</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

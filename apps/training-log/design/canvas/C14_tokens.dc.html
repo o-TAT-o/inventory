@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>デザイントークンと部品</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
+.doc{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:1280px;height:1750px;overflow:hidden;padding:40px;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;gap:24px}
+.doc.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
+.L{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A}
+.D{--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.i.f{fill:currentColor;stroke:none}
+.i.s{width:18px;height:18px}
+.sub{color:var(--sub)}
+h1{font-size:34px}
+.lead{font-size:15px;color:var(--sub);margin-top:2px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px}
+.panel{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:16px;padding:20px}
+.panel h2{font-size:18px;margin-bottom:12px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tile{display:flex;flex-direction:column;gap:2px}
+.tile .c{height:48px;border-radius:10px;border:1px solid var(--line)}
+.tile b{font-size:13px}
+.tile small{font-size:11px;color:var(--sub)}
+.cr{margin-top:12px;font-size:12px;color:var(--sub);line-height:1.7}
+.ty{display:grid;grid-template-columns:44px 1fr 150px;align-items:center;min-height:40px;border-bottom:1px solid var(--line)}
+.ty .s{font-size:12px;color:var(--sub)}
+.ty small{font-size:12px;color:var(--sub)}
+.bx{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px}
+.bx div{background:var(--pri);height:16px;border-radius:2px}
+.bx span{display:block;font-size:11px;color:var(--sub);margin-top:4px;text-align:center}
+.rd{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:14px}
+.rd div{width:64px;height:48px;background:var(--con);color:var(--oncon);display:grid;place-items:center;font-size:12px;font-weight:700}
+.note{font-size:13px;color:var(--sub);line-height:1.7}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card h3{font-size:13px;color:var(--sub);letter-spacing:.04em}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border-radius:16px;font-size:16px;font-weight:700;padding:0 20px;text-align:center}
+.btn.fill{background:var(--pri);color:var(--onpri)}
+.btn.tone{background:var(--con);color:var(--oncon)}
+.btn.line{border:1.5px solid var(--line)}
+.btn.off{background:var(--sf2);color:var(--sub)}
+.chip{display:inline-flex;align-items:center;gap:4px;height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;font-size:14px;white-space:nowrap}
+.chip.on{background:var(--con);color:var(--oncon);border-color:transparent;font-weight:600}
+.seg{display:flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;height:48px}
+.seg span{flex:1;display:grid;place-items:center;font-size:14px}
+.seg .on{background:var(--con);color:var(--oncon);font-weight:700}
+.rw{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tag{font-size:11px;font-style:normal;border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--sub);white-space:nowrap}
+.pb{display:inline-flex;align-items:center;gap:2px;font-style:normal;font-size:11px;font-weight:700;border:1.5px solid var(--fg);border-radius:999px;padding:1px 7px 1px 4px;white-space:nowrap}
+.pb .i{width:13px;height:13px}
+.stp{display:flex;align-items:center}
+.stp .pm{width:48px;height:56px;border-radius:16px;background:var(--sf2);display:grid;place-items:center;flex:none}
+.stp .val{flex:1;text-align:center;line-height:1.15}
+.stp .val b{font-size:24px}
+.stp .val small{display:block;font-size:12px;color:var(--sub)}
+.sets{border:1px solid var(--line);border-radius:12px;overflow:hidden;padding:4px 0}
+.r{display:grid;grid-template-columns:28px 1fr auto;align-items:center;min-height:44px;margin:0 8px;padding:0 8px;font-size:15px;border-radius:10px}
+.r .no{color:var(--sub);font-size:13px}
+.r .st{display:flex;align-items:center;gap:6px}
+.r.todo{color:var(--sub)}
+.r.sel{background:var(--con);color:var(--oncon);font-weight:700}
+.r.sel .no{color:inherit}
+.ring{width:18px;height:18px;border:2px solid var(--line);border-radius:50%}
+.rest{display:flex;align-items:center;min-height:48px;padding:0 4px 0 16px;font-size:13px;gap:8px;background:var(--sf2);border-radius:12px}
+.rest b{font-size:20px;margin-right:auto}
+.rest.end{background:var(--pri);color:var(--onpri);font-weight:700}
+.snack{display:flex;align-items:center;min-height:56px;padding:0 4px 0 16px;border-radius:12px;background:var(--inv);color:var(--oninv)}
+.snack span{flex:1}
+.snack button{min-height:48px;padding:0 14px;font-weight:700;color:var(--invact)}
+.nav{display:flex;height:72px;background:var(--sf);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.nav div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;color:var(--sub)}
+.nav div span{width:56px;height:30px;border-radius:15px;display:grid;place-items:center}
+.nav .on{color:var(--fg);font-weight:700}
+.nav .on span{background:var(--con);color:var(--oncon)}
+.sw{width:52px;height:32px;border-radius:16px;background:var(--pri);position:relative}
+.sw::after{content:'';position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:var(--onpri)}
+.sw.off{background:var(--sf2);border:2px solid var(--sub)}
+.sw.off::after{right:auto;left:2px;top:2px;background:var(--sub)}
+.ad{height:50px;border:1.5px dashed var(--line);border-radius:8px;display:grid;place-items:center;color:var(--sub);font-size:12px}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+  <symbol id="minus" viewBox="0 0 24 24"><path d="M5 12h14"></path></symbol>
+  <symbol id="star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.2 1.2 6.1-5.5-3-5.5 3 1.2-6.1-4.5-4.2 6.1-.8z"></path></symbol>
+  <symbol id="timer" viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"></circle><path d="M12 9v4l2.5 2M9.5 3h5"></path></symbol>
+  <symbol id="bell" viewBox="0 0 24 24"><path d="M6 17h12l-1.5-2V11a4.5 4.5 0 0 0-9 0v4zM10 20h4"></path></symbol>
+  <symbol id="home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"></path></symbol>
+  <symbol id="list" viewBox="0 0 24 24"><path d="M9 7h11M9 12h11M9 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01"></path></symbol>
+  <symbol id="cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M4 10h16M8 3v4M16 3v4"></path></symbol>
+</svg>
+<div class="doc {{themeClass}}">
+  <div><h1>デザイントークンと部品</h1><p class="lead">案C ドック型。Material 3 の部品を基本にして、独自のものは記録画面の数値入力まわりに絞る。画像・独自フォントは使わない。</p></div>
+
+  <div class="two">
+    <div class="panel L"><h2>色（ライト）</h2>
+      <div class="tiles">
+        <div class="tile"><span class="c" style="background:#F4F6F9"></span><b>bg</b><small>背景 #F4F6F9</small></div>
+        <div class="tile"><span class="c" style="background:#FFFFFF"></span><b>sf</b><small>面 #FFFFFF</small></div>
+        <div class="tile"><span class="c" style="background:#E4E9F0"></span><b>sf2</b><small>くぼみ #E4E9F0</small></div>
+        <div class="tile"><span class="c" style="background:#C5CCD6"></span><b>line</b><small>罫線 #C5CCD6</small></div>
+        <div class="tile"><span class="c" style="background:#141A22"></span><b>fg</b><small>文字 #141A22</small></div>
+        <div class="tile"><span class="c" style="background:#4D5766"></span><b>sub</b><small>補助 #4D5766</small></div>
+        <div class="tile"><span class="c" style="background:#BA1A1A"></span><b>err</b><small>警告 #BA1A1A</small></div>
+        <div class="tile"><span class="c" style="background:#1F3A5F"></span><b>pri</b><small>主 #1F3A5F</small></div>
+        <div class="tile"><span class="c" style="background:#FFFFFF"></span><b>onpri</b><small>主の上 #FFFFFF</small></div>
+        <div class="tile"><span class="c" style="background:#D6E3F5"></span><b>con</b><small>主（淡）#D6E3F5</small></div>
+        <div class="tile"><span class="c" style="background:#0D2440"></span><b>oncon</b><small>淡の上 #0D2440</small></div>
+      </div>
+      <p class="cr">コントラスト（概算）　文字 16:1 · 補助 6.8:1 · 主の上の文字 11.5:1 · 淡の上の文字 12:1 · 警告 6:1</p>
+    </div>
+    <div class="panel D"><h2>色（ダーク）</h2>
+      <div class="tiles">
+        <div class="tile"><span class="c" style="background:#0F1318"></span><b>bg</b><small>背景 #0F1318</small></div>
+        <div class="tile"><span class="c" style="background:#181D24"></span><b>sf</b><small>面 #181D24</small></div>
+        <div class="tile"><span class="c" style="background:#242B34"></span><b>sf2</b><small>くぼみ #242B34</small></div>
+        <div class="tile"><span class="c" style="background:#38414D"></span><b>line</b><small>罫線 #38414D</small></div>
+        <div class="tile"><span class="c" style="background:#E4E8EE"></span><b>fg</b><small>文字 #E4E8EE</small></div>
+        <div class="tile"><span class="c" style="background:#9DA7B5"></span><b>sub</b><small>補助 #9DA7B5</small></div>
+        <div class="tile"><span class="c" style="background:#FFB4AB"></span><b>err</b><small>警告 #FFB4AB</small></div>
+        <div class="tile"><span class="c" style="background:#A9C7F0"></span><b>pri</b><small>主 #A9C7F0</small></div>
+        <div class="tile"><span class="c" style="background:#0B2748"></span><b>onpri</b><small>主の上 #0B2748</small></div>
+        <div class="tile"><span class="c" style="background:#263B56"></span><b>con</b><small>主（淡）#263B56</small></div>
+        <div class="tile"><span class="c" style="background:#D6E3F5"></span><b>oncon</b><small>淡の上 #D6E3F5</small></div>
+      </div>
+      <p class="cr">コントラスト（概算）　文字 15:1 · 補助 7.6:1 · 主の上の文字 8.7:1 · 淡の上の文字 8.8:1 · 警告 11:1</p>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="panel"><h2>文字</h2>
+      <div class="ty"><span class="s">28</span><span style="font-size:28px;font-weight:700">ベンチプレス</span><small>完了画面の見出し</small></div>
+      <div class="ty"><span class="s">24</span><span style="font-size:24px;font-weight:700">62.5</span><small>入力の数値（重量・回数）</small></div>
+      <div class="ty"><span class="s">20</span><span style="font-size:20px;font-weight:600">ルーティン</span><small>画面のタイトル</small></div>
+      <div class="ty"><span class="s">17</span><span style="font-size:17px;font-weight:700">Push</span><small>ルーティン名・見出し</small></div>
+      <div class="ty"><span class="s">15</span><span style="font-size:15px;font-weight:600">インクラインダンベルプレス</span><small>種目名・行</small></div>
+      <div class="ty"><span class="s">14</span><span style="font-size:14px">ベンチが空いていなければ変更</span><small>本文</small></div>
+      <div class="ty"><span class="s">13</span><span style="font-size:13px;color:var(--sub)">前回 11/7　60×10 · 60×9 · 60×8 kg</span><small>補助（前回の記録など）</small></div>
+      <div class="ty"><span class="s">12</span><span style="font-size:12px;font-weight:700;color:var(--sub)">ギア</span><small>ラベル・小見出し</small></div>
+      <div class="ty"><span class="s">11</span><span style="font-size:11px;font-weight:700">自己ベスト</span><small>タグ・ピル</small></div>
+      <p class="note" style="margin-top:10px">書体は端末標準（Roboto / Noto Sans JP）。数字は桁がそろう等幅数字。端末の文字サイズ設定に追従する。</p>
+    </div>
+    <div class="panel"><h2>余白・形・押す大きさ</h2>
+      <div class="note" style="margin-bottom:6px">余白（px）</div>
+      <div class="bx"><p><i style="display:block;width:4px;height:16px;background:var(--pri);border-radius:2px"></i><span>4</span></p><p><i style="display:block;width:8px;height:16px;background:var(--pri);border-radius:2px"></i><span>8</span></p><p><i style="display:block;width:12px;height:16px;background:var(--pri);border-radius:2px"></i><span>12</span></p><p><i style="display:block;width:16px;height:16px;background:var(--pri);border-radius:2px"></i><span>16</span></p><p><i style="display:block;width:20px;height:16px;background:var(--pri);border-radius:2px"></i><span>20</span></p><p><i style="display:block;width:24px;height:16px;background:var(--pri);border-radius:2px"></i><span>24</span></p></div>
+      <div class="note" style="margin-bottom:6px">角丸（px）</div>
+      <div class="rd"><div style="border-radius:4px">4 タグ</div><div style="border-radius:10px">10 入力</div><div style="border-radius:12px">12 チップ</div><div style="border-radius:16px">16 ボタン</div><div style="border-radius:24px 24px 0 0">24 ドック</div><div style="border-radius:28px 28px 0 0">28 シート</div></div>
+      <p class="note">押せるところは 48px 以上。記録画面の ± は 48×56、「完了」は高さ 60、アイコンボタンは 48×48。<br>色だけで状態を伝えない（完了はチェック、自己ベストは星のピル、入力中は文字）。<br>動きは状態が変わったときの最小限だけ。</p>
+    </div>
+  </div>
+
+  <div class="panel"><h2>部品</h2>
+    <div class="three">
+      <div class="card"><h3>ボタン・チップ・切り替え</h3>
+        <button type="button" class="btn fill" style="min-height:60px;font-size:18px"><svg class="i" aria-hidden="true"><use href="#check"></use></svg>完了</button>
+        <button type="button" class="btn tone">とじる</button>
+        <button type="button" class="btn line">開く・直す</button>
+        <button type="button" class="btn off" aria-disabled="true">完了（入力待ち）</button>
+        <div class="rw"><span class="chip on"><svg class="i s" aria-hidden="true"><use href="#check"></use></svg>リストラップ</span><span class="chip">ベルト</span></div>
+        <div class="seg"><span>片手</span><span class="on">合計</span></div>
+        <div class="rw"><span class="sw"></span><span class="sw off"></span></div>
+      </div>
+      <div class="card"><h3>記録の部品</h3>
+        <div class="stp"><span class="pm"><svg class="i" aria-hidden="true"><use href="#minus"></use></svg></span><div class="val"><b>62.5</b><small>kg 合計</small></div><span class="pm"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg></span></div>
+        <div class="stp"><span class="pm"><svg class="i" aria-hidden="true"><use href="#minus"></use></svg></span><div class="val"><b>10</b><small>回 片側</small></div><span class="pm"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg></span></div>
+        <div class="sets">
+          <div class="r"><span class="no">1</span><span><b>62.5</b> kg <i class="tag">合計</i> × <b>10</b> 回</span><span class="st"><em class="pb"><svg class="i f" aria-hidden="true"><use href="#star"></use></svg>自己ベスト</em><svg class="i s" aria-hidden="true"><use href="#check"></use></svg></span></div>
+          <div class="r"><span class="no">2</span><span><b>62.5</b> kg <i class="tag">合計</i> × <b>9</b> 回</span><span class="st"><svg class="i s" aria-hidden="true"><use href="#check"></use></svg></span></div>
+          <div class="r sel"><span class="no">3</span><span>62.5 kg × 9 回</span><span class="st" style="font-size:12px">入力中</span></div>
+          <div class="r todo"><span class="no">4</span><span>62.5 kg × 9 回</span><span class="st"><span class="ring"></span></span></div>
+        </div>
+        <div class="rw"><i class="tag">片手</i><i class="tag">合計</i><i class="tag">片側</i><i class="tag">左右計</i><i class="tag">加重</i><i class="tag">補助</i></div>
+      </div>
+      <div class="card"><h3>タイマー・お知らせ・ナビ</h3>
+        <div class="rest"><svg class="i s" aria-hidden="true"><use href="#timer"></use></svg>休憩<b>1:12</b><span style="font-weight:700;color:var(--pri)">−10 秒</span><span style="font-weight:700;color:var(--pri);margin-right:12px">＋10 秒</span></div>
+        <div class="rest end"><svg class="i s" aria-hidden="true"><use href="#bell"></use></svg>休憩おわり<b>+0:08</b><span style="margin-right:12px">＋30 秒</span></div>
+        <div class="snack" role="status"><span>ワンハンドダンベルロウを外しました</span><button type="button">元に戻す</button></div>
+        <div class="nav"><div class="on"><span><svg class="i" aria-hidden="true"><use href="#home"></use></svg></span>今日</div><div><span><svg class="i" aria-hidden="true"><use href="#list"></use></svg></span>ルーティン</div><div><span><svg class="i" aria-hidden="true"><use href="#cal"></use></svg></span>履歴</div></div>
+        <div class="ad" role="img" aria-label="広告バナーの枠">広告バナーの枠（記録画面には置かない）</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1280,"height":1750}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>C ドック — 設定</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
+.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:1920px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.sub{color:var(--sub)}
+.bar{height:56px;flex:none;display:flex;align-items:center;padding:0 4px;gap:4px}
+.bar .ttl{font-size:20px;font-weight:600;flex:1;padding-left:4px}
+.ib{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;flex:none}
+.lab{font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.04em;margin:8px 20px 6px}
+.grp{background:var(--sf);border:1px solid var(--line);border-radius:16px;margin:0 16px 12px;overflow:hidden}
+.row{display:flex;align-items:center;gap:10px;width:100%;min-height:64px;padding:0 12px 0 16px;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row .t{flex:1;min-width:0}
+.row .t b{display:block;font-size:15px;font-weight:600}
+.row .t small{font-size:12px;color:var(--sub)}
+.seg{display:flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;height:44px;flex:none}
+.seg button{padding:0 14px;text-align:center;font-size:14px;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--con);color:var(--oncon);font-weight:700}
+.seg.full{width:100%;margin:0 0 12px}
+.seg.full button{flex:1;padding:0}
+.col{display:block;padding:12px 16px 0;border-top:1px solid var(--line)}
+.col:first-child{border-top:0}
+.col .h2{display:block;font-size:15px;font-weight:600}
+.col .sm{display:block;font-size:12px;color:var(--sub);margin:2px 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 0 14px}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:56px;height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--con);color:var(--oncon);border-color:transparent;font-weight:700}
+.orow{display:flex;align-items:center;gap:12px;min-height:60px;padding:0 16px;border-top:1px solid var(--line);cursor:pointer}
+.orow input{width:22px;height:22px;accent-color:var(--pri);flex:none}
+.orow .t b{display:block;font-size:15px;font-weight:600}
+.orow .t small{font-size:12px;color:var(--sub)}
+.pm{width:44px;height:44px;border-radius:12px;background:var(--sf2);display:grid;place-items:center;flex:none}
+.val{min-width:52px;text-align:center;font-size:18px;font-weight:700}
+.val small{font-size:12px;font-weight:400;color:var(--sub)}
+.swb{display:grid;place-items:center;width:64px;height:48px;flex:none}
+.sw{width:52px;height:32px;border-radius:16px;background:var(--pri);position:relative}
+.sw::after{content:'';position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:var(--onpri)}
+.buy{min-height:44px;padding:0 16px;border-radius:12px;background:var(--pri);color:var(--onpri);font-weight:700;white-space:nowrap}
+.ad{margin:4px 16px 16px;height:50px;border:1.5px dashed var(--line);border-radius:8px;display:grid;place-items:center;color:var(--sub);font-size:12px}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"></path></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+  <symbol id="minus" viewBox="0 0 24 24"><path d="M5 12h14"></path></symbol>
+  <symbol id="right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></symbol>
+</svg>
+<div class="app {{themeClass}}">
+  <div class="bar">
+    <button type="button" class="ib" aria-label="戻る"><svg class="i" aria-hidden="true"><use href="#back"></use></svg></button>
+    <div class="ttl">設定</div>
+  </div>
+
+  <div class="lab">単位と入力</div>
+  <div class="grp">
+    <div class="row"><span class="t"><b>重量の単位</b></span><div class="seg" role="group" aria-label="重量の単位"><button type="button" aria-pressed="true">kg</button><button type="button" aria-pressed="false">lb</button></div></div>
+    <div class="col"><b class="h2">重量の刻み</b><small class="sm">＋ − ボタンで増減する幅（kg）。種目ごとにも変えられます</small>
+      <div class="chips" role="group" aria-label="重量の刻み">
+        <button type="button" class="chip" aria-pressed="false">0.25</button><button type="button" class="chip" aria-pressed="false">0.5</button><button type="button" class="chip" aria-pressed="false">1</button><button type="button" class="chip" aria-pressed="false">1.25</button><button type="button" class="chip" aria-pressed="false">2</button><button type="button" class="chip" aria-pressed="true">2.5</button><button type="button" class="chip" aria-pressed="false">5</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="lab">表示</div>
+  <div class="grp">
+    <div class="col"><b class="h2" style="margin-bottom:8px">テーマ</b><div class="seg full" role="group" aria-label="テーマ"><button type="button" aria-pressed="false">ライト</button><button type="button" aria-pressed="false">ダーク</button><button type="button" aria-pressed="true">端末に合わせる</button></div></div>
+    <div class="row"><span class="t"><b>履歴カレンダーの週の始まり</b></span><div class="seg" role="group" aria-label="週の始まり"><button type="button" aria-pressed="false">日曜</button><button type="button" aria-pressed="true">月曜</button></div></div>
+    <div class="col" style="padding-bottom:6px"><b class="h2">ホームの日付の帯</b><small class="sm" style="margin-bottom:0">日付をタップすると、その日の記録を開きます</small></div>
+    <div role="radiogroup" aria-label="ホームの日付の帯">
+      <label class="orow"><input type="radio" name="band" checked><span class="t"><b>その週</b><small>週の始まりに合わせて 7 日を並べる</small></span></label>
+      <label class="orow"><input type="radio" name="band"><span class="t"><b>今日を真ん中</b><small>前後 3 日ずつ。左右にスワイプして動かせる</small></span></label>
+      <label class="orow"><input type="radio" name="band"><span class="t"><b>直近 7 日</b><small>今日が右端。前日までの入力がしやすい</small></span></label>
+    </div>
+  </div>
+
+  <div class="lab">休憩タイマー</div>
+  <div class="grp">
+    <div class="row"><span class="t"><b>休憩（セット間）</b><small>記録中に変えられます</small></span><button type="button" class="pm" aria-label="休憩を短くする"><svg class="i" aria-hidden="true"><use href="#minus"></use></svg></button><span class="val">1:30</span><button type="button" class="pm" aria-label="休憩を長くする"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg></button></div>
+    <div class="row"><span class="t"><b>休憩（種目のあと）</b><small>次の種目に進むとき</small></span><button type="button" class="pm" aria-label="種目のあとの休憩を短くする"><svg class="i" aria-hidden="true"><use href="#minus"></use></svg></button><span class="val">2:00</span><button type="button" class="pm" aria-label="種目のあとの休憩を長くする"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg></button></div>
+    <div class="row"><span class="t"><b>セットを完了したら、自動で始める</b></span><button type="button" class="swb" role="switch" aria-checked="true" aria-label="自動で始める"><span class="sw"></span></button></div>
+    <div class="row"><span class="t"><b>音で知らせる</b></span><button type="button" class="swb" role="switch" aria-checked="true" aria-label="音で知らせる"><span class="sw"></span></button></div>
+    <div class="row"><span class="t"><b>バイブで知らせる</b></span><button type="button" class="swb" role="switch" aria-checked="true" aria-label="バイブで知らせる"><span class="sw"></span></button></div>
+  </div>
+
+  <div class="lab">管理</div>
+  <div class="grp">
+    <button type="button" class="row"><span class="t"><b>ギアの管理</b><small>ベルト・パワーグリップなど</small></span><svg class="i sub" aria-hidden="true"><use href="#right"></use></svg></button>
+    <button type="button" class="row"><span class="t"><b>データ管理</b><small>最後の書き出しから 32 日</small></span><svg class="i sub" aria-hidden="true"><use href="#right"></use></svg></button>
+  </div>
+
+  <div class="lab">広告</div>
+  <div class="grp">
+    <div class="row" style="min-height:80px"><span class="t"><b>広告を消す</b><small>買い切り · ずっと非表示</small></span><button type="button" class="buy">[価格]で購入</button></div>
+    <button type="button" class="row"><span class="t"><b>購入を復元</b><small>機種変更や再インストールのあとに</small></span><svg class="i sub" aria-hidden="true"><use href="#right"></use></svg></button>
+  </div>
+
+  <div class="lab">このアプリについて</div>
+  <div class="grp">
+    <button type="button" class="row"><span class="t"><b>利用規約</b></span><svg class="i sub" aria-hidden="true"><use href="#right"></use></svg></button>
+    <button type="button" class="row"><span class="t"><b>プライバシーポリシー</b></span><svg class="i sub" aria-hidden="true"><use href="#right"></use></svg></button>
+    <button type="button" class="row"><span class="t"><b>ライセンス表示</b></span><svg class="i sub" aria-hidden="true"><use href="#right"></use></svg></button>
+    <div class="row"><span class="t"><b>バージョン</b></span><span class="sub">1.0.0</span></div>
+  </div>
+  <div class="ad" role="img" aria-label="広告バナーの枠">広告バナーの枠（広告を消すと、ここは詰まります）</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":1920}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

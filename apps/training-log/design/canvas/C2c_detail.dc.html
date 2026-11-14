@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>C ドック — 記録（詳細パネル）</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
+.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:780px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.i.s{width:18px;height:18px}
+.sub{color:var(--sub)}
+.bar{height:56px;flex:none;display:flex;align-items:center;padding:0 4px;gap:4px}
+.bar .ttl{font-size:20px;font-weight:600;flex:1;padding-left:4px}
+.bar .time{font-size:15px;color:var(--sub);padding-right:4px}
+.ib{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;flex:none}
+.tb{min-height:48px;padding:0 14px;display:inline-flex;align-items:center;font-weight:700;color:var(--pri);border-radius:999px;white-space:nowrap}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border-radius:16px;font-size:16px;font-weight:700;padding:0 20px;text-align:center}
+.btn.tone{background:var(--con);color:var(--oncon)}
+.memo{padding:0 4px 0 16px;min-height:44px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sub);border-bottom:1px solid var(--line)}
+.memo span{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.scrim{position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.45)}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:668px;background:var(--sf);border-radius:28px 28px 0 0;padding:8px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.grab{width:32px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 4px}
+.sh{display:flex;align-items:center;min-height:48px}
+.sh .t{flex:1;min-width:0}
+.sh .t b{display:block;font-size:18px}
+.sh .t small{font-size:12px;color:var(--sub)}
+.lab{font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.04em;margin-bottom:6px}
+.lab small{font-weight:400;letter-spacing:0;margin-left:6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:4px;height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;font-size:14px;white-space:nowrap}
+.chip.on{background:var(--con);color:var(--oncon);border-color:transparent;font-weight:600}
+.adj{display:flex;align-items:center;gap:8px;min-height:56px}
+.adj .n{flex:1}
+.adj .n b{display:block;font-size:15px}
+.adj .n small{font-size:12px;color:var(--sub)}
+.adj .pm{width:48px;height:48px;border-radius:14px;background:var(--sf2);display:grid;place-items:center;flex:none}
+.adj .v{width:64px;text-align:center;font-size:22px;font-weight:700}
+.adj .v small{font-size:13px;font-weight:400;color:var(--sub);margin-left:2px}
+.cnt{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cnt span{width:36px;font-size:13px;color:var(--sub);flex:none}
+.seg{flex:1;display:flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;height:48px}
+.seg button{flex:1;text-align:center;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--con);color:var(--oncon);font-weight:700}
+.fld{min-height:56px;border:1.5px solid var(--line);border-radius:12px;padding:14px 14px;color:var(--sub);font-size:14px}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"></path></symbol>
+  <symbol id="down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+  <symbol id="minus" viewBox="0 0 24 24"><path d="M5 12h14"></path></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"></path></symbol>
+</svg>
+<div class="app {{themeClass}}">
+  <div class="bar">
+    <button type="button" class="ib" aria-label="戻る"><svg class="i" aria-hidden="true"><use href="#back"></use></svg></button>
+    <div class="ttl">Push</div><div class="time">27:40</div>
+    <button type="button" class="tb">終える</button>
+  </div>
+  <div class="memo"><span>メモ: ベンチが空いていなければダンベルプレスに変更</span></div>
+  <div class="scrim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="sh">
+      <div class="t"><b>インクラインダンベルプレス</b><small>ダンベル · 重量は片手</small></div>
+      <button type="button" class="ib" aria-label="詳細をとじる"><svg class="i" aria-hidden="true"><use href="#down"></use></svg></button>
+    </div>
+    <div>
+      <div class="lab">ギア<small>タップで付け外し・前回と同じものが選ばれています</small></div>
+      <div class="chips">
+        <button type="button" class="chip on" aria-pressed="true"><svg class="i s" aria-hidden="true"><use href="#check"></use></svg>リストストラップ</button>
+        <button type="button" class="chip" aria-pressed="false">パワーグリップ</button>
+        <button type="button" class="chip" aria-pressed="false">ベルト</button>
+        <button type="button" class="chip" aria-pressed="false">リストラップ</button>
+        <button type="button" class="chip" aria-pressed="false">ニースリーブ</button>
+        <button type="button" class="chip" aria-pressed="false">エルボースリーブ</button>
+        <button type="button" class="chip" aria-pressed="false"><svg class="i s" aria-hidden="true"><use href="#plus"></use></svg>追加</button>
+      </div>
+    </div>
+    <div>
+      <div class="lab">調整項目</div>
+      <div class="adj">
+        <div class="n"><b>ベンチ角度</b><small>前回 30°</small></div>
+        <button type="button" class="pm" aria-label="ベンチ角度を下げる"><svg class="i" aria-hidden="true"><use href="#minus"></use></svg></button>
+        <div class="v">30<small>°</small></div>
+        <button type="button" class="pm" aria-label="ベンチ角度を上げる"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg></button>
+      </div>
+    </div>
+    <div>
+      <div class="lab">数え方<small>今日の記録だけ変えます。種目の設定は変わりません</small></div>
+      <div class="cnt"><span>重量</span><div class="seg" role="group" aria-label="重量の数え方"><button type="button" aria-pressed="true">片手</button><button type="button" aria-pressed="false">合計</button></div></div>
+      <div class="cnt" style="margin-bottom:0"><span>回数</span><div class="seg" role="group" aria-label="回数の数え方"><button type="button" aria-pressed="true">通常</button><button type="button" aria-pressed="false">片側</button><button type="button" aria-pressed="false">左右計</button></div></div>
+    </div>
+    <div>
+      <div class="lab">この種目のメモ</div>
+      <div class="fld">今日の記録にメモを書く</div>
+    </div>
+    <button type="button" class="btn tone">とじる</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":780}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>C ドック — 種目の編集</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
+.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:1800px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
+.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.i.s{width:18px;height:18px}
+.sub{color:var(--sub)}
+.bar{height:56px;flex:none;display:flex;align-items:center;padding:0 4px;gap:4px}
+.bar .ttl{font-size:20px;font-weight:600;flex:1;padding-left:4px}
+.ib{width:48px;height:48px;display:grid;place-items:center;border-radius:50%;flex:none}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;border-radius:14px;font-size:15px;font-weight:700;padding:0 16px;text-align:center}
+.btn.tone{background:var(--con);color:var(--oncon)}
+.btn.line{border:1.5px solid var(--line)}
+.sec{padding:0 16px 18px}
+.lab{font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.04em;margin:0 4px 6px}
+.help{font-size:12px;color:var(--sub);margin:6px 4px 0}
+.field{display:block;min-height:60px;border:1.5px solid var(--line);border-radius:12px;padding:6px 14px;background:var(--sf)}
+.field span{display:block;font-size:12px;color:var(--sub)}
+.field input,.field textarea{width:100%;border:0;background:transparent;font:inherit;font-size:16px;color:var(--fg);padding:2px 0;resize:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;height:44px;padding:0 14px;border:1px solid var(--line);border-radius:12px;font-size:14px;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--con);color:var(--oncon);border-color:transparent;font-weight:600}
+.seg{display:flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;height:48px}
+.seg button{flex:1;text-align:center;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--con);color:var(--oncon);font-weight:700}
+.stpr{display:flex;align-items:center;gap:8px;min-height:56px}
+.stpr .n{flex:1}
+.stpr .n b{display:block;font-size:15px}
+.stpr .n small{font-size:12px;color:var(--sub)}
+.stpr .pm{width:48px;height:48px;border-radius:14px;background:var(--sf2);display:grid;place-items:center;flex:none}
+.stpr .v{width:64px;text-align:center;font-size:20px;font-weight:700}
+.stpr .v small{font-size:12px;font-weight:400;color:var(--sub)}
+.card{background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px;margin-bottom:8px}
+.lst{background:var(--sf);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:8px}
+.lst .it{display:flex;align-items:center;width:100%;min-height:60px;padding:0 8px 0 16px;border-top:1px solid var(--line)}
+.lst .it:first-child{border-top:0}
+.lst .it .t{flex:1}
+.lst .it .t b{display:block;font-size:15px}
+.lst .it .t small{font-size:12px;color:var(--sub)}
+</style>
+</helmet>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"></path></symbol>
+  <symbol id="more" viewBox="0 0 24 24"><path d="M12 5h.01M12 12h.01M12 19h.01" stroke-width="3"></path></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+  <symbol id="minus" viewBox="0 0 24 24"><path d="M5 12h14"></path></symbol>
+  <symbol id="right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></symbol>
+  <symbol id="drag" viewBox="0 0 24 24"><path d="M5 9h14M5 15h14"></path></symbol>
+</svg>
+<div class="app {{themeClass}}">
+  <div class="bar">
+    <button type="button" class="ib" aria-label="戻る"><svg class="i" aria-hidden="true"><use href="#back"></use></svg></button>
+    <div class="ttl">種目の編集</div>
+    <button type="button" class="ib" aria-label="メニュー"><svg class="i" aria-hidden="true"><use href="#more"></use></svg></button>
+  </div>
+
+  <div class="sec"><label class="field"><span>名前</span><input type="text" value="ワンハンドダンベルロウ"></label></div>
+
+  <div class="sec"><div class="lab">部位</div>
+    <div class="chips">
+      <button type="button" class="chip" aria-pressed="false">胸</button><button type="button" class="chip" aria-pressed="true">背中</button><button type="button" class="chip" aria-pressed="false">脚</button><button type="button" class="chip" aria-pressed="false">肩</button><button type="button" class="chip" aria-pressed="false">腕</button><button type="button" class="chip" aria-pressed="false">腹</button><button type="button" class="chip" aria-pressed="false">全身</button><button type="button" class="chip" aria-pressed="false">有酸素</button>
+    </div>
+  </div>
+
+  <div class="sec"><div class="lab">記録の種類</div>
+    <div class="seg" role="group" aria-label="記録の種類"><button type="button" aria-pressed="true">重量×回数</button><button type="button" aria-pressed="false">自重</button><button type="button" aria-pressed="false">時間</button><button type="button" aria-pressed="false">距離×時間</button></div>
+    <p class="help">「自重」を選ぶと、加重（ウェイトベストなど）を使うかを選べます。</p>
+  </div>
+
+  <div class="sec"><div class="lab">器具</div>
+    <div class="chips">
+      <button type="button" class="chip" aria-pressed="false">バーベル</button><button type="button" class="chip" aria-pressed="true">ダンベル</button><button type="button" class="chip" aria-pressed="false">マシン</button><button type="button" class="chip" aria-pressed="false">ケーブル</button><button type="button" class="chip" aria-pressed="false">スミスマシン</button><button type="button" class="chip" aria-pressed="false">ケトルベル</button><button type="button" class="chip" aria-pressed="false">自重</button><button type="button" class="chip" aria-pressed="false">その他</button>
+    </div>
+  </div>
+
+  <div class="sec"><div class="lab">重量の数え方</div>
+    <div class="seg" role="group" aria-label="重量の数え方"><button type="button" aria-pressed="true">片手</button><button type="button" aria-pressed="false">合計</button></div>
+    <p class="help">記録の横に「片手」と表示されます。</p>
+  </div>
+
+  <div class="sec"><div class="lab">回数の数え方</div>
+    <div class="seg" role="group" aria-label="回数の数え方"><button type="button" aria-pressed="false">通常</button><button type="button" aria-pressed="true">片側</button><button type="button" aria-pressed="false">左右計</button></div>
+    <p class="help">「片側」は片側の回数を入れます。「左右計」は左右を足した回数を入れます。</p>
+  </div>
+
+  <div class="sec"><div class="lab">重量の刻み</div>
+    <div class="stpr"><div class="n"><b>この種目だけ</b><small>設定のままなら 2.5 kg</small></div><button type="button" class="pm" aria-label="刻みを下げる"><svg class="i" aria-hidden="true"><use href="#minus"></use></svg></button><span class="v">2<small>kg</small></span><button type="button" class="pm" aria-label="刻みを上げる"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg></button></div>
+  </div>
+
+  <div class="sec"><div class="lab">調整項目<span style="font-weight:400;letter-spacing:0;margin-left:6px">ベンチ角度・シート位置など</span></div>
+    <div class="card">
+      <label class="field" style="min-height:56px"><span>項目名</span><input type="text" placeholder="例: ベンチ角度"></label>
+      <div class="seg" role="group" aria-label="値の種類"><button type="button" aria-pressed="true">数値</button><button type="button" aria-pressed="false">文字</button></div>
+      <label class="field" style="min-height:56px"><span>単位（なくてもよい）</span><input type="text" placeholder="例: °"></label>
+    </div>
+    <button type="button" class="btn tone"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg>調整項目を追加</button>
+  </div>
+
+  <div class="sec"><div class="lab">バリエーション<span style="font-weight:400;letter-spacing:0;margin-left:6px">フォーム違い</span></div>
+    <div class="lst">
+      <button type="button" class="it"><span class="t"><b>膝をベンチにつく</b><small>記録 24 回</small></span><svg class="i sub" aria-hidden="true"><use href="#right"></use></svg></button>
+      <button type="button" class="it"><span class="t"><b>立って背もたれに手をつく</b><small>記録なし</small></span><svg class="i sub" aria-hidden="true"><use href="#right"></use></svg></button>
+    </div>
+    <button type="button" class="btn tone"><svg class="i" aria-hidden="true"><use href="#plus"></use></svg>バリエーションを追加</button>
+    <p class="help">追加したフォームは、部位・器具・数え方・調整項目を引き継ぎます。</p>
+    <button type="button" class="btn line" style="margin-top:8px">これまでの記録を、あるフォームへまとめて移す</button>
+  </div>
+
+  <div class="sec"><div class="lab">メモ</div>
+    <label class="field" style="min-height:84px"><span>この種目のメモ</span><textarea rows="2">肩甲骨を寄せる</textarea></label>
+  </div>
+
+  <div class="sec">
+    <button type="button" class="btn line" style="color:var(--err)">この種目を非表示にする</button>
+    <p class="help">記録がある種目は、削除せずに非表示にします。過去の記録は残ります。</p>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":1800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: this.props.dark ? 'dark' : '' };
+  }
+}
+</script>
+</body>
+</html>
