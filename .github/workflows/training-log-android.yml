@@ -31,14 +31,14 @@ jobs:
       run:
         working-directory: apps/training-log/android
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: ユニットテスト（ドメイン・データ・アプリ）
         run: ./gradlew :domain:test :data:test :app:testDebugUnitTest --stacktrace
@@ -52,7 +52,7 @@ jobs:
       - name: ビルドした APK の大きさ
         run: ls -l app/build/outputs/apk/debug/*.apk
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: training-log-debug-apk
           path: apps/training-log/android/app/build/outputs/apk/debug/app-debug.apk
@@ -61,7 +61,7 @@ jobs:
 
       - name: 失敗したときのレポート
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reports
           path: |
@@ -78,7 +78,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: training-log-debug-apk
           path: apk
