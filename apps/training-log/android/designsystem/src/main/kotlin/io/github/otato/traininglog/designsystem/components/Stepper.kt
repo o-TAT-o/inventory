@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -39,22 +40,30 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
- * 押している間、だんだん速く繰り返す（F-WO-19）。押した瞬間に 1 回、長押しすると繰り返す。
+ * 押している間、だんだん速く繰り返す（F-WO-19）。長押しすると繰り返し、離すと止まる。
+ *
+ * [fireOnPress] が true のときは、押した瞬間に 1 回動く（記録画面の ± のように、反応の速さが大事なとき）。
+ * false のときは、離したときに 1 回動く（ふつうのボタンと同じ）。スクロールする画面の中では、こちらにする
+ * （スクロールを始めようと触れただけで、値が変わってしまわないように。スクロールが始まったら、動かない）。
+ * どちらも、長押しの間は繰り返す。
  */
 fun Modifier.repeatingClickable(
     enabled: Boolean = true,
+    fireOnPress: Boolean = true,
     onClick: () -> Unit,
 ): Modifier = composed {
     val currentOnClick by rememberUpdatedState(onClick)
-    pointerInput(enabled) {
+    pointerInput(enabled, fireOnPress) {
         if (!enabled) return@pointerInput
         coroutineScope {
             val scope = this
             awaitEachGesture {
                 awaitFirstDown()
-                currentOnClick()
+                if (fireOnPress) currentOnClick()
+                var repeating = false
                 val repeat = scope.launch {
                     delay(LONG_PRESS_MILLIS)
+                    repeating = true
                     var wait = FIRST_REPEAT_MILLIS
                     while (isActive) {
                         currentOnClick()
@@ -62,11 +71,20 @@ fun Modifier.repeatingClickable(
                         wait = (wait * 0.85).toLong().coerceAtLeast(MIN_REPEAT_MILLIS)
                     }
                 }
-                waitForUpOrCancellation()
+                val up = waitForUpOrCancellation()
                 repeat.cancel()
+                // 離したときに動くボタンは、長押しで繰り返していなければ、ここで 1 回動く（スクロールになったときは up が null）
+                if (!fireOnPress && up != null && !repeating) currentOnClick()
             }
         }
     }
+        // 読み上げ（TalkBack）などの、押す操作でも動くように
+        .semantics {
+            onClick {
+                currentOnClick()
+                true
+            }
+        }
 }
 
 private const val LONG_PRESS_MILLIS = 400L
@@ -152,6 +170,7 @@ fun CompactStepper(
     }
 }
 
+/** 小さな ± ボタン。長押しで、だんだん速く増減する。スクロールする画面の中で使うので、離したときに 1 回動く。 */
 @Composable
 private fun SmallStepButton(icon: ImageVector, contentDescription: String, onClick: () -> Unit) {
     Box(
@@ -159,8 +178,11 @@ private fun SmallStepButton(icon: ImageVector, contentDescription: String, onCli
             .size(44.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(AppTheme.colors.surfaceVariant)
-            .clickable(role = Role.Button, onClick = onClick)
-            .semantics { this.contentDescription = contentDescription },
+            .repeatingClickable(fireOnPress = false, onClick = onClick)
+            .semantics {
+                role = Role.Button
+                this.contentDescription = contentDescription
+            },
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = null, tint = AppTheme.colors.fg, modifier = Modifier.size(24.dp))
