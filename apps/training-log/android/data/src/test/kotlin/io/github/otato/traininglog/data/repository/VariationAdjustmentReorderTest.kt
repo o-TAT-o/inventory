@@ -11,6 +11,7 @@ import io.github.otato.traininglog.domain.model.Routine
 import io.github.otato.traininglog.domain.model.RoutineItem
 import io.github.otato.traininglog.domain.model.SetValues
 import io.github.otato.traininglog.domain.model.Workout
+import io.github.otato.traininglog.domain.usecase.AddVariation
 import io.github.otato.traininglog.domain.usecase.StartWorkout
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -19,6 +20,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -190,5 +192,100 @@ class VariationAdjustmentReorderTest {
         val planned = planner.plan("w", 0, Exercise(id = "bench", name = "ベンチプレス")).copy(gearIds = setOf("belt"))
         data.workouts.createWorkout(Workout("w", today, null, Instant.parse("2026-11-16T09:00:00Z")), listOf(planned))
         assertEquals(mapOf("belt" to 1), data.gear.observeUsage().first())
+    }
+
+    @Test
+    fun `フォームを足すと、親の設定と調整項目を引き継ぎ、親の下に並ぶ`() = runTest {
+        val parent = row.copy(equipment = io.github.otato.traininglog.domain.model.Equipment.Dumbbell, weightMode = io.github.otato.traininglog.domain.model.WeightMode.PerSide)
+        data.exercises.save(parent)
+        data.exercises.saveAdjustmentFields("row", listOf(AdjustmentField("angle", "row", "ベンチ角度", AdjustmentValueType.Number, "°")))
+        val addVariation = AddVariation(data.exercises, TestDatabase.sequentialIds("v"))
+
+        val id = addVariation("row", "  膝をベンチにつく ")
+
+        val child = assertNotNull(data.exercises.getExercise(id))
+        assertEquals("膝をベンチにつく", child.name, "名前の前後の空白は取る")
+        assertEquals("row", child.parentId)
+        assertEquals(parent.equipment, child.equipment, "器具を引き継ぐ")
+        assertEquals(parent.weightMode, child.weightMode, "重量の数え方を引き継ぐ")
+        val fields = data.exercises.getAdjustmentFields(id)
+        assertEquals(listOf("ベンチ角度"), fields.map { it.name }, "調整項目を引き継ぐ")
+        assertTrue(fields.single().id != "angle" && fields.single().exerciseId == id, "項目は、フォームのものとして新しく作る")
+        assertEquals(listOf(id), data.exercises.observeChildren("row").first().map { it.id })
+    }
+
+    @Test
+    fun `バリエーションを渡しても、その親の下にフォームを足す。名前が空なら断る`() = runTest {
+        listOf(row, kneeRow).forEach { data.exercises.save(it) }
+        val addVariation = AddVariation(data.exercises, TestDatabase.sequentialIds("v"))
+
+        val id = addVariation("row-knee", "立って")
+
+        assertEquals("row", assertNotNull(data.exercises.getExercise(id)).parentId, "入れ子は 2 段まで")
+        assertFailsWith<IllegalArgumentException> { addVariation("row", "   ") }
+    }
+
+    @Test
+    fun `記録の種目に、親の名前・選べるフォーム・まだ選んでいないことが付く`() = runTest {
+        listOf(row, kneeRow, standRow).forEach { data.exercises.save(it) }
+        val workoutId = "w-form"
+        val onParent = planner.plan(workoutId, 0, row)
+        data.workouts.createWorkout(Workout(workoutId, today, null, Instant.parse("2026-11-16T10:00:00Z")), listOf(onParent))
+
+        val parentDetail = assertNotNull(data.workouts.observeWorkout(workoutId).first()).exercises.single()
+        assertTrue(parentDetail.formUnselected, "親の種目のまま = フォームは未選択")
+        assertEquals(listOf("row-knee", "row-stand"), parentDetail.forms.map { it.id })
+        assertEquals("ワンハンドダンベルロウ", parentDetail.title)
+        assertNull(parentDetail.formName)
+
+        data.workouts.changeExercise(onParent.workoutExercise.id, kneeRow)
+        val chosen = assertNotNull(data.workouts.observeWorkout(workoutId).first()).exercises.single()
+        assertEquals(false, chosen.formUnselected)
+        assertEquals("ワンハンドダンベルロウ", chosen.title, "見出しは親の名前")
+        assertEquals("膝をベンチにつく", chosen.formName)
+        assertEquals("ワンハンドダンベルロウ（膝をベンチにつく）", chosen.fullName)
+        assertEquals(listOf("row-knee", "row-stand"), chosen.forms.map { it.id }, "選んだあとも、同じ親のフォームから選び直せる")
+    }
+
+    @Test
+    fun `外した種目は、下書きに戻して足し直すと、セット・ギア・調整項目・並びがそのまま戻る`() = runTest {
+        data.exercises.save(row)
+        data.exercises.save(Exercise(id = "other", name = "ほかの種目"))
+        data.gear.save(Gear("belt", "ベルト", 0))
+        data.exercises.saveAdjustmentFields("row", listOf(AdjustmentField("angle", "row", "ベンチ角度", AdjustmentValueType.Number, "°")))
+        val first = planner.plan("w-undo", 0, Exercise(id = "other", name = "ほかの種目"))
+        val second = planner.plan("w-undo", 1, row).copy(gearIds = setOf("belt"), adjustments = mapOf("angle" to "30"))
+        data.workouts.createWorkout(Workout("w-undo", today, null, Instant.parse("2026-11-16T10:00:00Z")), listOf(first, second))
+        data.workouts.updateSetValues(SetValues(second.sets[0].id, 26.0, 10))
+        data.workouts.setCompleted(second.sets[0].id, true, Instant.parse("2026-11-16T10:05:00Z"))
+
+        val removed = assertNotNull(data.workouts.observeWorkout("w-undo").first()).exercises.first { it.exercise.id == "row" }
+        data.workouts.removeExercise(removed.workoutExercise.id)
+        assertEquals(listOf("other"), assertNotNull(data.workouts.observeWorkout("w-undo").first()).exercises.map { it.exercise.id })
+
+        data.workouts.addExercise(removed.toPlanned(), "w-undo")
+
+        val restored = assertNotNull(data.workouts.observeWorkout("w-undo").first()).exercises
+        assertEquals(listOf("other", "row"), restored.map { it.exercise.id }, "元の並びに戻る")
+        val back = restored.last()
+        assertEquals(removed.sets.map { it.id }, back.sets.map { it.id }, "セットはそのまま")
+        assertEquals(true, back.sets[0].completed, "完了も戻る")
+        assertEquals(26.0, back.sets[0].weightKg)
+        assertEquals(setOf("belt"), back.gearIds)
+        assertEquals(mapOf("angle" to "30"), back.adjustments)
+    }
+
+    @Test
+    fun `あとから入力で始めたワークアウトは、印が付き、ふつうに記録へ切り替えられる`() = runTest {
+        data.exercises.save(row)
+        val startWorkout = StartWorkout(data.workouts, data.routines, data.exercises, clock, TestDatabase.sequentialIds("s"))
+
+        val quick = startWorkout(today.minusDays(2), routineId = null, quickEntry = true)
+        val normal = startWorkout(today.minusDays(1), routineId = null)
+
+        assertEquals(true, assertNotNull(data.workouts.observeWorkout(quick).first()).workout.quickEntry)
+        assertEquals(false, assertNotNull(data.workouts.observeWorkout(normal).first()).workout.quickEntry)
+        data.workouts.setQuickEntry(quick, false)
+        assertEquals(false, assertNotNull(data.workouts.observeWorkout(quick).first()).workout.quickEntry)
     }
 }

@@ -6,8 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -20,9 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.otato.traininglog.designsystem.components.AppCard
-import io.github.otato.traininglog.designsystem.components.AppChip
 import io.github.otato.traininglog.designsystem.components.AppDivider
 import io.github.otato.traininglog.designsystem.components.AppIconButton
 import io.github.otato.traininglog.designsystem.components.AppTopBar
@@ -83,7 +78,7 @@ fun HomeRoute(
     }
     HomeScreen(
         state = state,
-        onStart = viewModel::start,
+        onStart = { routineId, date, quickEntry -> viewModel.start(routineId, date, quickEntry) },
         onOpenWorkout = onOpenWorkout,
         onOpenSettings = onOpenSettings,
         onOpenRoutines = onOpenRoutines,
@@ -94,7 +89,7 @@ fun HomeRoute(
 @Composable
 fun HomeScreen(
     state: HomeUiState,
-    onStart: (routineId: String?, date: LocalDate) -> Unit,
+    onStart: (routineId: String?, date: LocalDate, quickEntry: Boolean) -> Unit,
     onOpenWorkout: (String) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenRoutines: () -> Unit,
@@ -147,7 +142,7 @@ fun HomeScreen(
             } else {
                 PrimaryButton(
                     text = if (next != null) "${next.name} を始める" else "自由に記録を始める",
-                    onClick = { onStart(next?.routineId, today) },
+                    onClick = { onStart(next?.routineId, today, false) },
                     icon = AppIcons.Play,
                     minHeight = 64.dp,
                     textStyle = AppTheme.typography.button.copy(fontSize = 18.sp),
@@ -172,7 +167,7 @@ fun HomeScreen(
                         )
                         OutlineButton(
                             "自由に記録",
-                            onClick = { onStart(null, today) },
+                            onClick = { onStart(null, today, false) },
                             textStyle = AppTheme.typography.button.copy(fontSize = 14.sp),
                             modifier = Modifier.weight(1f),
                         )
@@ -183,28 +178,30 @@ fun HomeScreen(
     }
 
     if (showRoutinePicker) {
-        RoutineSheet(
+        StartSheet(
             title = "ルーティンを選んで始める",
             routines = state.routines,
             confirmText = null,
             onDismiss = { showRoutinePicker = false },
-            onPick = { id ->
+            onPick = { id, _ ->
                 showRoutinePicker = false
-                onStart(id, today ?: LocalDate.now())
+                onStart(id, today ?: LocalDate.now(), false)
             },
         )
     }
 
     pendingDay?.let { cell ->
-        RoutineSheet(
+        StartSheet(
             title = "${formatDateWithDow(cell.date)}の記録を始める",
             subtitle = if (cell.isToday) "今日 · 記録はまだありません" else "記録はまだありません",
             routines = state.routines,
             confirmText = "この日の記録を始める",
+            // 今日以外の日は、記録のしかた（ふつうに記録 / あとから入力）も選べる（F-HI-05、F-WO-21）
+            showRecordingStyle = !cell.isToday,
             onDismiss = { pendingDay = null },
-            onPick = { id ->
+            onPick = { id, quickEntry ->
                 pendingDay = null
-                onStart(id, cell.date)
+                onStart(id, cell.date, quickEntry)
             },
         )
     }
@@ -373,61 +370,6 @@ private fun WeekStrip(cells: List<DayCellUi>, onDayClick: (DayCellUi) -> Unit) {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.height(14.dp),
-                )
-            }
-        }
-    }
-}
-
-/** ルーティンを選ぶ下からのシート。「ほかのルーティン」と、記録がない日を始めるときに使う。 */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-@Composable
-private fun RoutineSheet(
-    title: String,
-    routines: List<RoutineChoice>,
-    confirmText: String?,
-    onDismiss: () -> Unit,
-    onPick: (routineId: String?) -> Unit,
-    subtitle: String? = null,
-) {
-    val colors = AppTheme.colors
-    // 確認ボタンがあるときは、選んでから「始める」。ないときは、タップした時点で始める
-    var selected by remember { mutableStateOf<String?>(routines.firstOrNull()?.id) }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = colors.surface) {
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 24.dp)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Column {
-                Text(title, style = AppTheme.typography.title, color = colors.fg)
-                subtitle?.let { Text(it, style = AppTheme.typography.caption, color = colors.sub) }
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                SectionLabel("ルーティン")
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    routines.forEach { routine ->
-                        AppChip(
-                            routine.name,
-                            selected = confirmText != null && selected == routine.id,
-                            onClick = { if (confirmText == null) onPick(routine.id) else selected = routine.id },
-                        )
-                    }
-                    AppChip(
-                        "自由に記録",
-                        selected = confirmText != null && selected == null,
-                        onClick = { if (confirmText == null) onPick(null) else selected = null },
-                    )
-                }
-            }
-            if (confirmText != null) {
-                PrimaryButton(
-                    confirmText,
-                    onClick = { onPick(selected) },
-                    minHeight = 60.dp,
-                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }

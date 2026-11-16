@@ -16,6 +16,9 @@ fun formatMonthDay(date: LocalDate): String = "${date.monthValue}/${date.dayOfMo
 /** 11/12（木） */
 fun formatDateWithDow(date: LocalDate): String = "${date.monthValue}/${date.dayOfMonth}（${date.dayOfWeek.jaShort()}）"
 
+/** 11月13日（金） */
+fun formatDateLong(date: LocalDate): String = "${date.monthValue}月${date.dayOfMonth}日（${date.dayOfWeek.jaShort()}）"
+
 /** 2026年11月 */
 fun formatYearMonth(date: LocalDate): String = "${date.year}年${date.monthValue}月"
 

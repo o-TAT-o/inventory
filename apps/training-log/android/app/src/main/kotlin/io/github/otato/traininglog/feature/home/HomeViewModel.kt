@@ -96,10 +96,10 @@ class HomeViewModel(
     private val _events = MutableSharedFlow<HomeEvent>(extraBufferCapacity = 4)
     val events: SharedFlow<HomeEvent> = _events.asSharedFlow()
 
-    /** ワークアウトを始める。[date] は、始める日（今日以外もある。F-HI-05）。 */
-    fun start(routineId: String?, date: LocalDate) {
+    /** ワークアウトを始める。[date] は、始める日（今日以外もある。F-HI-05）。[quickEntry] は「あとから入力」（F-WO-21）。 */
+    fun start(routineId: String?, date: LocalDate, quickEntry: Boolean = false) {
         viewModelScope.launch {
-            _events.emit(HomeEvent.OpenWorkout(startWorkout(date, routineId)))
+            _events.emit(HomeEvent.OpenWorkout(startWorkout(date, routineId, quickEntry)))
         }
     }
 

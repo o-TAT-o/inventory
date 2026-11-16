@@ -223,6 +223,7 @@ internal data class WorkoutDto(
     val startedAt: Long,
     val finishedAt: Long? = null,
     val memo: String = "",
+    val quickEntry: Boolean = false,
 ) {
     fun toDomain() = Workout(
         id = id,
@@ -231,10 +232,11 @@ internal data class WorkoutDto(
         startedAt = Instant.ofEpochMilli(startedAt),
         finishedAt = finishedAt?.let(Instant::ofEpochMilli),
         memo = memo,
+        quickEntry = quickEntry,
     )
 
     companion object {
-        fun from(w: Workout) = WorkoutDto(w.id, w.date.toString(), w.routineId, w.startedAt.toEpochMilli(), w.finishedAt?.toEpochMilli(), w.memo)
+        fun from(w: Workout) = WorkoutDto(w.id, w.date.toString(), w.routineId, w.startedAt.toEpochMilli(), w.finishedAt?.toEpochMilli(), w.memo, w.quickEntry)
     }
 }
 

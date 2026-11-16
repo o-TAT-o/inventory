@@ -187,6 +187,7 @@ internal class SqlWorkoutRepository(
                     workout.startedAt.toEpochMilli(),
                     workout.finishedAt?.toEpochMilli(),
                     workout.memo,
+                    if (workout.quickEntry) 1L else 0L,
                 )
                 exercises.forEach { insertPlanned(it, workout.id) }
             }
@@ -195,6 +196,10 @@ internal class SqlWorkoutRepository(
 
     override suspend fun updateDate(workoutId: String, date: LocalDate) {
         withContext(io) { queries.updateDate(date = date.toString(), id = workoutId) }
+    }
+
+    override suspend fun setQuickEntry(workoutId: String, quickEntry: Boolean) {
+        withContext(io) { queries.updateQuickEntry(quickEntry = if (quickEntry) 1L else 0L, id = workoutId) }
     }
 
     override suspend fun updateMemo(workoutId: String, memo: String) {

@@ -7,7 +7,9 @@ CREATE TABLE workout (
     -- 実際の開始・終了の時刻（エポックミリ秒）。finished_at が NULL なら記録中
     started_at INTEGER NOT NULL,
     finished_at INTEGER,
-    memo TEXT NOT NULL DEFAULT ''
+    memo TEXT NOT NULL DEFAULT '',
+    -- 「あとから入力」（タイマーなしの簡易入力）で記録するワークアウトか（0/1）。あとから足した列なので、表の末尾に置く
+    quick_entry INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX workout_date ON workout(date);
@@ -70,7 +72,10 @@ ORDER BY date DESC, started_at DESC
 LIMIT 1;
 
 insertWorkout:
-INSERT INTO workout (id, date, routine_id, started_at, finished_at, memo) VALUES (?, ?, ?, ?, ?, ?);
+INSERT INTO workout (id, date, routine_id, started_at, finished_at, memo, quick_entry) VALUES (?, ?, ?, ?, ?, ?, ?);
+
+updateQuickEntry:
+UPDATE workout SET quick_entry = :quickEntry WHERE id = :id;
 
 updateDate:
 UPDATE workout SET date = :date WHERE id = :id;

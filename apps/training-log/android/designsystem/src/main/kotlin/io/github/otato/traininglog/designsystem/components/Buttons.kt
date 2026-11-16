@@ -89,6 +89,32 @@ fun OutlineButton(
     )
 }
 
+/** 淡い面のボタン（シートの「とじる」など。主ボタンほど目立たせない閉じる操作）。 */
+@Composable
+fun TonalButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    minHeight: Dp = 56.dp,
+    textStyle: TextStyle = AppTheme.typography.button,
+) {
+    val colors = AppTheme.colors
+    ButtonBody(
+        text = text,
+        onClick = onClick,
+        icon = null,
+        enabled = enabled,
+        textStyle = textStyle,
+        horizontalPadding = 20.dp,
+        contentColor = colors.onContainer,
+        modifier = modifier
+            .defaultMinSize(minHeight = minHeight)
+            .clip(ButtonShape)
+            .background(colors.container),
+    )
+}
+
 /** 無効なボタンの、文字とアイコンの濃さ。 */
 private const val DISABLED_CONTENT_ALPHA = 0.4f
 

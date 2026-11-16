@@ -29,7 +29,12 @@ data class PreviousUi(
 ) {
     companion object {
         fun of(record: PreviousRecord, line: SetsLine) = PreviousUi(
-            label = if (record.isBaseline) "前回（前のアプリ）" else "前回 ${formatMonthDay(record.date)}",
+            label = when {
+                record.isBaseline -> "前回（前のアプリ）"
+                // 初めて使うフォームは、同じ親のほかのフォームの直近の記録を目安にする。どのフォームの記録かを添える（F-EX-16）
+                record.sourceExerciseName != null -> "「${record.sourceExerciseName}」の直近 ${formatMonthDay(record.date)}"
+                else -> "前回 ${formatMonthDay(record.date)}"
+            },
             line = line,
         )
     }

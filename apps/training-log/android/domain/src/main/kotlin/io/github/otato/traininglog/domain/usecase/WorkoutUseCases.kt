@@ -25,9 +25,9 @@ class StartWorkout(
     private val planner: WorkoutPlanner = WorkoutPlanner(ids),
 ) {
     /** @return 始めたワークアウトの id */
-    suspend operator fun invoke(date: LocalDate, routineId: String?): String {
+    suspend operator fun invoke(date: LocalDate, routineId: String?, quickEntry: Boolean = false): String {
         val workoutId = ids.next()
-        val workout = Workout(id = workoutId, date = date, routineId = routineId, startedAt = clock.instant())
+        val workout = Workout(id = workoutId, date = date, routineId = routineId, startedAt = clock.instant(), quickEntry = quickEntry)
         val planned = if (routineId == null) {
             emptyList()
         } else {

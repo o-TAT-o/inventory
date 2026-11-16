@@ -47,6 +47,12 @@ object AppIcons {
     val Up = stroke("up", "M6 15l6-6 6 6")
     val Down = stroke("down", "M6 9l6 6 6-6")
     val Drag = stroke("drag", "M5 9h14M5 15h14")
+
+    /** 縦に 3 つの点（その行のメニューを開く） */
+    val More = stroke("more", "M12 5h.01M12 12h.01M12 19h.01")
+
+    /** 時計（あとから入力のしるし） */
+    val Clock = stroke("clock", "M4 12a8 8 0 1 0 16 0a8 8 0 1 0 -16 0", "M12 8v4l3 2")
     val Timer = stroke("timer", "M5 13a7 7 0 1 0 14 0a7 7 0 1 0 -14 0", "M12 9v4l2.5 2M9.5 3h5")
     val Skip = stroke("skip", "M6 6l8 6-8 6zM18 6v12")
     val Search = stroke("search", "M4 10.5a6.5 6.5 0 1 0 13 0a6.5 6.5 0 1 0 -13 0", "M15.5 15.5L20 20")

@@ -48,6 +48,9 @@ interface WorkoutRepository {
 
     suspend fun updateMemo(workoutId: String, memo: String)
 
+    /** 「あとから入力」と「ふつうに記録」を行き来する（F-WO-21）。 */
+    suspend fun setQuickEntry(workoutId: String, quickEntry: Boolean)
+
     /**
      * ワークアウトを終える。未完了のセットと、完了したセットのない種目は記録に含めない（F-WO-18）。
      * 完了したセットが 1 つもなければ、ワークアウトごと破棄する。

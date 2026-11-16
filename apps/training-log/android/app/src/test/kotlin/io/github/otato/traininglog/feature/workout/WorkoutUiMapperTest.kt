@@ -1,5 +1,7 @@
 package io.github.otato.traininglog.feature.workout
 
+import io.github.otato.traininglog.domain.model.AdjustmentField
+import io.github.otato.traininglog.domain.model.AdjustmentValueType
 import io.github.otato.traininglog.domain.model.AppSettings
 import io.github.otato.traininglog.domain.model.Equipment
 import io.github.otato.traininglog.domain.model.Exercise
@@ -48,7 +50,13 @@ class WorkoutUiMapperTest {
         selected: String? = null,
         draft: Draft? = null,
         settings: AppSettings = AppSettings(),
-    ) = WorkoutUiMapper.map(detail, settings, contexts, focused, selected, draft, emptyList(), "Push", "ベンチが空いていなければダンベルに変更", today)
+        expanded: Set<String> = emptySet(),
+        lastCompleted: String? = null,
+        now: Instant = Instant.parse("2026-11-14T10:27:00Z"),
+    ) = WorkoutUiMapper.map(
+        detail, settings, contexts, focused, selected, draft, emptyList(), "Push", "ベンチが空いていなければダンベルに変更", today,
+        expandedIds = expanded, lastCompletedId = lastCompleted, now = now,
+    )
 
     private val twoExercises = detail(
         today,
@@ -165,5 +173,133 @@ class WorkoutUiMapperTest {
         val second = assertNotNull(map(twoExercises, focused = "we2").dock)
         assertTrue(second.canGoPrevious)
         assertFalse(second.canGoNext)
+    }
+
+    /** ベンチ 3 セット完了 / インクライン 1 セット未完了、のワークアウト。 */
+    private val benchDone = detail(
+        today,
+        exercise("we1", 0, bench, set("a1", "we1", 0, 60.0, 10, true), set("a2", "we1", 1, 60.0, 9, true), set("a3", "we1", 2, 60.0, 9, true)),
+        exercise("we2", 1, incline, set("b1", "we2", 0, 20.0, 10, false)),
+    )
+
+    @Test
+    fun `すべて完了した種目は、1 行にたたまれ、完了の数と要約が出る`() {
+        val first = map(benchDone).exercises[0]
+        assertTrue(first.collapsed)
+        assertEquals("3/3", "${first.doneCount}/${first.totalCount}")
+        assertEquals("60 kg 合計 × 10 · 9 · 9", first.summary)
+        assertFalse(map(benchDone).exercises[1].collapsed, "未完了のセットがある種目は、たたまない")
+    }
+
+    @Test
+    fun `いま完了したばかりの種目と、自分で開いた種目は、たたまない`() {
+        assertFalse(map(benchDone, lastCompleted = "we1").exercises[0].collapsed, "いま完了したばかり（自己ベストの説明などを見せるため）")
+        assertFalse(map(benchDone, expanded = setOf("we1")).exercises[0].collapsed, "タップして開いた")
+        // タップして直しているセットの種目も、たたまない
+        assertFalse(map(benchDone, selected = "a1").exercises[0].collapsed)
+    }
+
+    @Test
+    fun `すべてのセットが終わったら、いま完了した種目も含めて、全部たたむ`() {
+        val allDone = detail(
+            today,
+            exercise("we1", 0, bench, set("a1", "we1", 0, 60.0, 10, true)),
+            exercise("we2", 1, incline, set("b1", "we2", 0, 20.0, 10, true)),
+        )
+        val state = map(allDone, lastCompleted = "we2")
+        assertTrue(state.allDone)
+        assertTrue(state.exercises.all { it.collapsed })
+    }
+
+    @Test
+    fun `フォームのある種目は、親の名前が見出しで、フォームの行が出る`() {
+        val row = Exercise(id = "row", name = "ワンハンドダンベルロウ", equipment = Equipment.Dumbbell)
+        val knee = Exercise(id = "row-knee", parentId = "row", name = "膝をベンチにつく", equipment = Equipment.Dumbbell)
+        val unselected = exercise("we1", 0, row, set("a1", "we1", 0, 26.0, 10, false))
+            .copy(forms = listOf(knee))
+        val chosen = exercise("we1", 0, knee, set("a1", "we1", 0, 26.0, 10, false))
+            .copy(parentName = "ワンハンドダンベルロウ", forms = listOf(knee))
+        val plain = exercise("we1", 0, bench, set("a1", "we1", 0, 60.0, 10, false))
+
+        val a = map(detail(today, unselected)).exercises.single()
+        assertEquals("ワンハンドダンベルロウ", a.name)
+        assertEquals("フォーム: 未選択", a.formLabel)
+        assertTrue(a.formUnselected)
+
+        val b = map(detail(today, chosen)).exercises.single()
+        assertEquals("ワンハンドダンベルロウ", b.name, "見出しは親の名前")
+        assertEquals("フォーム: 膝をベンチにつく", b.formLabel)
+        assertFalse(b.formUnselected)
+        assertEquals("ワンハンドダンベルロウ　1 セット目", map(detail(today, chosen)).dock?.title)
+
+        assertNull(map(detail(today, plain)).exercises.single().formLabel, "フォームのない種目には、フォームの行は出ない")
+    }
+
+    @Test
+    fun `調整項目の値は見出しの下に出て、詳細には前回の値が出る`() {
+        val angle = AdjustmentField("angle", "incline", "ベンチ角度", AdjustmentValueType.Number, "°")
+        val grip = AdjustmentField("grip", "incline", "グリップ", AdjustmentValueType.Text)
+        val withValues = exercise("we2", 0, incline, set("b1", "we2", 0, 20.0, 10, false))
+            .copy(adjustmentFields = listOf(angle, grip), adjustments = mapOf("angle" to "30", "grip" to "ワイド"))
+        val previous = PreviousRecord(
+            date = LocalDate.of(2026, 11, 7),
+            sets = listOf(set("p1", "pw", 0, 20.0, 10, true)),
+            weightMode = WeightMode.PerSide,
+            repMode = RepMode.Normal,
+            adjustments = mapOf("angle" to "45"),
+        )
+
+        val state = map(detail(today, withValues), contexts = mapOf("incline" to ExerciseContext(previous, 20.0)))
+
+        assertEquals("ダンベル · ベンチ角度 30° · グリップ ワイド", state.exercises.single().meta)
+        val items = state.dock!!.detail.adjustments
+        assertEquals(listOf("30", "ワイド"), items.map { it.value })
+        assertEquals("前回 45°", items[0].previousText)
+        assertEquals("45", items[0].previousValue)
+        assertNull(items[1].previousText, "前回の値がない項目には、前回は出ない")
+    }
+
+    @Test
+    fun `自己ベストのセットの下に、これまでの最高値の説明が付く`() {
+        val detail = detail(today, exercise("we1", 0, bench, set("a1", "we1", 0, 65.0, 5, true), set("a2", "we1", 1, 60.0, 8, true)))
+        val state = map(detail, contexts = mapOf("bench" to ExerciseContext(previous = null, bestBefore = 62.5)))
+
+        val sets = state.exercises.single().sets
+        assertEquals("最大重量の更新　これまで 62.5 kg 合計", sets[0].pbNote)
+        assertNull(sets[1].pbNote, "自己ベストでないセットには付かない")
+        assertTrue(state.exercises.single().hasPersonalBest)
+    }
+
+    @Test
+    fun `あとから入力のときは、まとめの文に時間を出さない。ふつうのときは分を出す`() {
+        val workout = detail(today, exercise("we1", 0, bench, set("a1", "we1", 0, 60.0, 10, true)))
+        assertEquals("1 種目 · 1 セット · 27 分", map(workout).summaryText)
+
+        val quick = workout.copy(workout = workout.workout.copy(quickEntry = true))
+        val state = map(quick)
+        assertEquals("1 種目 · 1 セット", state.summaryText)
+        assertTrue(state.quickEntry)
+    }
+
+    @Test
+    fun `日付の見出しと、今日かどうかが出る`() {
+        val yesterday = detail(today.minusDays(1), exercise("we1", 0, bench, set("a1", "we1", 0, 60.0, 10, false)))
+        val state = map(yesterday)
+        assertEquals("11月13日（金）", state.dateTitle)
+        assertFalse(state.isToday)
+        assertTrue(map(twoExercises).isToday)
+    }
+
+    @Test
+    fun `初めて使うフォームの前回には、どのフォームの記録かが添えられる`() {
+        val previous = PreviousRecord(
+            date = LocalDate.of(2026, 11, 7),
+            sets = listOf(set("p1", "pw", 0, 26.0, 10, true)),
+            weightMode = WeightMode.Total,
+            repMode = RepMode.Normal,
+            sourceExerciseName = "膝をベンチにつく",
+        )
+        val state = map(twoExercises, contexts = mapOf("bench" to ExerciseContext(previous, 26.0)))
+        assertEquals("「膝をベンチにつく」の直近 11/7", state.exercises[0].previous?.label)
     }
 }

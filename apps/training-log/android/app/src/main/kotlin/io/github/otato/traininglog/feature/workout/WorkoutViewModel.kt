@@ -3,20 +3,29 @@ package io.github.otato.traininglog.feature.workout
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.otato.traininglog.domain.logic.DayBoundary
+import io.github.otato.traininglog.domain.IdGenerator
+import io.github.otato.traininglog.domain.UuidGenerator
 import io.github.otato.traininglog.domain.logic.RestTimes
 import io.github.otato.traininglog.domain.logic.WeightUnits
+import io.github.otato.traininglog.domain.logic.WorkoutPlanner
 import io.github.otato.traininglog.domain.model.AppSettings
+import io.github.otato.traininglog.domain.model.Gear
 import io.github.otato.traininglog.domain.model.RecordType
 import io.github.otato.traininglog.domain.model.RepMode
 import io.github.otato.traininglog.domain.model.SetRecord
 import io.github.otato.traininglog.domain.model.WeightMode
 import io.github.otato.traininglog.domain.model.WorkoutDetail
+import io.github.otato.traininglog.domain.model.WorkoutExerciseDetail
+import io.github.otato.traininglog.domain.repository.ExerciseRepository
 import io.github.otato.traininglog.domain.repository.GearRepository
 import io.github.otato.traininglog.domain.repository.RoutineRepository
 import io.github.otato.traininglog.domain.repository.SettingsRepository
 import io.github.otato.traininglog.domain.repository.WorkoutRepository
 import io.github.otato.traininglog.domain.usecase.AddSet
+import io.github.otato.traininglog.domain.usecase.AddVariation
+import io.github.otato.traininglog.ui.common.RecordFormat
 import io.github.otato.traininglog.ui.common.formatMmSs
+import io.github.otato.traininglog.ui.common.formatMonthDay
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -49,8 +58,8 @@ sealed interface WorkoutEvent {
     /** 休憩の時間になった（音・バイブ） */
     data object RestFinished : WorkoutEvent
 
-    /** セットを削除した（元に戻す案内を出す。F-WO-17） */
-    data class SetDeleted(val message: String) : WorkoutEvent
+    /** 取り消せる操作をした（セットの削除・種目を外す・種目の並べ替え）。元に戻す案内を出す（F-WO-17、F-UI-03） */
+    data class Undoable(val message: String) : WorkoutEvent
 
     /** ワークアウトを終えた（完了画面へ） */
     data class Finished(val workoutId: String) : WorkoutEvent
@@ -73,10 +82,12 @@ class WorkoutViewModel(
     private val workoutId: String,
     private val workouts: WorkoutRepository,
     private val routines: RoutineRepository,
-    gearRepository: GearRepository,
+    private val exercises: ExerciseRepository,
+    private val gearRepository: GearRepository,
     settingsRepository: SettingsRepository,
     private val addSetUseCase: AddSet,
     private val clock: Clock,
+    private val ids: IdGenerator = UuidGenerator,
 ) : ViewModel() {
 
     private sealed interface Source {
@@ -88,7 +99,18 @@ class WorkoutViewModel(
         val focusedWorkoutExerciseId: String? = null,
         val selectedSetId: String? = null,
         val rest: RestState? = null,
+        /** すべて完了してたたまれた種目のうち、タップして開いたもの */
+        val expandedIds: Set<String> = emptySet(),
+        /** いちばん最近、セットを完了した種目（全部が終わるまで、たたまずに残す） */
+        val lastCompletedId: String? = null,
     )
+
+    /** 直前の取り消せる操作。次の操作をしたら、置き換わる。 */
+    private sealed interface Undo {
+        data class SetDeleted(val set: SetRecord) : Undo
+        data class ExerciseRemoved(val detail: WorkoutExerciseDetail) : Undo
+        data class Reordered(val previousOrder: List<String>) : Undo
+    }
 
     private data class RestState(
         val endAtMillis: Long,
@@ -99,7 +121,13 @@ class WorkoutViewModel(
     private val local = MutableStateFlow(Local())
     private val draft = MutableStateFlow<Draft?>(null)
     private val contexts = MutableStateFlow<Map<String, ExerciseContext>>(emptyMap())
-    private var lastDeleted: SetRecord? = null
+    private var undoAction: Undo? = null
+    private val planner = WorkoutPlanner(ids)
+    private val addVariation = AddVariation(exercises, ids)
+
+    /** フォームを選ぶシートを開いている種目（ワークアウトの種目の id）と、シートで選んでいるフォーム */
+    private val formSheetFor = MutableStateFlow<String?>(null)
+    private val formSheetSelected = MutableStateFlow<String?>(null)
 
     private val settings: StateFlow<AppSettings> =
         settingsRepository.observe().stateIn(viewModelScope, SharingStarted.Eagerly, AppSettings())
@@ -151,10 +179,29 @@ class WorkoutViewModel(
                     routineName = routine.first,
                     routineMemo = routine.second,
                     today = DayBoundary.today(clock, settings.dayBoundaryHour),
+                    expandedIds = local.expandedIds,
+                    lastCompletedId = local.lastCompletedId,
+                    now = clock.instant(),
                 )
             } ?: WorkoutUiState(loaded = true, missing = true)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WorkoutUiState())
+
+    /** フォーム（バリエーション）を選ぶシート（F-RT-10）。開いていないときは null。前回の記録を読むので、状態とは別に出す。 */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val formSheet: StateFlow<FormSheetUi?> = combine(formSheetFor, formSheetSelected, source, settings) { id, selected, source, settings ->
+        FormSheetInputs(id, selected, (source as? Source.Value)?.detail, settings.weightUnit)
+    }.flatMapLatest { inputs ->
+        val target = inputs.detail?.exercises?.firstOrNull { it.workoutExercise.id == inputs.workoutExerciseId }
+        if (target == null) flowOf<FormSheetUi?>(null) else flow<FormSheetUi?> { emit(buildFormSheet(target, inputs.selectedId, inputs.unit)) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    private data class FormSheetInputs(
+        val workoutExerciseId: String?,
+        val selectedId: String?,
+        val detail: WorkoutDetail?,
+        val unit: io.github.otato.traininglog.domain.model.WeightUnit,
+    )
 
     /** 休憩タイマーの表示（1 秒ごとに変わるので、状態とは別に出す）。 */
     val rest: StateFlow<RestUi?> = combine(local.map { it.rest }.distinctUntilChanged(), ticker) { rest, now ->
@@ -304,7 +351,8 @@ class WorkoutViewModel(
                 it.workoutExercise.id != exercise.workoutExercise.id && it.currentSet != null
             }
             val settings = settings.value
-            val restSeconds = if (!detail.workout.isFinished && settings.autoStartRest && (remainingHere > 0 || remainingElsewhere)) {
+            // 終えたあとの記録と、あとから入力（タイマーなし）では、休憩タイマーを動かさない
+            val restSeconds = if (!detail.workout.isFinished && !detail.workout.quickEntry && settings.autoStartRest && (remainingHere > 0 || remainingElsewhere)) {
                 RestTimes.afterSet(
                     isLastSetOfExercise = remainingHere == 0,
                     workoutExercise = exercise.workoutExercise,
@@ -319,6 +367,7 @@ class WorkoutViewModel(
                     // 同じ種目に続きのセットがあれば、その種目のまま進む
                     focusedWorkoutExerciseId = exercise.workoutExercise.id.takeIf { remainingHere > 0 },
                     rest = restSeconds?.let { seconds -> RestState(clock.millis() + seconds * 1000L, seconds) },
+                    lastCompletedId = exercise.workoutExercise.id,
                 )
             }
         }
@@ -339,17 +388,24 @@ class WorkoutViewModel(
         viewModelScope.launch {
             val detail = currentDetail() ?: return@launch
             val set = detail.exercises.flatMap { it.sets }.firstOrNull { it.id == setId } ?: return@launch
-            lastDeleted = set
+            undoAction = Undo.SetDeleted(set)
             workouts.deleteSet(setId)
             local.update { if (it.selectedSetId == setId) it.copy(selectedSetId = null) else it }
-            _events.emit(WorkoutEvent.SetDeleted("セットを削除しました"))
+            _events.emit(WorkoutEvent.Undoable("セットを削除しました"))
         }
     }
 
-    fun undoDelete() {
-        val set = lastDeleted ?: return
-        lastDeleted = null
-        viewModelScope.launch { workouts.addSet(set) }
+    /** 直前の「セットの削除」「種目を外す」「種目の並べ替え」を、元に戻す（F-UI-03）。 */
+    fun undo() {
+        val action = undoAction ?: return
+        undoAction = null
+        viewModelScope.launch {
+            when (action) {
+                is Undo.SetDeleted -> workouts.addSet(action.set)
+                is Undo.ExerciseRemoved -> workouts.addExercise(action.detail.toPlanned(), workoutId)
+                is Undo.Reordered -> workouts.reorderExercises(workoutId, action.previousOrder)
+            }
+        }
     }
 
     // ---- 休憩タイマー ----
@@ -390,19 +446,149 @@ class WorkoutViewModel(
         viewModelScope.launch { workouts.updateExerciseMemo(workoutExerciseId, memo) }
     }
 
+    /** 種目を外す。入力したセットも消えるが、直後なら元に戻せる（F-UI-03）。 */
     fun removeExercise(workoutExerciseId: String) {
         viewModelScope.launch {
+            val target = currentDetail()?.exercises?.firstOrNull { it.workoutExercise.id == workoutExerciseId } ?: return@launch
+            undoAction = Undo.ExerciseRemoved(target)
             workouts.removeExercise(workoutExerciseId)
             local.update {
                 if (it.focusedWorkoutExerciseId == workoutExerciseId) it.copy(focusedWorkoutExerciseId = null, selectedSetId = null) else it
             }
+            _events.emit(WorkoutEvent.Undoable("${target.title}を外しました"))
+        }
+    }
+
+    /** 種目の並びを変える（F-WO-13）。直後なら、元に戻せる。 */
+    fun reorderExercises(orderedIds: List<String>) {
+        viewModelScope.launch {
+            val before = currentDetail()?.exercises?.map { it.workoutExercise.id } ?: return@launch
+            if (before == orderedIds) return@launch
+            undoAction = Undo.Reordered(before)
+            workouts.reorderExercises(workoutId, orderedIds)
+            _events.emit(WorkoutEvent.Undoable("種目を並べ替えました"))
+        }
+    }
+
+    /** 完了してたたまれた種目を、開く・たたむ。 */
+    fun toggleExpanded(workoutExerciseId: String) {
+        local.update {
+            val expanded = if (workoutExerciseId in it.expandedIds) it.expandedIds - workoutExerciseId else it.expandedIds + workoutExerciseId
+            // いま完了したばかりの種目をたたむときは、その印も外す（外さないと、たたんだままにならない）
+            it.copy(expandedIds = expanded, lastCompletedId = it.lastCompletedId.takeIf { id -> id != workoutExerciseId })
+        }
+    }
+
+    // ---- 調整項目・ギアの追加 ----
+
+    /** 調整項目（ベンチ角度など）の値を入れる（F-WO-12）。空にすると、値を消す。 */
+    fun setAdjustment(workoutExerciseId: String, fieldId: String, value: String?) {
+        viewModelScope.launch { workouts.setAdjustment(workoutExerciseId, fieldId, value) }
+    }
+
+    /** ギアを、その場で新しく作って、この種目に付ける（F-GR-01、F-GR-02）。 */
+    fun addGear(workoutExerciseId: String, name: String) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch {
+            val exercise = currentDetail()?.exercises?.firstOrNull { it.workoutExercise.id == workoutExerciseId } ?: return@launch
+            val gear = Gear(id = ids.next(), name = trimmed, sortOrder = gearRepository.nextSortOrder())
+            gearRepository.save(gear)
+            workouts.setGear(workoutExerciseId, exercise.gearIds + gear.id)
+        }
+    }
+
+    // ---- フォーム（バリエーション。F-RT-10、F-EX-16） ----
+
+    fun openFormSheet(workoutExerciseId: String) {
+        formSheetSelected.value = null
+        formSheetFor.value = workoutExerciseId
+    }
+
+    fun closeFormSheet() {
+        formSheetFor.value = null
+        formSheetSelected.value = null
+    }
+
+    /** シートで、フォームを選ぶ（まだ、記録には反映しない）。 */
+    fun chooseForm(exerciseId: String) {
+        formSheetSelected.value = exerciseId
+    }
+
+    /** 選んだフォームで始める。完了していないセットは、そのフォームの前回の値で用意し直す。 */
+    fun confirmForm(workoutExerciseId: String, formId: String) {
+        viewModelScope.launch {
+            val target = currentDetail()?.exercises?.firstOrNull { it.workoutExercise.id == workoutExerciseId }
+            val form = target?.forms?.firstOrNull { it.id == formId }
+            if (target != null && form != null && form.id != target.exercise.id) {
+                val previous = workouts.previousRecord(form.id, excludeWorkoutId = workoutId)
+                workouts.changeExercise(workoutExerciseId, form, planner.refill(target.sets, previous))
+                // まだギアを付けていなければ、そのフォームで前回使ったギアを付けておく（F-GR-03）
+                if (target.gearIds.isEmpty() && previous != null && previous.gearIds.isNotEmpty()) {
+                    workouts.setGear(workoutExerciseId, previous.gearIds)
+                }
+                // 用意し直した値が、入力途中の古い値で上書きされないようにする
+                if (draft.value?.setId in target.sets.map { it.id }) draft.value = null
+            }
+            closeFormSheet()
+        }
+    }
+
+    /** フォームを、その場で足す。親の種目の設定と調整項目を引き継ぐ（F-EX-15）。足したフォームを選んだ状態にする。 */
+    fun addForm(workoutExerciseId: String, name: String) {
+        if (name.isBlank()) return
+        viewModelScope.launch {
+            val target = currentDetail()?.exercises?.firstOrNull { it.workoutExercise.id == workoutExerciseId } ?: return@launch
+            val id = addVariation(target.exercise.id, name)
+            formSheetSelected.value = id
+        }
+    }
+
+    private suspend fun buildFormSheet(target: WorkoutExerciseDetail, selectedId: String?, unit: io.github.otato.traininglog.domain.model.WeightUnit): FormSheetUi {
+        val options = target.forms.map { form ->
+            val record = workouts.previousRecord(form.id, excludeWorkoutId = workoutId)
+            val line = record?.let { RecordFormat.setsLine(it.sets, form, it.weightMode, it.repMode, unit) }
+            val text = line?.let { listOfNotNull(it.weightText.takeIf(String::isNotEmpty), it.tag, it.repsText).joinToString(" ") }
+            val own = record != null && record.sourceExerciseName == null
+            val lines = when {
+                own && text != null -> listOf("前回 ${formatMonthDay(record!!.date)}　$text")
+                record != null && text != null -> listOf("まだ記録がありません", "「${record.sourceExerciseName}」の直近: $text")
+                else -> listOf("まだ記録がありません")
+            }
+            Triple(FormOptionUi(form.id, form.name, lines), record?.takeIf { own }?.date, form)
+        }
+        // 最初に選んでおくのは、いま選んでいるフォーム。まだなら、前回使ったフォーム（記録の日付が新しいもの）
+        val initial = target.exercise.id.takeIf { target.exercise.parentId != null }
+            ?: options.filter { it.second != null }.maxByOrNull { it.second!! }?.first?.exerciseId
+            ?: options.firstOrNull()?.first?.exerciseId
+        return FormSheetUi(
+            workoutExerciseId = target.workoutExercise.id,
+            title = target.title,
+            options = options.map { it.first },
+            selectedId = selectedId?.takeIf { id -> options.any { it.first.exerciseId == id } } ?: initial,
+        )
+    }
+
+    // ---- あとから入力（F-WO-21） ----
+
+    /** 「あとから入力」（タイマーなし）と「ふつうに記録」を行き来する。あとから入力にすると、動いている休憩は止める。 */
+    fun setQuickEntry(quickEntry: Boolean) {
+        viewModelScope.launch {
+            workouts.setQuickEntry(workoutId, quickEntry)
+            if (quickEntry) local.update { it.copy(rest = null) }
         }
     }
 
     // ---- ワークアウト全体 ----
 
     fun changeDate(date: LocalDate) {
-        viewModelScope.launch { workouts.updateDate(workoutId, date) }
+        viewModelScope.launch {
+            workouts.updateDate(workoutId, date)
+            // あとから入力は、今日以外の日付のためのもの。今日にしたら、ふつうの記録に戻す
+            if (date == DayBoundary.today(clock, settings.value.dayBoundaryHour) && currentDetail()?.workout?.quickEntry == true) {
+                workouts.setQuickEntry(workoutId, false)
+            }
+        }
     }
 
     /** ワークアウトを終える。未完了のセットは記録に含めない（F-WO-18）。完了したセットがなければ破棄する。 */

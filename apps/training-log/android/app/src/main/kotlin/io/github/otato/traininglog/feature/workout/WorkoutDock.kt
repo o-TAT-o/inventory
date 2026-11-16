@@ -32,19 +32,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.otato.traininglog.designsystem.components.AppChip
 import io.github.otato.traininglog.designsystem.components.AppDivider
 import io.github.otato.traininglog.designsystem.components.AppIconButton
+import io.github.otato.traininglog.designsystem.components.AppSegmented
+import io.github.otato.traininglog.designsystem.components.NumberInputDialog
 import io.github.otato.traininglog.designsystem.components.OutlineButton
 import io.github.otato.traininglog.designsystem.components.PrimaryButton
 import io.github.otato.traininglog.designsystem.components.SectionLabel
+import io.github.otato.traininglog.designsystem.components.SheetHeader
+import io.github.otato.traininglog.designsystem.components.StepButton
 import io.github.otato.traininglog.designsystem.components.TextAction
+import io.github.otato.traininglog.designsystem.components.TextInputDialog
+import io.github.otato.traininglog.designsystem.components.TonalButton
 import io.github.otato.traininglog.designsystem.components.ValueStepper
 import io.github.otato.traininglog.designsystem.icons.AppIcons
 import io.github.otato.traininglog.designsystem.theme.AppTheme
+import io.github.otato.traininglog.domain.logic.WeightUnits
 import io.github.otato.traininglog.domain.model.Equipment
 import io.github.otato.traininglog.domain.model.RepMode
 import io.github.otato.traininglog.domain.model.WeightMode
@@ -266,8 +274,8 @@ private fun AllDonePanel(summaryText: String, actions: DockActions) {
 }
 
 /**
- * 種目の詳細パネル（ギアの付け外し・その日だけの数え方・メモ）。下のパネルの「詳細」から開く。
- * 前回と同じギアが最初から選ばれているので、いつもと同じなら何も触らなくてよい（F-GR-03）。
+ * 種目の詳細パネル（ギアの付け外し・調整項目・その日だけの数え方・メモ）。下のパネルの「詳細」から開く。
+ * 前回と同じギアと調整項目の値が最初から入っているので、いつもと同じなら何も触らなくてよい（F-GR-03、F-WO-12）。
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -275,20 +283,22 @@ fun ExerciseDetailSheet(
     detail: DetailUi,
     onDismiss: () -> Unit,
     onToggleGear: (String) -> Unit,
+    onAddGear: (String) -> Unit,
+    onSetAdjustment: (fieldId: String, value: String?) -> Unit,
     onSetModes: (WeightMode, RepMode) -> Unit,
     onSetMemo: (String) -> Unit,
 ) {
     val colors = AppTheme.colors
     var memo by remember(detail.workoutExerciseId) { mutableStateOf(detail.memo) }
+    var addingGear by remember { mutableStateOf(false) }
 
     // 閉じるときに、書きかけのメモも保存する
-    ModalBottomSheet(
-        onDismissRequest = {
-            if (memo != detail.memo) onSetMemo(memo)
-            onDismiss()
-        },
-        containerColor = colors.surface,
-    ) {
+    val close = {
+        if (memo != detail.memo) onSetMemo(memo)
+        onDismiss()
+    }
+
+    ModalBottomSheet(onDismissRequest = close, containerColor = colors.surface) {
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
@@ -296,45 +306,49 @@ fun ExerciseDetailSheet(
                 .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Column {
-                Text(detail.exerciseName, style = AppTheme.typography.title, color = colors.fg)
-                Text(detail.subtitle, style = AppTheme.typography.caption, color = colors.sub)
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                SectionLabel("ギア　タップで付け外し・前回と同じものが選ばれています")
-                if (detail.gear.isEmpty()) {
-                    Text("ギアがまだありません", style = AppTheme.typography.body, color = colors.sub)
-                }
+            SheetHeader(detail.exerciseName, onClose = close, subtitle = detail.subtitle)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LabelWithHint("ギア", "タップで付け外し・前回と同じものが選ばれています")
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     detail.gear.forEach { gear ->
-                        AppChip(gear.name, selected = gear.selected, onClick = { onToggleGear(gear.id) })
+                        AppChip(
+                            gear.name,
+                            selected = gear.selected,
+                            onClick = { onToggleGear(gear.id) },
+                            icon = if (gear.selected) AppIcons.Check else null,
+                        )
+                    }
+                    AppChip("追加", selected = false, onClick = { addingGear = true }, icon = AppIcons.Plus)
+                }
+            }
+            if (detail.adjustments.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SectionLabel("調整項目")
+                    detail.adjustments.forEach { item ->
+                        AdjustmentRow(item, onChange = { onSetAdjustment(item.fieldId, it) })
                     }
                 }
             }
             if (detail.showWeightMode || detail.showRepMode) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SectionLabel("数え方　今日の記録だけ変えます。種目の設定は変わりません")
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    LabelWithHint("数え方", "今日の記録だけ変わります")
                     if (detail.showWeightMode) {
-                        SegmentRow("重量") {
-                            listOf(WeightMode.Total, WeightMode.PerSide).forEach { mode ->
-                                AppChip(
-                                    mode.label(detail.equipment.takeIf { mode == WeightMode.PerSide } ?: Equipment.Machine),
-                                    selected = detail.weightMode == mode,
-                                    onClick = { onSetModes(mode, detail.repMode) },
-                                )
-                            }
-                        }
+                        val modes = listOf(WeightMode.PerSide, WeightMode.Total)
+                        SegmentRow(
+                            label = "重量",
+                            options = modes.map { it.label(detail.equipment) },
+                            selectedIndex = modes.indexOf(detail.weightMode),
+                            onSelect = { onSetModes(modes[it], detail.repMode) },
+                        )
                     }
                     if (detail.showRepMode) {
-                        SegmentRow("回数") {
-                            listOf(RepMode.Normal, RepMode.PerSide, RepMode.BothSidesTotal).forEach { mode ->
-                                AppChip(
-                                    mode.label(),
-                                    selected = detail.repMode == mode,
-                                    onClick = { onSetModes(detail.weightMode, mode) },
-                                )
-                            }
-                        }
+                        val modes = listOf(RepMode.Normal, RepMode.PerSide, RepMode.BothSidesTotal)
+                        SegmentRow(
+                            label = "回数",
+                            options = modes.map { it.label() },
+                            selectedIndex = modes.indexOf(detail.repMode),
+                            onSelect = { onSetModes(detail.weightMode, modes[it]) },
+                        )
                     }
                 }
             }
@@ -348,25 +362,103 @@ fun ExerciseDetailSheet(
                     minLines = 2,
                 )
             }
-            OutlineButton(
-                "とじる",
-                onClick = {
-                    if (memo != detail.memo) onSetMemo(memo)
-                    onDismiss()
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            TonalButton("とじる", onClick = close, modifier = Modifier.fillMaxWidth())
         }
+    }
+
+    if (addingGear) {
+        TextInputDialog(
+            title = "ギアを追加",
+            initialText = "",
+            label = "ギアの名前（例: ベルト）",
+            onConfirm = {
+                addingGear = false
+                onAddGear(it)
+            },
+            onDismiss = { addingGear = false },
+        )
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/** 「ギア　タップで付け外し…」のように、見出しの横に、小さな補足を並べる。 */
 @Composable
-private fun SegmentRow(label: String, content: @Composable () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(label, style = AppTheme.typography.body, color = AppTheme.colors.sub, modifier = Modifier.width(40.dp))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            content()
+private fun LabelWithHint(label: String, hint: String) {
+    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(label, style = AppTheme.typography.label, color = AppTheme.colors.fg, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+        Text(hint, style = AppTheme.typography.caption, color = AppTheme.colors.sub, modifier = Modifier.weight(1f))
+    }
+}
+
+/** 調整項目の 1 行。数値の項目は ＋ − と数字（タップで直接入力）、文字の項目は入力欄。変えるたびにその場で保存する。 */
+@Composable
+private fun AdjustmentRow(item: AdjustmentUi, onChange: (String?) -> Unit) {
+    val colors = AppTheme.colors
+    if (item.isNumber) {
+        // 長押しで速く増減しても追いつくように、いまの値は手元で持つ（保存は、そのつど書く）
+        var current by remember(item.fieldId) { mutableStateOf(item.value) }
+        var editing by remember(item.fieldId) { mutableStateOf(false) }
+        val base = current.toDoubleOrNull() ?: item.previousValue?.toDoubleOrNull() ?: 0.0
+        val set = { value: Double ->
+            val text = WeightUnits.format(value)
+            current = text
+            onChange(text)
         }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(item.name, style = AppTheme.typography.heading, color = colors.fg)
+                item.previousText?.let { Text(it, style = AppTheme.typography.caption, color = colors.sub) }
+            }
+            StepButton(AppIcons.Minus, "${item.name}を減らす", onClick = { set(base - 1) }, fireOnPress = false)
+            Row(
+                modifier = Modifier
+                    .width(88.dp)
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable(role = Role.Button, onClickLabel = "${item.name}を入力する") { editing = true },
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(current.ifEmpty { "—" }, style = AppTheme.typography.number, color = colors.fg)
+                if (current.isNotEmpty() && item.unit.isNotEmpty()) {
+                    Text(item.unit, style = AppTheme.typography.caption, color = colors.sub)
+                }
+            }
+            StepButton(AppIcons.Plus, "${item.name}を増やす", onClick = { set(base + 1) }, fireOnPress = false)
+        }
+        if (editing) {
+            NumberInputDialog(
+                title = item.name,
+                initialText = current.ifEmpty { item.previousValue.orEmpty() },
+                unitText = item.unit,
+                allowDecimal = true,
+                onConfirm = {
+                    set(it)
+                    editing = false
+                },
+                onDismiss = { editing = false },
+            )
+        }
+    } else {
+        var text by remember(item.fieldId) { mutableStateOf(item.value) }
+        OutlinedTextField(
+            value = text,
+            onValueChange = {
+                text = it
+                onChange(it.ifBlank { null })
+            },
+            label = { Text(item.name) },
+            placeholder = item.previousText?.let { previous -> { Text(previous) } },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/** 「重量 ［片手｜合計］」のように、見出しと、切り替えを 1 行に並べる。 */
+@Composable
+private fun SegmentRow(label: String, options: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(label, style = AppTheme.typography.body, color = AppTheme.colors.sub, modifier = Modifier.width(36.dp))
+        AppSegmented(options = options, selectedIndex = selectedIndex, onSelect = onSelect, modifier = Modifier.weight(1f))
     }
 }

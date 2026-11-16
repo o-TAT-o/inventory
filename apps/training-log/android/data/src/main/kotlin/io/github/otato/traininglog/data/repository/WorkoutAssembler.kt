@@ -25,6 +25,12 @@ internal object WorkoutAssembler {
         val setsByExercise = sets.groupBy { it.workoutExerciseId }
         val details = exercises.sortedBy { it.sortOrder }.mapNotNull { workoutExercise ->
             val exercise = catalog[workoutExercise.exerciseId] ?: return@mapNotNull null
+            val parent = exercise.parentId?.let(catalog::get)
+            // 選べるフォーム: 親の種目なら、その子。バリエーションなら、同じ親の子（非表示のものは除く。いま使っているものは残す）
+            val familyRootId = exercise.parentId ?: exercise.id
+            val forms = catalog.values
+                .filter { it.parentId == familyRootId && (!it.hidden || it.id == exercise.id) }
+                .sortedWith(compareBy({ it.sortOrder }, { it.name }))
             WorkoutExerciseDetail(
                 workoutExercise = workoutExercise,
                 exercise = exercise,
@@ -32,6 +38,8 @@ internal object WorkoutAssembler {
                 gearIds = gearByWorkoutExercise[workoutExercise.id].orEmpty(),
                 adjustmentFields = fieldsByExercise[workoutExercise.exerciseId].orEmpty(),
                 adjustments = valuesByWorkoutExercise[workoutExercise.id].orEmpty(),
+                parentName = parent?.name,
+                forms = forms,
             )
         }
         return WorkoutDetail(workout, details)
@@ -44,7 +52,7 @@ internal object WorkoutAssembler {
             routineName = routineName,
             completedSetCount = done.sumOf { it.completedSets.size },
             volumeKg = done.sumOf { Volume.ofExercise(it) },
-            exerciseNames = done.map { it.exercise.name },
+            exerciseNames = done.map { it.fullName },
             bodyParts = done.map { it.exercise.bodyPart }.distinct(),
         )
     }

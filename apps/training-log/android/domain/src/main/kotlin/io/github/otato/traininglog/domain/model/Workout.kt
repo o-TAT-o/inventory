@@ -15,6 +15,8 @@ data class Workout(
     val startedAt: Instant,
     val finishedAt: Instant? = null,
     val memo: String = "",
+    /** 「あとから入力」（タイマーなしの簡易入力）で記録するか（F-WO-21）。休憩タイマーを使わず、経過時間も出さない */
+    val quickEntry: Boolean = false,
 ) {
     val isFinished: Boolean get() = finishedAt != null
 }
@@ -70,7 +72,29 @@ data class WorkoutExerciseDetail(
     val adjustmentFields: List<AdjustmentField> = emptyList(),
     /** この記録での、調整項目の値（項目の id → 値。F-WO-12）。入れていない項目は含まない */
     val adjustments: Map<String, String> = emptyMap(),
+    /** バリエーション（フォーム）のとき、親の種目の名前 */
+    val parentName: String? = null,
+    /**
+     * 選べるフォーム（バリエーション）。親の種目なら、その子。バリエーションなら、同じ親の子（自分を含む）。
+     * フォームのない種目では空。並びは、種目の並び順。
+     */
+    val forms: List<Exercise> = emptyList(),
 ) {
+    /** 見出しに出す名前。バリエーションは、親の種目の名前（フォームは [formName] を別に出す）。 */
+    val title: String get() = parentName ?: exercise.name
+
+    /** フォーム（バリエーション）の名前。バリエーションでなければ null。 */
+    val formName: String? get() = if (parentName != null) exercise.name else null
+
+    /** 「ワンハンドダンベルロウ（膝をベンチにつく）」。履歴などの一覧で使う。 */
+    val fullName: String get() = if (parentName != null) "$parentName（${exercise.name}）" else exercise.name
+
+    /** フォームを選べる種目で、まだ選んでいない（親の種目のまま）か（F-RT-10）。 */
+    val formUnselected: Boolean get() = exercise.parentId == null && forms.isNotEmpty()
+
+    /** 下書きに戻す（種目を外したあと、元に戻すために使う）。 */
+    fun toPlanned() = PlannedWorkoutExercise(workoutExercise, sets, gearIds, adjustments)
+
     val completedSets: List<SetRecord> get() = sets.filter { it.completed }
 
     /** いま入力するセット。先頭から数えて、最初の未完了のセット。 */

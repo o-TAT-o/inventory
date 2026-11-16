@@ -93,6 +93,7 @@ internal fun WorkoutRow.toDomain() = Workout(
     startedAt = Instant.ofEpochMilli(started_at),
     finishedAt = finished_at?.let(Instant::ofEpochMilli),
     memo = memo,
+    quickEntry = quick_entry != 0L,
 )
 
 /** 「終えたワークアウト」の問い合わせは、finished_at が必ずある行になるので、別の型で返る。 */
@@ -103,6 +104,7 @@ internal fun SelectLastFinished.toDomain() = Workout(
     startedAt = Instant.ofEpochMilli(started_at),
     finishedAt = Instant.ofEpochMilli(finished_at),
     memo = memo,
+    quickEntry = quick_entry != 0L,
 )
 
 internal fun Workout_exercise.toDomain() = WorkoutExercise(

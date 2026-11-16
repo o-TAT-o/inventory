@@ -47,7 +47,10 @@ class BackupRepositoryTest {
 
         val planned = WorkoutPlanner(TestDatabase.sequentialIds("p")).plan("w1", 0, Exercise(id = "bench", name = "ベンチプレス"))
             .copy(gearIds = setOf("belt"), adjustments = mapOf("angle" to "30"))
-        target.workouts.createWorkout(Workout("w1", LocalDate.of(2026, 11, 14), "push", Instant.parse("2026-11-14T10:00:00Z")), listOf(planned))
+        target.workouts.createWorkout(
+            Workout("w1", LocalDate.of(2026, 11, 14), "push", Instant.parse("2026-11-14T10:00:00Z"), quickEntry = true),
+            listOf(planned),
+        )
         planned.sets.forEachIndexed { index, set ->
             target.workouts.updateSetValues(SetValues(set.id, 62.5, 10 - index))
             if (index < 2) target.workouts.setCompleted(set.id, true, Instant.parse("2026-11-14T10:30:00Z"))
@@ -66,6 +69,7 @@ class BackupRepositoryTest {
         other.backup.restore(BackupJson.decode(text))
 
         assertEquals(data.backup.snapshot().copy(settings = emptyMap()), other.backup.snapshot().copy(settings = emptyMap()))
+        assertTrue(other.backup.snapshot().workouts.single().quickEntry, "「あとから入力」の印も移る")
         // 設定も移る（休憩の長さ）。端末の状態（最後に書き出した日）は移らない
         val settings = other.settings.get()
         assertEquals(120, settings.restBetweenSetsSec)

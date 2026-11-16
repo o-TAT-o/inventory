@@ -24,8 +24,9 @@ class SchemaMigrationTest {
     @Test
     fun `バージョンは、マイグレーションの数に合わせて上がっている`() {
         assertTrue(
-            DataModule.schema.version >= 4,
-            "最初の版（1）から、初期設定の表を足した版（2）、腕を二頭と三頭に分けて初期設定にセット数を足した版（3）、調整項目の表を足した版（4）以降",
+            DataModule.schema.version >= 5,
+            "最初の版（1）から、初期設定の表を足した版（2）、腕を二頭と三頭に分けて初期設定にセット数を足した版（3）、" +
+                "調整項目の表を足した版（4）、「あとから入力」の印を足した版（5）以降",
         )
     }
 
@@ -39,6 +40,7 @@ class SchemaMigrationTest {
         // バージョン 1 の状態に戻す（初期設定の表も、調整項目の表もなかった頃）
         driver.execute(null, "DROP TABLE exercise_baseline", 0)
         dropVersionFourTables(driver)
+        dropVersionFiveColumns(driver)
 
         DataModule.schema.migrate(driver, 1, DataModule.schema.version)
 
@@ -108,6 +110,7 @@ class SchemaMigrationTest {
         before.exercises.save(Exercise(id = "bench", name = "ベンチプレス", bodyPart = BodyPart.Chest))
         // バージョン 3 の状態に戻す（調整項目の表がなかった頃）
         dropVersionFourTables(driver)
+        dropVersionFiveColumns(driver)
 
         DataModule.schema.migrate(driver, 3, DataModule.schema.version)
 
@@ -118,6 +121,30 @@ class SchemaMigrationTest {
             listOf(AdjustmentField("angle", "bench", "ベンチ角度", AdjustmentValueType.Number, "°")),
         )
         assertEquals(listOf("ベンチ角度"), after.exercises.getAdjustmentFields("bench").map { it.name })
+    }
+
+    @Test
+    fun `バージョン 4 のデータベースを移すと、すでにあるワークアウトは「ふつうに記録」のままで、印を付け外しできる`() = runTest {
+        val driver = TestDatabase.newDriver()
+        DataModule.schema.create(driver)
+        // バージョン 4 の状態に戻す（「あとから入力」の印の列がなかった頃）に、記録中のワークアウトが 1 つある
+        dropVersionFiveColumns(driver)
+        driver.execute(
+            null,
+            "INSERT INTO workout (id, date, started_at, memo) VALUES ('old', '2026-11-13', 1000, '')",
+            0,
+        )
+
+        DataModule.schema.migrate(driver, 4, DataModule.schema.version)
+
+        val after = DataModule(driver, Dispatchers.Unconfined)
+        val old = assertNotNull(after.workouts.observeWorkout("old").first()).workout
+        assertEquals(false, old.quickEntry, "移す前のワークアウトは、ふつうに記録したもの")
+
+        after.workouts.setQuickEntry("old", true)
+        assertEquals(true, assertNotNull(after.workouts.observeWorkout("old").first()).workout.quickEntry)
+        after.workouts.setQuickEntry("old", false)
+        assertEquals(false, assertNotNull(after.workouts.observeWorkout("old").first()).workout.quickEntry)
     }
 
     /**
@@ -141,6 +168,7 @@ class SchemaMigrationTest {
 
         driver.execute(null, "DROP TABLE exercise_baseline", 0)
         dropVersionFourTables(driver)
+        dropVersionFiveColumns(driver)
         driver.execute(
             null,
             "CREATE TABLE exercise_baseline (" +
@@ -162,6 +190,11 @@ class SchemaMigrationTest {
     private fun dropVersionFourTables(driver: SqlDriver) {
         driver.execute(null, "DROP TABLE adjustment_value", 0)
         driver.execute(null, "DROP TABLE adjustment_field", 0)
+    }
+
+    /** バージョン 5 で足した、ワークアウトの「あとから入力」の印の列を消す（古い版の状態に戻すため）。 */
+    private fun dropVersionFiveColumns(driver: SqlDriver) {
+        driver.execute(null, "ALTER TABLE workout DROP COLUMN quick_entry", 0)
     }
 
     private fun count(driver: SqlDriver, where: String): Long =

@@ -87,6 +87,7 @@ internal class SqlBackupRepository(
                 snapshot.workouts.forEach { w ->
                     db.workoutQueries.insertWorkout(
                         w.id, w.date.toString(), w.routineId, w.startedAt.toEpochMilli(), w.finishedAt?.toEpochMilli(), w.memo,
+                        if (w.quickEntry) 1L else 0L,
                     )
                 }
                 snapshot.workoutExercises.forEach { we ->

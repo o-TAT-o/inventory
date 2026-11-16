@@ -40,11 +40,15 @@ class ReorderState<T> internal constructor(
     val listState: LazyListState,
     internal val reorderable: ReorderableLazyListState,
     private val getItems: () -> List<T>,
+    private val getDragging: () -> Boolean,
     private val setDragging: (Boolean) -> Unit,
     private val commit: () -> Unit,
 ) {
     /** いま画面に出す並び。 */
     val items: List<T> get() = getItems()
+
+    /** つまみを持って、動かしている最中か。種目の見出しだけにたたむ、バナーを出す、などに使う。 */
+    val isDragging: Boolean get() = getDragging()
 
     internal fun dragStarted() = setDragging(true)
 
@@ -85,6 +89,7 @@ fun <T> rememberReorderState(
             listState = listState,
             reorderable = reorderable,
             getItems = { items },
+            getDragging = { dragging },
             setDragging = { dragging = it },
             commit = {
                 val saved = currentSource.map(currentKey)

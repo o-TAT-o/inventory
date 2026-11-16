@@ -98,13 +98,15 @@ fun StepButton(
     contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    /** false にすると、離したときに 1 回動く（スクロールする画面の中では、押した瞬間に動かさない） */
+    fireOnPress: Boolean = true,
 ) {
     Box(
         modifier = modifier
             .size(width = 48.dp, height = 56.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(AppTheme.colors.surfaceVariant)
-            .repeatingClickable(onClick = onClick)
+            .repeatingClickable(fireOnPress = fireOnPress, onClick = onClick)
             .semantics {
                 role = Role.Button
                 this.contentDescription = contentDescription

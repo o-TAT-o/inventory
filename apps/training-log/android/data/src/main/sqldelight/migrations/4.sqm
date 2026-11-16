@@ -1,0 +1,3 @@
+-- バージョン 4 → 5: ワークアウトに「あとから入力」（タイマーなしの簡易入力）かどうかの印を足す。
+-- 表の定義は、Workout.sq と同じにする（列は表の末尾）。
+ALTER TABLE workout ADD COLUMN quick_entry INTEGER NOT NULL DEFAULT 0;
