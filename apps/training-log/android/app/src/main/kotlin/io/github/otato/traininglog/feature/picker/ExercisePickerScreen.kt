@@ -45,6 +45,7 @@ fun ExercisePickerRoute(
     mode: PickerMode,
     targetId: String,
     onBack: () -> Unit,
+    onPicked: (createdItemId: String?) -> Unit,
     onCreateExercise: () -> Unit,
 ) {
     val viewModel = appViewModel<ExercisePickerViewModel>(key = "picker-$mode-$targetId") { container ->
@@ -59,7 +60,7 @@ fun ExercisePickerRoute(
         )
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    LaunchedEffect(viewModel) { viewModel.done.collect { onBack() } }
+    LaunchedEffect(viewModel) { viewModel.done.collect { onPicked(it) } }
 
     ExercisePickerScreen(
         state = state,

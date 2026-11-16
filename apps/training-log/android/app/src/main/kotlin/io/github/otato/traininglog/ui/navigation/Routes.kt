@@ -30,6 +30,12 @@ object Routes {
     const val ROUTINE_EDIT = "routine/{routineId}"
     fun routineEdit(routineId: String) = "routine/${Uri.encode(routineId)}"
 
+    /**
+     * 種目選択から、ルーティンの編集へ返す値のキー。ルーティンに足した種目（ルーティンの種目）の id。
+     * 受け取ったルーティンの編集は、その種目の目標をすぐ入れられるように開く。
+     */
+    const val RESULT_NEW_ROUTINE_ITEM = "newRoutineItemId"
+
     const val EXERCISE_DETAIL = "exercise/{exerciseId}"
     fun exerciseDetail(exerciseId: String) = "exercise/${Uri.encode(exerciseId)}"
 

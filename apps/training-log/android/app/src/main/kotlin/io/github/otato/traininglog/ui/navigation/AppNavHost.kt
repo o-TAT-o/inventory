@@ -1,7 +1,9 @@
 package io.github.otato.traininglog.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -89,12 +91,23 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 },
                 targetId = entry.arg("targetId"),
                 onBack = { navController.popBackStack() },
+                onPicked = { createdItemId ->
+                    // ルーティンに足したときは、前の画面（ルーティンの編集）に、足した種目の id を渡す
+                    if (createdItemId != null) {
+                        navController.previousBackStackEntry?.savedStateHandle?.set(Routes.RESULT_NEW_ROUTINE_ITEM, createdItemId)
+                    }
+                    navController.popBackStack()
+                },
                 onCreateExercise = { navController.navigate(Routes.exerciseEdit("new")) },
             )
         }
         composable(Routes.ROUTINE_EDIT, arguments = stringArg("routineId")) { entry ->
+            val newItemId by entry.savedStateHandle.getStateFlow<String?>(Routes.RESULT_NEW_ROUTINE_ITEM, null)
+                .collectAsStateWithLifecycle()
             RoutineEditRoute(
                 routineId = entry.arg("routineId"),
+                newItemId = newItemId,
+                onNewItemShown = { entry.savedStateHandle[Routes.RESULT_NEW_ROUTINE_ITEM] = null },
                 onBack = { navController.popBackStack() },
                 onAddExercise = { navController.navigate(Routes.picker("routine", it)) },
             )

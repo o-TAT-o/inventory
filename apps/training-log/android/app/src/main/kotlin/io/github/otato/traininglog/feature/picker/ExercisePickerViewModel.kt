@@ -120,10 +120,13 @@ class ExercisePickerViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PickerUiState(multiSelect = mode == PickerMode.Migration))
 
-    private val _done = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val _done = MutableSharedFlow<String?>(extraBufferCapacity = 1)
 
-    /** 種目を追加し終えた（前の画面に戻る）。 */
-    val done: SharedFlow<Unit> = _done.asSharedFlow()
+    /**
+     * 種目を追加し終えた（前の画面に戻る）。ルーティンに足したときは、足した種目（ルーティンの種目）の id を渡す
+     * （ルーティンの編集で、その種目の目標をすぐ入れられるように開くため）。それ以外は null。
+     */
+    val done: SharedFlow<String?> = _done.asSharedFlow()
 
     fun setQuery(query: String) = filter.update { it.copy(query = query) }
 
@@ -138,23 +141,28 @@ class ExercisePickerViewModel(
             return
         }
         viewModelScope.launch {
-            when (mode) {
+            val createdItemId: String? = when (mode) {
                 PickerMode.Workout -> {
                     val next = workouts.observeWorkout(targetId).first()
                         ?.exercises?.maxOfOrNull { it.workoutExercise.sortOrder }?.plus(1) ?: 0
                     addExerciseToWorkout(targetId, exerciseId, next)
+                    null
                 }
-                PickerMode.Routine -> routines.saveItem(
-                    RoutineItem(
-                        id = ids.next(),
-                        routineId = targetId,
-                        exerciseId = exerciseId,
-                        sortOrder = routines.nextItemSortOrder(targetId),
-                    ),
-                )
-                PickerMode.Migration -> Unit
+                PickerMode.Routine -> {
+                    val itemId = ids.next()
+                    routines.saveItem(
+                        RoutineItem(
+                            id = itemId,
+                            routineId = targetId,
+                            exerciseId = exerciseId,
+                            sortOrder = routines.nextItemSortOrder(targetId),
+                        ),
+                    )
+                    itemId
+                }
+                PickerMode.Migration -> null
             }
-            _done.emit(Unit)
+            _done.emit(createdItemId)
         }
     }
 
@@ -166,7 +174,7 @@ class ExercisePickerViewModel(
             // 画面に出ている順（種目の並び順）で足す
             val ordered = state.value.rows.map { it.exercise.id }.filter { it in chosen }
             baselines.addExercises(ordered + (chosen - ordered.toSet()))
-            _done.emit(Unit)
+            _done.emit(null)
         }
     }
 }
