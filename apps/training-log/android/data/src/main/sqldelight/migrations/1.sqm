@@ -1,0 +1,11 @@
+-- バージョン 1（最初の公開前の開発版）→ 2: 乗り換え用の初期設定の表を足す。
+-- 表の定義は、Baseline.sq と同じにする。
+CREATE TABLE exercise_baseline (
+    exercise_id TEXT NOT NULL PRIMARY KEY REFERENCES exercise(id) ON DELETE CASCADE,
+    weight_kg REAL,
+    reps INTEGER,
+    duration_sec INTEGER,
+    best REAL,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL
+);

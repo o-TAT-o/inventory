@@ -1,0 +1,40 @@
+-- 乗り換え用の初期設定（前のアプリでの、種目ごとの直近の値と自己ベスト）
+CREATE TABLE exercise_baseline (
+    exercise_id TEXT NOT NULL PRIMARY KEY REFERENCES exercise(id) ON DELETE CASCADE,
+    -- 直近の重量（kg）。自重の種目では加重（マイナスは補助）
+    weight_kg REAL,
+    reps INTEGER,
+    -- 時間の種目の、直近の秒数
+    duration_sec INTEGER,
+    -- 自己ベスト（重量の種目は kg、加重のない自重は回数、時間は秒）
+    best REAL,
+    -- 一覧に足した順
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL
+);
+
+selectAll:
+SELECT * FROM exercise_baseline ORDER BY sort_order;
+
+selectByExercise:
+SELECT * FROM exercise_baseline WHERE exercise_id = ?;
+
+insertBaseline:
+INSERT INTO exercise_baseline (
+    exercise_id, weight_kg, reps, duration_sec, best, sort_order, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?);
+
+updateBaseline:
+UPDATE exercise_baseline SET
+    weight_kg = :weightKg,
+    reps = :reps,
+    duration_sec = :durationSec,
+    best = :best,
+    updated_at = :updatedAt
+WHERE exercise_id = :exerciseId;
+
+deleteBaseline:
+DELETE FROM exercise_baseline WHERE exercise_id = ?;
+
+maxSortOrder:
+SELECT COALESCE(MAX(sort_order), -1) FROM exercise_baseline;

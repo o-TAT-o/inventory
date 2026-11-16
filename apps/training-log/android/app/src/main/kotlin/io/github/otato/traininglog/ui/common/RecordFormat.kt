@@ -2,6 +2,7 @@ package io.github.otato.traininglog.ui.common
 
 import io.github.otato.traininglog.domain.logic.WeightUnits
 import io.github.otato.traininglog.domain.model.Exercise
+import io.github.otato.traininglog.domain.model.PreviousRecord
 import io.github.otato.traininglog.domain.model.RecordType
 import io.github.otato.traininglog.domain.model.RepMode
 import io.github.otato.traininglog.domain.model.SetRecord
@@ -18,11 +19,21 @@ data class SetsLine(
     val repsText: String,
 )
 
-/** 前回の記録の表示（「前回 11/7　60 kg 〔合計〕× 10 · 9 · 8」）。 */
+/**
+ * 前回の記録の表示（「前回 11/7　60 kg 〔合計〕× 10 · 9 · 8」）。
+ * [label] は「前回 11/7」。乗り換え用の初期設定で入れた値のときは「前回（前のアプリ）」（F-DA-06）。
+ */
 data class PreviousUi(
-    val dateText: String,
+    val label: String,
     val line: SetsLine,
-)
+) {
+    companion object {
+        fun of(record: PreviousRecord, line: SetsLine) = PreviousUi(
+            label = if (record.isBaseline) "前回（前のアプリ）" else "前回 ${formatMonthDay(record.date)}",
+            line = line,
+        )
+    }
+}
 
 object RecordFormat {
     /** 完了したセットの重量の表記。自重の種目は「自重」「+10 kg」「-20 kg」。 */

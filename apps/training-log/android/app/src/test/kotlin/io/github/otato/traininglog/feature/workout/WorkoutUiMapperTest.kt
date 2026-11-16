@@ -137,7 +137,7 @@ class WorkoutUiMapperTest {
             repMode = RepMode.Normal,
         )
         val state = map(twoExercises, contexts = mapOf("bench" to ExerciseContext(previous, 57.5)))
-        assertEquals("11/7", state.exercises[0].previous?.dateText)
+        assertEquals("前回 11/7", state.exercises[0].previous?.label)
         assertEquals("× 10 · 9", state.exercises[0].previous?.line?.repsText)
         // 2 セット目の副題は、前回の 2 セット目
         assertEquals("前回 57.5 kg × 9", state.dock?.subtitle)

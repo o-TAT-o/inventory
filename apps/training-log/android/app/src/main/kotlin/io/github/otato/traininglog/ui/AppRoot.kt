@@ -7,6 +7,7 @@ import androidx.activity.compose.LocalActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -53,7 +54,8 @@ fun AppRoot() {
             val entry by navController.currentBackStackEntryAsState()
             val route = entry?.destination?.route
             Column(modifier = Modifier.fillMaxSize().systemBarsPadding()) {
-                AppNavHost(navController = navController, modifier = Modifier.weight(1f))
+                // キーボードが出たら、画面をその分だけ縮める（入力欄・下のボタンがキーボードに隠れないように）
+                AppNavHost(navController = navController, modifier = Modifier.weight(1f).imePadding())
                 if (route in Routes.topLevel) {
                     AppBottomBar(
                         items = tabs.map { it.second },

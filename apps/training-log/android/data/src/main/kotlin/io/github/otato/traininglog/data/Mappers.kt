@@ -8,6 +8,8 @@ import io.github.otato.traininglog.data.db.Set_record
 import io.github.otato.traininglog.data.db.Workout as WorkoutRow
 import io.github.otato.traininglog.data.db.Workout_exercise
 import io.github.otato.traininglog.data.db.Exercise as ExerciseRow
+import io.github.otato.traininglog.data.db.Exercise_baseline
+import io.github.otato.traininglog.domain.model.Baseline
 import io.github.otato.traininglog.domain.model.BodyPart
 import io.github.otato.traininglog.domain.model.Equipment
 import io.github.otato.traininglog.domain.model.Exercise
@@ -44,6 +46,15 @@ internal fun ExerciseRow.toDomain() = Exercise(
     memo = memo,
     sortOrder = sort_order.toInt(),
     hidden = hidden != 0L,
+)
+
+internal fun Exercise_baseline.toDomain() = Baseline(
+    exerciseId = exercise_id,
+    weightKg = weight_kg,
+    reps = reps?.toInt(),
+    durationSec = duration_sec?.toInt(),
+    best = best,
+    sortOrder = sort_order.toInt(),
 )
 
 internal fun GearRow.toDomain() = Gear(id = id, name = name, sortOrder = sort_order.toInt(), hidden = hidden != 0L)

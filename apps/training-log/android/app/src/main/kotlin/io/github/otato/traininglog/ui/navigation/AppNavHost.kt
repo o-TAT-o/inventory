@@ -11,6 +11,7 @@ import androidx.navigation.navArgument
 import io.github.otato.traininglog.feature.done.WorkoutDoneRoute
 import io.github.otato.traininglog.feature.history.HistoryRoute
 import io.github.otato.traininglog.feature.home.HomeRoute
+import io.github.otato.traininglog.feature.migration.MigrationRoute
 import io.github.otato.traininglog.feature.picker.ExercisePickerRoute
 import io.github.otato.traininglog.feature.picker.PickerMode
 import io.github.otato.traininglog.feature.routine.RoutineEditRoute
@@ -33,6 +34,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onOpenWorkout = { navController.navigate(Routes.workout(it)) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 onOpenRoutines = { navController.navigate(Routes.ROUTINES) },
+                onOpenMigration = { navController.navigate(Routes.MIGRATION) },
             )
         }
         composable(Routes.ROUTINES) {
@@ -42,7 +44,17 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
             HistoryRoute(onOpenWorkout = { navController.navigate(Routes.workout(it)) })
         }
         composable(Routes.SETTINGS) {
-            SettingsRoute(onBack = { navController.popBackStack() })
+            SettingsRoute(
+                onBack = { navController.popBackStack() },
+                onOpenMigration = { navController.navigate(Routes.MIGRATION) },
+            )
+        }
+        composable(Routes.MIGRATION) {
+            MigrationRoute(
+                onBack = { navController.popBackStack() },
+                onAddExercises = { navController.navigate(Routes.picker("migration", "-")) },
+                onEditExercise = { navController.navigate(Routes.exerciseEdit(it)) },
+            )
         }
         composable(Routes.WORKOUT, arguments = stringArg("workoutId")) { entry ->
             WorkoutRoute(
@@ -70,7 +82,11 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         }
         composable(Routes.PICKER, arguments = listOf(navArgument("mode") { type = NavType.StringType }, navArgument("targetId") { type = NavType.StringType })) { entry ->
             ExercisePickerRoute(
-                mode = if (entry.arg("mode") == "routine") PickerMode.Routine else PickerMode.Workout,
+                mode = when (entry.arg("mode")) {
+                    "routine" -> PickerMode.Routine
+                    "migration" -> PickerMode.Migration
+                    else -> PickerMode.Workout
+                },
                 targetId = entry.arg("targetId"),
                 onBack = { navController.popBackStack() },
                 onCreateExercise = { navController.navigate(Routes.exerciseEdit("new")) },

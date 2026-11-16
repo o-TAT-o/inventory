@@ -15,7 +15,6 @@ import io.github.otato.traininglog.ui.common.PreviousUi
 import io.github.otato.traininglog.ui.common.RecordFormat
 import io.github.otato.traininglog.ui.common.formatDateWithDow
 import io.github.otato.traininglog.ui.common.formatMmSs
-import io.github.otato.traininglog.ui.common.formatMonthDay
 import io.github.otato.traininglog.ui.common.label
 import io.github.otato.traininglog.ui.common.tag
 import java.time.LocalDate
@@ -146,7 +145,7 @@ object WorkoutUiMapper {
 
     private fun previousUi(record: PreviousRecord, exercise: Exercise, unit: io.github.otato.traininglog.domain.model.WeightUnit): PreviousUi? {
         val line = RecordFormat.setsLine(record.sets, exercise, record.weightMode, record.repMode, unit) ?: return null
-        return PreviousUi(dateText = formatMonthDay(record.date), line = line)
+        return PreviousUi.of(record, line)
     }
 
     private fun setRow(

@@ -37,8 +37,10 @@ class WorkoutPlanner(private val ids: IdGenerator = UuidGenerator) {
             restAfterSeconds = routineItem?.restAfterSeconds,
         )
         val previousSets = previous?.sets.orEmpty()
+        // 乗り換え用の初期設定の値は 1 セット分なので、セット数の目安にはしない（値だけを使う）
+        val previousCount = previous?.takeUnless { it.isBaseline }?.sets?.size
         val count = routineItem?.targetSets
-            ?: previousSets.size.takeIf { it > 0 }?.coerceAtMost(MAX_SETS_FROM_PREVIOUS)
+            ?: previousCount?.takeIf { it > 0 }?.coerceAtMost(MAX_SETS_FROM_PREVIOUS)
             ?: DEFAULT_SET_COUNT
         val sets = (0 until count).map { index ->
             val reference = previousSets.getOrNull(index) ?: previousSets.lastOrNull()

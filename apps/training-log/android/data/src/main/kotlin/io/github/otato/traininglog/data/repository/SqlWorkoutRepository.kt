@@ -6,6 +6,7 @@ import app.cash.sqldelight.coroutines.mapToOneOrNull
 import io.github.otato.traininglog.data.db.TrainingLogDatabase
 import io.github.otato.traininglog.data.toDomain
 import io.github.otato.traininglog.data.toLong
+import io.github.otato.traininglog.domain.logic.Baselines
 import io.github.otato.traininglog.domain.model.Exercise
 import io.github.otato.traininglog.domain.model.PlannedWorkoutExercise
 import io.github.otato.traininglog.domain.model.PreviousRecord
@@ -26,16 +27,19 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 
 internal class SqlWorkoutRepository(
     private val db: TrainingLogDatabase,
     private val io: CoroutineDispatcher,
+    private val clock: Clock,
 ) : WorkoutRepository {
     private val queries = db.workoutQueries
     private val exerciseQueries = db.exerciseQueries
     private val routineQueries = db.routineQueries
+    private val baselineQueries = db.baselineQueries
 
     // ---- 観察 ----
 
@@ -226,7 +230,8 @@ internal class SqlWorkoutRepository(
 
     override suspend fun previousRecord(exerciseId: String, excludeWorkoutId: String?): PreviousRecord? = withContext(io) {
         val session = queries.selectPreviousExercise(exerciseId, excludeWorkoutId).executeAsOneOrNull()
-            ?: return@withContext null
+            // 実際の記録がなければ、乗り換え用の初期設定で入れた直近の値を、前回の記録として使う（F-DA-06）
+            ?: return@withContext baselinePrevious(exerciseId)
         PreviousRecord(
             date = LocalDate.parse(session.date),
             sets = queries.selectCompletedSetsOfExercise(session.workout_exercise_id).executeAsList().map { it.toDomain() },
@@ -238,12 +243,23 @@ internal class SqlWorkoutRepository(
 
     override suspend fun personalBest(exercise: Exercise, excludeWorkoutId: String?): Double? = withContext(io) {
         val best = queries.selectBest(exercise.id, excludeWorkoutId).executeAsOne()
-        when (exercise.recordType) {
+        val recorded = when (exercise.recordType) {
             RecordType.WeightReps -> best.best_weight
             RecordType.Bodyweight -> if (exercise.useAddedWeight) best.best_weight else best.best_reps?.toDouble()
             RecordType.Duration -> best.best_duration?.toDouble()
             RecordType.DistanceTime -> best.best_distance
         }
+        // 乗り換え用の初期設定で入れた自己ベストも含める（F-DA-06）
+        val baseline = baselineQueries.selectByExercise(exercise.id).executeAsOneOrNull()
+            ?.let { Baselines.effectiveBest(it.toDomain(), exercise) }
+        listOfNotNull(recorded, baseline).maxOrNull()
+    }
+
+    private fun baselinePrevious(exerciseId: String): PreviousRecord? {
+        val row = baselineQueries.selectByExercise(exerciseId).executeAsOneOrNull() ?: return null
+        val exercise = exerciseQueries.selectById(exerciseId).executeAsOneOrNull()?.toDomain() ?: return null
+        val date = LocalDate.ofInstant(Instant.ofEpochMilli(row.updated_at), clock.zone)
+        return Baselines.toPreviousRecord(row.toDomain(), exercise, date)
     }
 
     // ---- 内部 ----

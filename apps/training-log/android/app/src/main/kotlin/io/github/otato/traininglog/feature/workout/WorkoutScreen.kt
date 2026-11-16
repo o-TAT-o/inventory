@@ -455,7 +455,7 @@ fun PreviousLine(previous: PreviousUi, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(
-            "前回 ${previous.dateText}　${line.weightText}".trimEnd(),
+            "${previous.label}　${line.weightText}".trimEnd(),
             style = AppTheme.typography.caption,
             color = colors.sub,
         )

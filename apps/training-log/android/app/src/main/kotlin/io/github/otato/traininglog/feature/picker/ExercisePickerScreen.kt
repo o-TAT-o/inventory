@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +30,7 @@ import io.github.otato.traininglog.designsystem.components.AppChip
 import io.github.otato.traininglog.designsystem.components.AppDivider
 import io.github.otato.traininglog.designsystem.components.AppTopBar
 import io.github.otato.traininglog.designsystem.components.OutlineButton
+import io.github.otato.traininglog.designsystem.components.PrimaryButton
 import io.github.otato.traininglog.designsystem.components.Tag
 import io.github.otato.traininglog.designsystem.icons.AppIcons
 import io.github.otato.traininglog.designsystem.theme.AppTheme
@@ -52,6 +54,7 @@ fun ExercisePickerRoute(
             exercises = container.data.exercises,
             routines = container.data.routines,
             workouts = container.data.workouts,
+            baselines = container.data.baselines,
             addExerciseToWorkout = container.addExerciseToWorkout,
         )
     }
@@ -65,6 +68,7 @@ fun ExercisePickerRoute(
         onBodyPart = viewModel::setBodyPart,
         onEquipment = viewModel::setEquipment,
         onPick = viewModel::pick,
+        onConfirm = viewModel::confirmSelection,
         onCreateExercise = onCreateExercise,
     )
 }
@@ -77,11 +81,12 @@ fun ExercisePickerScreen(
     onBodyPart: (BodyPart?) -> Unit,
     onEquipment: (Equipment?) -> Unit,
     onPick: (String) -> Unit,
+    onConfirm: () -> Unit,
     onCreateExercise: () -> Unit,
 ) {
     val colors = AppTheme.colors
     Column(modifier = Modifier.fillMaxSize()) {
-        AppTopBar(title = "種目を選ぶ", onBack = onBack)
+        AppTopBar(title = if (state.multiSelect) "種目を選ぶ（いくつでも）" else "種目を選ぶ", onBack = onBack)
         OutlinedTextField(
             value = state.query,
             onValueChange = onQuery,
@@ -117,14 +122,20 @@ fun ExercisePickerScreen(
         AppDivider()
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(state.rows, key = { it.exercise.id }) { row ->
+                val added = row.exercise.id in state.addedIds
+                val checked = added || row.exercise.id in state.selectedIds
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .defaultMinSize(minHeight = 60.dp)
-                        .clickable(role = Role.Button) { onPick(row.exercise.id) }
+                        .clickable(enabled = !added, role = Role.Button) { onPick(row.exercise.id) }
                         .padding(start = if (row.parentName != null) 32.dp else 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    if (state.multiSelect) {
+                        Checkbox(checked = checked, onCheckedChange = null, enabled = !added)
+                        Spacer(Modifier.width(12.dp))
+                    }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(row.exercise.name, style = AppTheme.typography.bodyStrong, color = colors.fg)
                         Text(
@@ -138,7 +149,11 @@ fun ExercisePickerScreen(
                         )
                     }
                     Spacer(Modifier.width(8.dp))
-                    Tag(row.exercise.weightMode.tag(row.exercise.equipment))
+                    if (added) {
+                        Text("追加済み", style = AppTheme.typography.caption, color = colors.sub)
+                    } else {
+                        Tag(row.exercise.weightMode.tag(row.exercise.equipment))
+                    }
                 }
                 AppDivider()
             }
@@ -158,6 +173,16 @@ fun ExercisePickerScreen(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                 )
             }
+        }
+        if (state.multiSelect) {
+            // まとめて選ぶとき（乗り換え用の初期設定）は、下に「N 種目を追加」を置く
+            AppDivider()
+            PrimaryButton(
+                text = if (state.selectedIds.isEmpty()) "種目を選んでください" else "${state.selectedIds.size} 種目を追加",
+                onClick = onConfirm,
+                enabled = state.selectedIds.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+            )
         }
     }
 }

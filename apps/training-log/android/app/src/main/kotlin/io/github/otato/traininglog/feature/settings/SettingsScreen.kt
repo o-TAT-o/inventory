@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -32,6 +33,7 @@ import io.github.otato.traininglog.designsystem.components.AppTopBar
 import io.github.otato.traininglog.designsystem.components.CompactStepper
 import io.github.otato.traininglog.designsystem.components.SectionLabel
 import io.github.otato.traininglog.designsystem.components.SettingRow
+import io.github.otato.traininglog.designsystem.icons.AppIcons
 import io.github.otato.traininglog.designsystem.theme.AppTheme
 import io.github.otato.traininglog.domain.logic.DayBoundary
 import io.github.otato.traininglog.domain.logic.WeightUnits
@@ -58,16 +60,21 @@ class SettingsViewModel(private val repository: SettingsRepository) : ViewModel(
 }
 
 @Composable
-fun SettingsRoute(onBack: () -> Unit) {
+fun SettingsRoute(onBack: () -> Unit, onOpenMigration: () -> Unit) {
     val viewModel = appViewModel<SettingsViewModel> { SettingsViewModel(it.data.settings) }
     val settings by viewModel.state.collectAsStateWithLifecycle()
-    SettingsScreen(settings, onBack, viewModel::update)
+    SettingsScreen(settings, onBack, viewModel::update, onOpenMigration)
 }
 
 /** 設定（F-SE-01〜08）。デザインの「設定」画面と同じ並びにしている。 */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SettingsScreen(settings: AppSettings, onBack: () -> Unit, onUpdate: ((AppSettings) -> AppSettings) -> Unit) {
+fun SettingsScreen(
+    settings: AppSettings,
+    onBack: () -> Unit,
+    onUpdate: ((AppSettings) -> AppSettings) -> Unit,
+    onOpenMigration: () -> Unit,
+) {
     val colors = AppTheme.colors
     Column(modifier = Modifier.fillMaxSize()) {
         AppTopBar("設定", onBack = onBack)
@@ -173,6 +180,15 @@ fun SettingsScreen(settings: AppSettings, onBack: () -> Unit, onUpdate: ((AppSet
                 AppDivider()
                 SettingRow("バイブで知らせる") {
                     Switch(checked = settings.vibrationOn, onCheckedChange = { v -> onUpdate { it.copy(vibrationOn = v) } })
+                }
+            }
+            Group("データ") {
+                SettingRow(
+                    title = "乗り換え用の初期設定",
+                    subtitle = "前のアプリの直近の重量・回数・自己ベストを入れます",
+                    onClick = onOpenMigration,
+                ) {
+                    Icon(AppIcons.Right, contentDescription = null, tint = colors.sub)
                 }
             }
             Group("このアプリについて") {

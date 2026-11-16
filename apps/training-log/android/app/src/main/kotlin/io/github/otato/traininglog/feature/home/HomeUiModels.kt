@@ -15,7 +15,10 @@ data class HomeUiState(
     /** 記録中のワークアウト（あれば「再開」を出す） */
     val active: ActiveUi? = null,
     val strip: List<DayCellUi> = emptyList(),
-)
+) {
+    /** はじめて開いた状態（記録の途中も、終えた記録も、ルーティンもない）。乗り換えの入口を出す。 */
+    val isFirstTime: Boolean get() = loaded && active == null && last == null && !hasRoutines
+}
 
 /** 前回のワークアウト（日付・ルーティン・時間・セット数・ボリューム・代表の種目）。 */
 data class LastWorkoutUi(

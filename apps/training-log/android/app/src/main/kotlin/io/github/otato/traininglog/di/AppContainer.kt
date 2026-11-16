@@ -33,8 +33,8 @@ class AppContainer(context: Context) {
         },
     )
 
-    val data = DataModule(driver)
     val clock: Clock = Clock.systemDefaultZone()
+    val data = DataModule(driver, clock = clock)
 
     val startWorkout = StartWorkout(data.workouts, data.routines, clock)
     val addExerciseToWorkout = AddExerciseToWorkout(data.workouts, data.exercises)

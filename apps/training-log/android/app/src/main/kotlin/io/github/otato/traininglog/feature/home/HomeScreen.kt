@@ -24,6 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,6 +62,7 @@ fun HomeRoute(
     onOpenWorkout: (String) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenRoutines: () -> Unit,
+    onOpenMigration: () -> Unit,
 ) {
     val viewModel = appViewModel<HomeViewModel> { container ->
         HomeViewModel(
@@ -85,6 +87,7 @@ fun HomeRoute(
         onOpenWorkout = onOpenWorkout,
         onOpenSettings = onOpenSettings,
         onOpenRoutines = onOpenRoutines,
+        onOpenMigration = onOpenMigration,
     )
 }
 
@@ -95,6 +98,7 @@ fun HomeScreen(
     onOpenWorkout: (String) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenRoutines: () -> Unit,
+    onOpenMigration: () -> Unit,
 ) {
     var showRoutinePicker by remember { mutableStateOf(false) }
     var pendingDay by remember { mutableStateOf<DayCellUi?>(null) }
@@ -149,6 +153,14 @@ fun HomeScreen(
                     textStyle = AppTheme.typography.button.copy(fontSize = 18.sp),
                     modifier = Modifier.fillMaxWidth(),
                 )
+                if (state.isFirstTime) {
+                    // はじめて開いたとき（記録もルーティンもない）だけ、前のアプリから乗り換える入口を出す
+                    TextButton(onClick = onOpenMigration, modifier = Modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp)) {
+                        Icon(AppIcons.Import, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("ほかのアプリから乗り換える", style = AppTheme.typography.bodyStrong)
+                    }
+                }
                 if (next != null) {
                     Spacer(Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

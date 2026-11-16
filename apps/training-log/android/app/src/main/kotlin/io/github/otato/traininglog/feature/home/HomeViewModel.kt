@@ -17,7 +17,6 @@ import io.github.otato.traininglog.domain.usecase.StartWorkout
 import io.github.otato.traininglog.ui.common.PreviousUi
 import io.github.otato.traininglog.ui.common.RecordFormat
 import io.github.otato.traininglog.ui.common.formatDateWithDow
-import io.github.otato.traininglog.ui.common.formatMonthDay
 import io.github.otato.traininglog.ui.common.formatVolume
 import io.github.otato.traininglog.ui.common.jaShort
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -178,7 +177,7 @@ class HomeViewModel(
                 val previous = workouts.previousRecord(detail.exercise.id, excludeWorkoutId = null)
                 val previousUi = previous?.let { record ->
                     RecordFormat.setsLine(record.sets, detail.exercise, record.weightMode, record.repMode, settings.weightUnit)
-                        ?.let { PreviousUi(formatMonthDay(record.date), it) }
+                        ?.let { PreviousUi.of(record, it) }
                 }
                 NextItemUi(
                     name = detail.exercise.name,

@@ -56,6 +56,12 @@ object AppIcons {
     val Calendar = stroke("calendar", "M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z", "M4 10h16M8 3v4M16 3v4")
     val Tune = stroke("tune", "M4 7h9M17 7h3M4 17h3M11 17h9", "M13 7a2 2 0 1 0 4 0a2 2 0 1 0 -4 0", "M7 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0")
     val Chart = stroke("chart", "M4 20V4M4 20h16M8 15l4-5 3 3 5-7")
+
+    /** 取り込む（下向きの矢印と受け皿） */
+    val Import = stroke("import", "M12 4v11M8 11l4 4 4-4M5 19h14")
+
+    /** 乗り換え（行き来する矢印） */
+    val Swap = stroke("swap", "M7 7h11l-3-3M17 17H6l3 3")
     val Play = filled("play", "M8 5l11 7-11 7z")
     val Star = filled("star", "M12 3l2.7 5.6 6.1.8-4.5 4.2 1.2 6.1-5.5-3-5.5 3 1.2-6.1-4.5-4.2 6.1-.8z")
 }

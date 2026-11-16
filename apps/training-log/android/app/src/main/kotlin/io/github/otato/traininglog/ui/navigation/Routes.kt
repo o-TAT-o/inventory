@@ -14,13 +14,16 @@ object Routes {
 
     const val SETTINGS = "settings"
 
+    /** 乗り換え用の初期設定（F-DA-05） */
+    const val MIGRATION = "migration"
+
     const val WORKOUT = "workout/{workoutId}"
     fun workout(workoutId: String) = "workout/${Uri.encode(workoutId)}"
 
     const val DONE = "done/{workoutId}"
     fun done(workoutId: String) = "done/${Uri.encode(workoutId)}"
 
-    /** 種目を選ぶ。mode は workout か routine、targetId はそのワークアウト・ルーティンの id */
+    /** 種目を選ぶ。mode は workout・routine・migration、targetId はそのワークアウト・ルーティンの id（migration では使わない） */
     const val PICKER = "picker/{mode}/{targetId}"
     fun picker(mode: String, targetId: String) = "picker/$mode/${Uri.encode(targetId)}"
 

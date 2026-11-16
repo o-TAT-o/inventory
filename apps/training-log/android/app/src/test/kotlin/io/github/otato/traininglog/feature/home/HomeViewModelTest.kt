@@ -109,7 +109,7 @@ class HomeViewModelTest {
 
         val next = assertNotNull(viewModel().state.first { it.next != null }.next)
         val previous = assertNotNull(next.items.single().previous)
-        assertEquals("11/12", previous.dateText)
+        assertEquals("前回 11/12", previous.label)
         assertEquals("60 kg", previous.line.weightText)
     }
 

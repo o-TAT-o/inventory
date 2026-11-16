@@ -2,6 +2,7 @@ package io.github.otato.traininglog.ui.common
 
 import io.github.otato.traininglog.domain.model.Equipment
 import io.github.otato.traininglog.domain.model.Exercise
+import io.github.otato.traininglog.domain.model.PreviousRecord
 import io.github.otato.traininglog.domain.model.RecordType
 import io.github.otato.traininglog.domain.model.RepMode
 import io.github.otato.traininglog.domain.model.SetRecord
@@ -61,6 +62,18 @@ class RecordFormatTest {
         assertEquals("加重", added.tag)
         val assisted = RecordFormat.setsLine(sets(-20.0 to 8), pullUp, WeightMode.Total, RepMode.Normal, WeightUnit.Kg)!!
         assertEquals("補助", assisted.tag)
+    }
+
+    @Test
+    fun `前回の見出しは、乗り換えの初期設定から来た値のときだけ「前のアプリ」になる`() {
+        val recorded = sets(60.0 to 10)
+        val line = RecordFormat.setsLine(recorded, bench, WeightMode.Total, RepMode.Normal, WeightUnit.Kg)!!
+        val date = java.time.LocalDate.of(2026, 11, 7)
+        val normal = PreviousRecord(date, recorded, WeightMode.Total, RepMode.Normal)
+        val baseline = PreviousRecord(date, recorded, WeightMode.Total, RepMode.Normal, isBaseline = true)
+
+        assertEquals("前回 11/7", PreviousUi.of(normal, line).label)
+        assertEquals("前回（前のアプリ）", PreviousUi.of(baseline, line).label)
     }
 
     @Test
