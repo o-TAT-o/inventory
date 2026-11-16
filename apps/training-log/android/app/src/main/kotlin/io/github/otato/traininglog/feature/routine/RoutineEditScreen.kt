@@ -3,6 +3,7 @@ package io.github.otato.traininglog.feature.routine
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -14,6 +15,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +39,9 @@ import io.github.otato.traininglog.designsystem.components.AppTopBar
 import io.github.otato.traininglog.designsystem.components.CompactStepper
 import io.github.otato.traininglog.designsystem.components.ConfirmDialog
 import io.github.otato.traininglog.designsystem.components.OutlineButton
+import io.github.otato.traininglog.designsystem.components.ReorderHandle
+import io.github.otato.traininglog.designsystem.components.ReorderableRow
+import io.github.otato.traininglog.designsystem.components.rememberReorderState
 import io.github.otato.traininglog.designsystem.components.SectionLabel
 import io.github.otato.traininglog.designsystem.components.TextAction
 import io.github.otato.traininglog.designsystem.icons.AppIcons
@@ -59,6 +66,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -67,6 +75,11 @@ data class RoutineEditUiState(
     val detail: RoutineDetail? = null,
     val settings: AppSettings = AppSettings(),
 )
+
+sealed interface RoutineEditEvent {
+    data class ItemRemoved(val exerciseName: String) : RoutineEditEvent
+    data object ItemsReordered : RoutineEditEvent
+}
 
 /** ルーティンの編集（F-RT-01〜03、F-RT-08、F-RT-11、F-RT-12）。 */
 class RoutineEditViewModel(
@@ -81,6 +94,13 @@ class RoutineEditViewModel(
 
     private val _deleted = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val deleted: SharedFlow<Unit> = _deleted.asSharedFlow()
+
+    private val _events = MutableSharedFlow<RoutineEditEvent>(extraBufferCapacity = 4)
+    val events: SharedFlow<RoutineEditEvent> = _events.asSharedFlow()
+
+    /** 外した種目（元に戻すために持つ）と、並べ替える前の並び。どちらか一方だけを持つ。 */
+    private var removedItem: RoutineItem? = null
+    private var previousOrder: List<String>? = null
 
     /**
      * 種目の目標の保存は、打った順に 1 つずつ行う。＋ − を長押しすると、短い間に何度も保存するので、
@@ -107,8 +127,38 @@ class RoutineEditViewModel(
         itemSaveQueue.trySend(item)
     }
 
+    /** 種目をルーティンから外す。直後なら、元に戻せる（F-UI-03）。 */
     fun removeItem(itemId: String) {
-        viewModelScope.launch { routines.deleteItem(itemId) }
+        viewModelScope.launch {
+            // 画面の状態ではなく、いまの保存内容から取る（画面がまだ読み込み前でも、外す操作は必ず効かせる）
+            val target = routines.observeRoutine(routineId).first()?.items?.firstOrNull { it.item.id == itemId }
+            removedItem = target?.item
+            previousOrder = null
+            routines.deleteItem(itemId)
+            if (target != null) _events.emit(RoutineEditEvent.ItemRemoved(target.exercise.name))
+        }
+    }
+
+    /** 種目の並びを変える（F-RT-02）。直後なら、元に戻せる。 */
+    fun reorderItems(orderedIds: List<String>) {
+        viewModelScope.launch {
+            previousOrder = routines.observeRoutine(routineId).first()?.items?.map { it.item.id }
+            removedItem = null
+            routines.reorderItems(routineId, orderedIds)
+            _events.emit(RoutineEditEvent.ItemsReordered)
+        }
+    }
+
+    /** 直前の「外す」「並べ替え」を、元に戻す。 */
+    fun undo() {
+        val removed = removedItem
+        val order = previousOrder
+        removedItem = null
+        previousOrder = null
+        viewModelScope.launch {
+            if (removed != null) routines.saveItem(removed)
+            if (order != null) routines.reorderItems(routineId, order)
+        }
     }
 
     fun delete() {
@@ -135,9 +185,22 @@ fun RoutineEditRoute(
         RoutineEditViewModel(routineId, it.data.routines, it.data.settings)
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(viewModel) { viewModel.deleted.collect { onBack() } }
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            snackbar.currentSnackbarData?.dismiss()
+            val message = when (event) {
+                is RoutineEditEvent.ItemRemoved -> "${event.exerciseName}を外しました"
+                RoutineEditEvent.ItemsReordered -> "並べ替えました"
+            }
+            if (snackbar.showSnackbar(message, actionLabel = "元に戻す") == SnackbarResult.ActionPerformed) viewModel.undo()
+        }
+    }
     RoutineEditScreen(
         state = state,
+        snackbar = snackbar,
+        onReorderItems = viewModel::reorderItems,
         newItemId = newItemId,
         onNewItemShown = onNewItemShown,
         onBack = onBack,
@@ -157,6 +220,8 @@ fun RoutineEditRoute(
 @Composable
 fun RoutineEditScreen(
     state: RoutineEditUiState,
+    snackbar: SnackbarHostState,
+    onReorderItems: (List<String>) -> Unit,
     newItemId: String?,
     onNewItemShown: () -> Unit,
     onBack: () -> Unit,
@@ -172,6 +237,14 @@ fun RoutineEditScreen(
     val listState = rememberLazyListState()
     var expandedId by remember { mutableStateOf<String?>(null) }
     val itemIds = detail?.items?.map { it.item.id }.orEmpty()
+    // 先頭の 1 つ（名前とメモの欄）は、並べ替えの対象ではない
+    val reorder = rememberReorderState(
+        source = detail?.items.orEmpty(),
+        key = { it.item.id },
+        listState = listState,
+        leadingItems = 1,
+        onCommit = { onReorderItems(it.map { d -> d.item.id }) },
+    )
 
     // 種目選択で足した種目は、すぐ目標を入れられるように、カードを開く
     LaunchedEffect(newItemId, itemIds) {
@@ -195,7 +268,8 @@ fun RoutineEditScreen(
         if (detail == null) return@Column
         var name by remember(detail.routine.id) { mutableStateOf(detail.routine.name) }
         var memo by remember(detail.routine.id) { mutableStateOf(detail.routine.memo) }
-        LazyColumn(state = listState, modifier = Modifier.weight(1f)) {
+        Box(modifier = Modifier.weight(1f)) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             item(key = "header") {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(
@@ -221,19 +295,24 @@ fun RoutineEditScreen(
                     SectionLabel("種目")
                 }
             }
-            items(detail.items, key = { it.item.id }) { itemDetail ->
-                RoutineItemCard(
-                    detail = itemDetail,
-                    settings = state.settings,
-                    expanded = expandedId == itemDetail.item.id,
-                    onToggle = { expandedId = if (expandedId == itemDetail.item.id) null else itemDetail.item.id },
-                    onChange = onSaveItem,
-                    onRemove = {
-                        if (expandedId == itemDetail.item.id) expandedId = null
-                        onRemoveItem(itemDetail.item.id)
-                    },
-                )
+            items(reorder.items, key = { it.item.id }) { itemDetail ->
+                ReorderableRow(reorder, key = itemDetail.item.id) { handle, _ ->
+                    RoutineItemCard(
+                        detail = itemDetail,
+                        settings = state.settings,
+                        expanded = expandedId == itemDetail.item.id,
+                        handle = handle,
+                        onToggle = { expandedId = if (expandedId == itemDetail.item.id) null else itemDetail.item.id },
+                        onChange = onSaveItem,
+                        onRemove = {
+                            if (expandedId == itemDetail.item.id) expandedId = null
+                            onRemoveItem(itemDetail.item.id)
+                        },
+                    )
+                }
             }
+        }
+        SnackbarHost(hostState = snackbar, modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp))
         }
         // 種目を足す操作は、画面の下に固定する（一覧が長くなっても、いつも押せる）
         Column(modifier = Modifier.fillMaxWidth().background(AppTheme.colors.surface)) {
@@ -271,6 +350,7 @@ private fun RoutineItemCard(
     detail: RoutineItemDetail,
     settings: AppSettings,
     expanded: Boolean,
+    handle: Modifier,
     onToggle: () -> Unit,
     onChange: (RoutineItem) -> Unit,
     onRemove: () -> Unit,
@@ -292,10 +372,11 @@ private fun RoutineItemCard(
                 .fillMaxWidth()
                 .defaultMinSize(minHeight = 64.dp)
                 .clickable(role = Role.Button, onClick = onToggle)
-                .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                .padding(start = 4.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            ReorderHandle(handle)
+            Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                 Text(exercise.name, style = AppTheme.typography.bodyStrong, color = colors.fg)
                 when {
                     expanded -> Text(

@@ -56,4 +56,38 @@ class RoutineEditViewModelTest {
         viewModel.removeItem("i1")
         assertEquals(emptyList(), assertNotNull(data.routines.observeRoutine("push").first { it?.items?.isEmpty() == true }).items)
     }
+
+    @Test
+    fun `外した種目は、元に戻すと、目標もそのまま戻る`() = harness.run {
+        prepare()
+        data.routines.saveItem(RoutineItem("i1", "push", "bench", targetWeightKg = 60.0, targetSets = 3))
+        val viewModel = viewModel()
+
+        viewModel.removeItem("i1")
+        data.routines.observeRoutine("push").first { it?.items?.isEmpty() == true }
+        viewModel.undo()
+
+        val item = assertNotNull(
+            data.routines.observeRoutine("push").first { it?.items?.size == 1 },
+        ).items.single().item
+        assertEquals(60.0, item.targetWeightKg)
+        assertEquals(3, item.targetSets)
+    }
+
+    @Test
+    fun `種目を並べ替えると並びが変わり、元に戻すと前の並びに戻る`() = harness.run {
+        prepare()
+        data.exercises.save(Exercise(id = "squat", name = "スクワット"))
+        data.routines.saveItem(RoutineItem("i1", "push", "bench", sortOrder = 0))
+        data.routines.saveItem(RoutineItem("i2", "push", "squat", sortOrder = 1))
+        val viewModel = viewModel()
+
+        viewModel.reorderItems(listOf("i2", "i1"))
+        val reordered = data.routines.observeRoutine("push").first { detail -> detail?.items?.map { it.item.id } == listOf("i2", "i1") }
+        assertEquals(listOf("i2", "i1"), assertNotNull(reordered).items.map { it.item.id })
+
+        viewModel.undo()
+        val restored = data.routines.observeRoutine("push").first { detail -> detail?.items?.map { it.item.id } == listOf("i1", "i2") }
+        assertEquals(listOf("i1", "i2"), assertNotNull(restored).items.map { it.item.id })
+    }
 }

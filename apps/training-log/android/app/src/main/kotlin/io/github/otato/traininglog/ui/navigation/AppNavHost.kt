@@ -40,7 +40,12 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
             )
         }
         composable(Routes.ROUTINES) {
-            RoutinesRoute(onOpenRoutine = { navController.navigate(Routes.routineEdit(it)) })
+            RoutinesRoute(
+                onOpenRoutine = { navController.navigate(Routes.routineEdit(it)) },
+                onOpenWorkout = { navController.navigate(Routes.workout(it)) },
+                onOpenExercise = { navController.navigate(Routes.exerciseDetail(it)) },
+                onCreateExercise = { navController.navigate(Routes.exerciseEdit("new")) },
+            )
         }
         composable(Routes.HISTORY) {
             HistoryRoute(onOpenWorkout = { navController.navigate(Routes.workout(it)) })
