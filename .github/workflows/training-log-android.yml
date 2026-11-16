@@ -1,7 +1,8 @@
 name: training-log (Android)
 
 # apps/training-log/android の変更があったときだけ動く。
-# - check: ユニットテスト・Lint・デバッグ APK のビルド
+# - check: ユニットテスト（JVM。速い）・Lint・デバッグ APK のビルド
+# - e2e: エミュレーターでアプリを動かし、ユーザーの基本の操作を確かめる（時間がかかるので、check とは別のジョブ）
 # - publish-dev-build: main へのプッシュのとき、動作確認用のデバッグ APK を GitHub のリリース（プレリリース）に置く
 on:
   push:
@@ -67,6 +68,52 @@ jobs:
           path: |
             apps/training-log/android/**/build/reports/
             apps/training-log/android/**/build/test-results/
+          retention-days: 7
+
+  e2e:
+    name: e2e（エミュレーター）
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: apps/training-log/android
+    steps:
+      - uses: actions/checkout@v7
+
+      # エミュレーターを速く動かすために、KVM（仮想化）を使えるようにする
+      - name: KVM を有効にする
+        working-directory: .
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: e2e（エミュレーターで、基本の操作を確かめる）
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          working-directory: apps/training-log/android
+          script: ./gradlew :app:connectedDebugAndroidTest --stacktrace
+
+      - name: 失敗したときのレポート
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-reports
+          path: |
+            apps/training-log/android/app/build/reports/androidTests/
+            apps/training-log/android/app/build/outputs/androidTest-results/
           retention-days: 7
 
   publish-dev-build:

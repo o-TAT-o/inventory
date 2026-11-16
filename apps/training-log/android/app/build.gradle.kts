@@ -17,6 +17,8 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // e2e は、1 つのテストごとに、アプリのデータを空にして始める（前のテストの記録が残らないように）
+        testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }
 
     // デバッグ用の鍵はリポジトリに置く（誰が作っても同じ署名になり、上書きインストールできる）。公開用の鍵は別に作り、コミットしない
@@ -50,6 +52,8 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        // e2e（src/androidTest）は、テストごとに別のプロセスで、データを消して動かす
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
     }
 }
 
@@ -78,5 +82,6 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
+    androidTestUtil(libs.androidx.test.orchestrator)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
