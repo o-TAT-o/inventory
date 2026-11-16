@@ -26,7 +26,12 @@ data class RoutineItem(
 data class RoutineItemDetail(
     val item: RoutineItem,
     val exercise: Exercise,
-)
+    /** バリエーション（フォーム）のとき、親の種目の名前 */
+    val parentName: String? = null,
+) {
+    /** 一覧に出す名前。バリエーションは「ワンハンドダンベルロウ（膝をベンチにつく）」。 */
+    val displayName: String get() = if (parentName != null) "$parentName（${exercise.name}）" else exercise.name
+}
 
 data class RoutineDetail(
     val routine: Routine,

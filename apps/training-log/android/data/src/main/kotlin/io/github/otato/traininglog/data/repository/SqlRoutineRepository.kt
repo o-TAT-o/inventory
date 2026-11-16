@@ -116,7 +116,7 @@ internal class SqlRoutineRepository(
         routine = routine,
         // 種目が（何らかの理由で）見つからない行は出さない
         items = items.sortedBy { it.sortOrder }.mapNotNull { item ->
-            catalog[item.exerciseId]?.let { RoutineItemDetail(item, it) }
+            catalog[item.exerciseId]?.let { RoutineItemDetail(item, it, parentName = it.parentId?.let(catalog::get)?.name) }
         },
     )
 }
