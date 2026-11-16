@@ -40,10 +40,12 @@ import io.github.otato.traininglog.ui.common.appViewModel
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.clickable
 
-private val WeightColumn = 64.dp
-private val RepsColumn = 52.dp
-private val BestColumn = 64.dp
-private val ColumnGap = 6.dp
+// 4 つの入力欄が、幅 360dp の画面でも、種目名の幅を残して並ぶように、細めにしている
+private val WeightColumn = 58.dp
+private val RepsColumn = 46.dp
+private val SetsColumn = 42.dp
+private val BestColumn = 58.dp
+private val ColumnGap = 4.dp
 
 @Composable
 fun MigrationRoute(
@@ -60,6 +62,7 @@ fun MigrationRoute(
         onEditExercise = onEditExercise,
         onWeight = viewModel::onWeight,
         onReps = viewModel::onReps,
+        onSets = viewModel::onSets,
         onBest = viewModel::onBest,
         onRemove = viewModel::remove,
     )
@@ -77,6 +80,7 @@ fun MigrationScreen(
     onEditExercise: (String) -> Unit,
     onWeight: (String, String) -> Unit,
     onReps: (String, String) -> Unit,
+    onSets: (String, String) -> Unit,
     onBest: (String, String) -> Unit,
     onRemove: (String) -> Unit,
 ) {
@@ -86,7 +90,7 @@ fun MigrationScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         AppTopBar("乗り換え用の初期設定", onBack = onBack)
         Text(
-            "前のアプリの画面を見ながら、種目ごとの直近の値を入れます。入れた値は、はじめのワークアウトで「前回の記録」になり、次のセットの初期値にもなります。",
+            "前のアプリの画面を見ながら、種目ごとの直近の値を入れます。セット数は空欄でもかまいません。入れた値は、はじめのワークアウトで「前回の記録」になり、次のセットの初期値にもなります。",
             style = AppTheme.typography.caption.copy(fontSize = 13.sp),
             color = colors.sub,
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 10.dp),
@@ -100,6 +104,7 @@ fun MigrationScreen(
                     onLongPress = { removeTarget = row },
                     onWeight = { onWeight(row.exerciseId, it) },
                     onReps = { onReps(row.exerciseId, it) },
+                    onSets = { onSets(row.exerciseId, it) },
                     onBest = { onBest(row.exerciseId, it) },
                 )
                 AppDivider()
@@ -173,13 +178,14 @@ private fun HeaderRow(weightUnitLabel: String) {
             .fillMaxWidth()
             .height(28.dp)
             .background(colors.surfaceVariant)
-            .padding(start = 20.dp, end = 12.dp),
+            .padding(start = 16.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(ColumnGap),
     ) {
         Text("種目", style = style, color = colors.sub, modifier = Modifier.weight(1f))
-        Text("重量 $weightUnitLabel", style = style, color = colors.sub, textAlign = TextAlign.Center, modifier = Modifier.width(WeightColumn))
-        Text("回数", style = style, color = colors.sub, textAlign = TextAlign.Center, modifier = Modifier.width(RepsColumn))
+        Text("重量 $weightUnitLabel", style = style, color = colors.sub, textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.width(WeightColumn))
+        Text("回数", style = style, color = colors.sub, textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.width(RepsColumn))
+        Text("セット", style = style, color = colors.sub, textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.width(SetsColumn))
         Text("自己ベスト", style = style, color = colors.sub, textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.width(BestColumn))
     }
 }
@@ -193,19 +199,21 @@ private fun MigrationRow(
     onLongPress: () -> Unit,
     onWeight: (String) -> Unit,
     onReps: (String) -> Unit,
+    onSets: (String) -> Unit,
     onBest: (String) -> Unit,
 ) {
     val colors = AppTheme.colors
     // 打った文字は、この行が持つ（保存した値で上書きしない。「62.」の途中で「62」に戻らないように）
     var weight by remember(row.exerciseId) { mutableStateOf(row.weight.initialText) }
     var reps by remember(row.exerciseId) { mutableStateOf(row.reps.initialText) }
+    var sets by remember(row.exerciseId) { mutableStateOf(row.sets.initialText) }
     var best by remember(row.exerciseId) { mutableStateOf(row.best.initialText) }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = 64.dp)
-            .padding(start = 20.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+            .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(ColumnGap),
     ) {
@@ -238,7 +246,20 @@ private fun MigrationRow(
             contentDescription = row.reps.description,
             enabled = row.reps.enabled,
             keyboard = row.reps.keyboard,
+            maxLength = 4,
             modifier = Modifier.width(RepsColumn),
+        )
+        AppCellField(
+            value = sets,
+            onValueChange = {
+                sets = it
+                onSets(it)
+            },
+            contentDescription = row.sets.description,
+            enabled = row.sets.enabled,
+            keyboard = row.sets.keyboard,
+            maxLength = 2,
+            modifier = Modifier.width(SetsColumn),
         )
         AppCellField(
             value = best,

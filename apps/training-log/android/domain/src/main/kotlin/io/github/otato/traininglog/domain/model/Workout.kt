@@ -99,7 +99,11 @@ data class WorkoutSummary(
 /**
  * 前回の記録（同じ種目で、直近のワークアウトの完了したセット）。
  * [isBaseline] が true のときは、実際の記録ではなく、乗り換え用の初期設定で入れた直近の値（F-DA-06）。
- * このとき [sets] は 1 セットだけで、[date] は値を入れた日。
+ * このとき [sets] は、同じ値のセットを、入れたセット数だけ並べたもの（セット数を入れなかったときは 1 セット）。
+ * [date] は値を入れた日。
+ *
+ * [setCountKnown] は、[sets] の数が、実際にやったセット数か。乗り換えでセット数を入れなかったときだけ false で、
+ * このときは、次のワークアウトのセット数の目安にしない（値だけを使う）。
  */
 data class PreviousRecord(
     val date: LocalDate,
@@ -108,6 +112,7 @@ data class PreviousRecord(
     val repMode: RepMode,
     val gearIds: Set<String> = emptySet(),
     val isBaseline: Boolean = false,
+    val setCountKnown: Boolean = true,
 )
 
 /** ワークアウトを始めるとき・種目を足すときに作る、種目とセットの下書き。 */

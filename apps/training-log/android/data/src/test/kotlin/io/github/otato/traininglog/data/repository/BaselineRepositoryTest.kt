@@ -152,6 +152,32 @@ class BaselineRepositoryTest {
     }
 
     @Test
+    fun `セット数を保存でき、空欄にも戻せる`() = runTest {
+        data.baselines.addExercises(listOf("bench"))
+        data.baselines.save(Baseline("bench", weightKg = 60.0, reps = 10, sets = 4))
+        assertEquals(4, baselines().single().baseline.sets)
+
+        data.baselines.save(Baseline("bench", weightKg = 60.0, reps = 10, sets = null))
+        assertNull(baselines().single().baseline.sets)
+    }
+
+    @Test
+    fun `セット数を入れていれば、前回の記録もそのセット数になり、ルーティンを始めたときのセット数も合う`() = runTest {
+        data.baselines.save(Baseline("bench", weightKg = 60.0, reps = 10, sets = 4))
+
+        val previous = assertNotNull(data.workouts.previousRecord("bench", excludeWorkoutId = null))
+        assertEquals(4, previous.sets.size)
+        assertTrue(previous.setCountKnown)
+
+        data.routines.saveRoutine(Routine("push", "Push"))
+        data.routines.saveItem(RoutineItem("i1", "push", "bench"))
+        val workoutId = StartWorkout(data.workouts, data.routines, clock, TestDatabase.sequentialIds("s"))(today, "push")
+        val sets = assertNotNull(data.workouts.observeWorkout(workoutId).first()).exercises.single().sets
+        assertEquals(4, sets.size)
+        assertEquals(listOf(60.0, 60.0, 60.0, 60.0), sets.map { it.weightKg })
+    }
+
+    @Test
     fun `種目を削除しても（非表示でなく消えるとき）、初期設定の行も消える`() = runTest {
         data.exercises.save(Exercise(id = "temp", name = "仮の種目"))
         data.baselines.addExercises(listOf("temp"))

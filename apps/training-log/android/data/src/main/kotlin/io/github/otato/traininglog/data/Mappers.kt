@@ -36,7 +36,7 @@ internal fun ExerciseRow.toDomain() = Exercise(
     id = id,
     parentId = parent_id,
     name = name,
-    bodyPart = BodyPart.valueOf(body_part),
+    bodyPart = BodyPart.fromName(body_part),
     recordType = RecordType.valueOf(record_type),
     equipment = Equipment.valueOf(equipment),
     weightMode = WeightMode.valueOf(weight_mode),
@@ -55,6 +55,7 @@ internal fun Exercise_baseline.toDomain() = Baseline(
     durationSec = duration_sec?.toInt(),
     best = best,
     sortOrder = sort_order.toInt(),
+    sets = sets?.toInt(),
 )
 
 internal fun GearRow.toDomain() = Gear(id = id, name = name, sortOrder = sort_order.toInt(), hidden = hidden != 0L)

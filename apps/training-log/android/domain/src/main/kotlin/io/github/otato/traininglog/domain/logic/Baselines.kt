@@ -12,24 +12,35 @@ object Baselines {
     /** 初期設定で入力できる種目か。距離 × 時間の種目は、対象にしない。 */
     fun isSupported(exercise: Exercise): Boolean = exercise.recordType != RecordType.DistanceTime
 
-    /** 直近の値（前回の記録の代わり）。直近の値が 1 つもなければ null。 */
+    /** 入れられるセット数の上限。 */
+    const val MAX_SETS = 20
+
+    /**
+     * 直近の値（前回の記録の代わり）。直近の値が 1 つもなければ null。
+     * セット数を入れていれば、同じ値のセットをその数だけ並べる。入れていなければ 1 セット（セット数は分からないので、
+     * [PreviousRecord.setCountKnown] を false にする）。
+     */
     fun toPreviousRecord(baseline: Baseline, exercise: Exercise, date: LocalDate): PreviousRecord? {
         if (!hasLatest(baseline, exercise)) return null
-        val set = SetRecord(
-            id = "baseline:${baseline.exerciseId}",
-            workoutExerciseId = "baseline",
-            sortOrder = 0,
-            weightKg = if (exercise.usesWeight) baseline.weightKg ?: 0.0 else 0.0,
-            reps = baseline.reps ?: 0,
-            durationSec = if (exercise.recordType == RecordType.Duration) baseline.durationSec else null,
-            completed = true,
-        )
+        val count = (baseline.sets ?: 1).coerceIn(1, MAX_SETS)
+        val sets = (0 until count).map { index ->
+            SetRecord(
+                id = "baseline:${baseline.exerciseId}:$index",
+                workoutExerciseId = "baseline",
+                sortOrder = index,
+                weightKg = if (exercise.usesWeight) baseline.weightKg ?: 0.0 else 0.0,
+                reps = baseline.reps ?: 0,
+                durationSec = if (exercise.recordType == RecordType.Duration) baseline.durationSec else null,
+                completed = true,
+            )
+        }
         return PreviousRecord(
             date = date,
-            sets = listOf(set),
+            sets = sets,
             weightMode = exercise.weightMode,
             repMode = exercise.repMode,
             isBaseline = true,
+            setCountKnown = baseline.sets != null,
         )
     }
 

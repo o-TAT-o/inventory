@@ -1,0 +1,24 @@
+-- バージョン 2 → 3:
+-- ①部位の「腕」を、「二頭」と「三頭」に分ける。
+-- ②乗り換え用の初期設定に、セット数の列を足す（列の定義は、Baseline.sq と同じにする）。
+
+-- 三頭: プリセットの種目と、名前から三頭と分かる種目（自分で作った種目も含む）
+UPDATE exercise SET body_part = 'Triceps'
+WHERE body_part = 'Arms'
+  AND (
+    id IN ('preset:triceps_pushdown', 'preset:skull_crusher')
+    OR name LIKE '%トライセプス%'
+    OR name LIKE '%プッシュダウン%'
+    OR name LIKE '%スカル%'
+    OR name LIKE '%キックバック%'
+    OR name LIKE '%フレンチ%'
+    OR name LIKE '%エクステンション%'
+    OR name LIKE '%ナローグリップ%'
+    OR name LIKE '%三頭%'
+    OR name LIKE '%ディップ%'
+  );
+
+-- 残りの「腕」は二頭にする（違っていたら、種目の編集で直せる）
+UPDATE exercise SET body_part = 'Biceps' WHERE body_part = 'Arms';
+
+ALTER TABLE exercise_baseline ADD COLUMN sets INTEGER;

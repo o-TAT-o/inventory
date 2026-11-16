@@ -63,12 +63,13 @@ internal object PresetData {
         ex("side_raise", "サイドレイズ", BodyPart.Shoulders, Equipment.Dumbbell, WeightMode.PerSide),
         ex("rear_raise", "リアレイズ", BodyPart.Shoulders, Equipment.Dumbbell, WeightMode.PerSide),
         ex("face_pull", "フェイスプル", BodyPart.Shoulders, Equipment.Cable),
-        // 腕
-        ex("barbell_curl", "バーベルカール", BodyPart.Arms, Equipment.Barbell),
-        ex("dumbbell_curl", "ダンベルカール", BodyPart.Arms, Equipment.Dumbbell, WeightMode.PerSide),
-        ex("hammer_curl", "ハンマーカール", BodyPart.Arms, Equipment.Dumbbell, WeightMode.PerSide),
-        ex("triceps_pushdown", "トライセプスプッシュダウン", BodyPart.Arms, Equipment.Cable),
-        ex("skull_crusher", "スカルクラッシャー", BodyPart.Arms, Equipment.Barbell),
+        // 二頭
+        ex("barbell_curl", "バーベルカール", BodyPart.Biceps, Equipment.Barbell),
+        ex("dumbbell_curl", "ダンベルカール", BodyPart.Biceps, Equipment.Dumbbell, WeightMode.PerSide),
+        ex("hammer_curl", "ハンマーカール", BodyPart.Biceps, Equipment.Dumbbell, WeightMode.PerSide),
+        // 三頭（id は、データの移行 2.sqm でも使っている。変えるときは移行も直す）
+        ex("triceps_pushdown", "トライセプスプッシュダウン", BodyPart.Triceps, Equipment.Cable),
+        ex("skull_crusher", "スカルクラッシャー", BodyPart.Triceps, Equipment.Barbell),
         // 腹
         ex("crunch", "クランチ", BodyPart.Abs, Equipment.Bodyweight, recordType = RecordType.Bodyweight),
         ex("leg_raise", "レッグレイズ", BodyPart.Abs, Equipment.Bodyweight, recordType = RecordType.Bodyweight),

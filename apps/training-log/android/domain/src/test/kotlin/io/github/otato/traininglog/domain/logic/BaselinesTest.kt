@@ -82,12 +82,42 @@ class BaselinesTest {
     }
 
     @Test
-    fun `初期設定の値は 1 セット分なので、ワークアウトのセット数は 3 セットのまま、値だけを使う`() {
+    fun `セット数を入れていないときは、値だけを使い、ワークアウトのセット数は 3 セットのまま`() {
         val previous = assertNotNull(Baselines.toPreviousRecord(Baseline("bench", weightKg = 60.0, reps = 10), bench, date))
+        assertFalse(previous.setCountKnown)
+        assertEquals(1, previous.sets.size)
         var n = 0
         val planned = WorkoutPlanner(IdGenerator { "p-${n++}" }).plan("w", 0, bench, previous = previous)
         assertEquals(3, planned.sets.size)
         assertEquals(listOf(60.0, 60.0, 60.0), planned.sets.map { it.weightKg })
         assertEquals(listOf(10, 10, 10), planned.sets.map { it.reps })
+    }
+
+    @Test
+    fun `セット数を入れていれば、前回の記録はそのセット数になり、ワークアウトのセット数にも使う`() {
+        val previous = assertNotNull(Baselines.toPreviousRecord(Baseline("bench", weightKg = 60.0, reps = 10, sets = 5), bench, date))
+        assertTrue(previous.setCountKnown)
+        assertEquals(5, previous.sets.size)
+        assertEquals(setOf(60.0), previous.sets.map { it.weightKg }.toSet())
+        assertEquals(5, previous.sets.map { it.id }.toSet().size, "セットの id は、重ならない")
+
+        var n = 0
+        val planned = WorkoutPlanner(IdGenerator { "p-${n++}" }).plan("w", 0, bench, previous = previous)
+        assertEquals(5, planned.sets.size)
+        assertEquals(listOf(10, 10, 10, 10, 10), planned.sets.map { it.reps })
+    }
+
+    @Test
+    fun `セット数が 1 でも、入れたものとして 1 セットにする（空欄とは別）`() {
+        val previous = assertNotNull(Baselines.toPreviousRecord(Baseline("bench", weightKg = 60.0, reps = 10, sets = 1), bench, date))
+        assertTrue(previous.setCountKnown)
+        var n = 0
+        assertEquals(1, WorkoutPlanner(IdGenerator { "p-${n++}" }).plan("w", 0, bench, previous = previous).sets.size)
+    }
+
+    @Test
+    fun `セット数が大きすぎるときは、上限までにする`() {
+        val previous = assertNotNull(Baselines.toPreviousRecord(Baseline("bench", weightKg = 60.0, reps = 10, sets = 99), bench, date))
+        assertEquals(Baselines.MAX_SETS, previous.sets.size)
     }
 }

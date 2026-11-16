@@ -12,6 +12,9 @@ package io.github.otato.traininglog.domain.model
  * - 自重（加重あり）: [weightKg]（加重。マイナスは補助）、[reps]、[best]（最大加重）
  * - 自重（加重なし）: [reps]、[best]（最大回数）
  * - 時間: [durationSec]（秒）、[best]（最大の秒数）
+ *
+ * [sets] は、直近のワークアウトでやったセット数（空欄でもよい）。分かっていれば、前回の記録のセット数と、
+ * はじめのワークアウトのセット数に使う。いつやったか（日付）は持たない。
  */
 data class Baseline(
     val exerciseId: String,
@@ -21,6 +24,7 @@ data class Baseline(
     val best: Double? = null,
     /** 一覧に足した順 */
     val sortOrder: Int = 0,
+    val sets: Int? = null,
 )
 
 /** 初期設定の 1 行（種目つき）。 */
@@ -30,5 +34,6 @@ data class BaselineDetail(
 ) {
     /** 1 つでも値が入っているか（「N 種目を入力済み」の数え方）。 */
     val hasValues: Boolean
-        get() = baseline.weightKg != null || baseline.reps != null || baseline.durationSec != null || baseline.best != null
+        get() = baseline.weightKg != null || baseline.reps != null || baseline.durationSec != null ||
+            baseline.best != null || baseline.sets != null
 }

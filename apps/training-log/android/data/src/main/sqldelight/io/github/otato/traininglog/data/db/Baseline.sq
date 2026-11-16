@@ -10,7 +10,11 @@ CREATE TABLE exercise_baseline (
     best REAL,
     -- 一覧に足した順
     sort_order INTEGER NOT NULL DEFAULT 0,
-    updated_at INTEGER NOT NULL
+    updated_at INTEGER NOT NULL,
+    -- 直近のワークアウトでやったセット数（空欄でもよい）。
+    -- 後から足した列は、移行（ALTER TABLE ... ADD COLUMN）で末尾に付くので、定義も末尾に置く
+    -- （SELECT * は列の並びで読むため、新しく作ったデータベースと移した後のデータベースで並びを揃える）
+    sets INTEGER
 );
 
 selectAll:
@@ -21,8 +25,8 @@ SELECT * FROM exercise_baseline WHERE exercise_id = ?;
 
 insertBaseline:
 INSERT INTO exercise_baseline (
-    exercise_id, weight_kg, reps, duration_sec, best, sort_order, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?);
+    exercise_id, weight_kg, reps, duration_sec, best, sort_order, updated_at, sets
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 updateBaseline:
 UPDATE exercise_baseline SET
@@ -30,6 +34,7 @@ UPDATE exercise_baseline SET
     reps = :reps,
     duration_sec = :durationSec,
     best = :best,
+    sets = :sets,
     updated_at = :updatedAt
 WHERE exercise_id = :exerciseId;
 

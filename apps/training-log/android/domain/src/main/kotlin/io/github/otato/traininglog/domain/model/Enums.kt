@@ -48,17 +48,28 @@ enum class Equipment {
     Other,
 }
 
-/** 部位（F-EX-03）。 */
+/** 部位（F-EX-03）。腕は、二頭と三頭に分けて持つ。 */
 enum class BodyPart {
     Chest,
     Back,
     Legs,
     Shoulders,
-    Arms,
+    Biceps,
+    Triceps,
     Abs,
     FullBody,
     Cardio,
     Other,
+    ;
+
+    companion object {
+        /**
+         * 保存された名前から部位を求める。昔の「腕」（`Arms`）は二頭として読み、知らない名前は「その他」にする。
+         * データベースは移行で変換するが、昔の名前が残ったファイルなどがあっても、読めなくならないようにする。
+         */
+        fun fromName(name: String): BodyPart =
+            entries.firstOrNull { it.name == name } ?: if (name == "Arms") Biceps else Other
+    }
 }
 
 /** セットの種類（F-WO-09）。 */

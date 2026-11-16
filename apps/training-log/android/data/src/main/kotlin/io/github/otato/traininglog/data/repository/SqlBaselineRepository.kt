@@ -36,7 +36,7 @@ internal class SqlBaselineRepository(
                 var next = queries.maxSortOrder().executeAsOne() + 1
                 exerciseIds.forEach { id ->
                     if (queries.selectByExercise(id).executeAsOneOrNull() == null) {
-                        queries.insertBaseline(id, null, null, null, null, next++, clock.millis())
+                        queries.insertBaseline(id, null, null, null, null, next++, clock.millis(), null)
                     }
                 }
             }
@@ -56,6 +56,7 @@ internal class SqlBaselineRepository(
                         baseline.best,
                         queries.maxSortOrder().executeAsOne() + 1,
                         clock.millis(),
+                        baseline.sets?.toLong(),
                     )
                 } else {
                     queries.updateBaseline(
@@ -63,6 +64,7 @@ internal class SqlBaselineRepository(
                         reps = baseline.reps?.toLong(),
                         durationSec = baseline.durationSec?.toLong(),
                         best = baseline.best,
+                        sets = baseline.sets?.toLong(),
                         updatedAt = clock.millis(),
                         exerciseId = baseline.exerciseId,
                     )

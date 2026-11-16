@@ -52,12 +52,13 @@ fun AppCellField(
     enabled: Boolean = true,
     keyboard: CellKeyboard = CellKeyboard.Integer,
     imeAction: ImeAction = ImeAction.Next,
+    maxLength: Int = DEFAULT_MAX_LENGTH,
 ) {
     val colors = AppTheme.colors
     val shape = RoundedCornerShape(10.dp)
     BasicTextField(
         value = if (enabled) value else "—",
-        onValueChange = { raw -> onValueChange(filterCellText(raw, keyboard)) },
+        onValueChange = { raw -> onValueChange(filterCellText(raw, keyboard, maxLength)) },
         enabled = enabled,
         singleLine = true,
         textStyle = AppTheme.typography.heading.copy(
@@ -103,8 +104,10 @@ fun AppCellField(
     )
 }
 
-/** 入力された文字から、打てない文字を取り除く（全角の数字・記号は半角に直す）。 */
-internal fun filterCellText(raw: String, keyboard: CellKeyboard): String {
+private const val DEFAULT_MAX_LENGTH = 8
+
+/** 入力された文字から、打てない文字を取り除く（全角の数字・記号は半角に直す）。[maxLength] を超える分は切る。 */
+internal fun filterCellText(raw: String, keyboard: CellKeyboard, maxLength: Int = DEFAULT_MAX_LENGTH): String {
     val normalized = raw.map { ch ->
         when (ch) {
             in '０'..'９' -> '0' + (ch - '０')
@@ -122,5 +125,5 @@ internal fun filterCellText(raw: String, keyboard: CellKeyboard): String {
                 ch == '-' && keyboard == CellKeyboard.SignedDecimal && isEmpty() -> append(ch)
             }
         }
-    }.take(8)
+    }.take(maxLength)
 }

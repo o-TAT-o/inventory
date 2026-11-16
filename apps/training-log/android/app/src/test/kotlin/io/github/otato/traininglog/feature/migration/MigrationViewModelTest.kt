@@ -2,6 +2,7 @@ package io.github.otato.traininglog.feature.migration
 
 import io.github.otato.traininglog.data.testing.TestDatabase
 import io.github.otato.traininglog.designsystem.components.CellKeyboard
+import io.github.otato.traininglog.domain.logic.Baselines
 import io.github.otato.traininglog.domain.model.Baseline
 import io.github.otato.traininglog.domain.model.Equipment
 import io.github.otato.traininglog.domain.model.Exercise
@@ -85,6 +86,39 @@ class MigrationViewModelTest {
     }
 
     @Test
+    fun `セット数を打つと保存され、空欄と 0 は「入れていない」になる`() = harness.run {
+        val viewModel = prepared(bench)
+        viewModel.onWeight("bench", "60")
+        viewModel.onReps("bench", "10")
+        viewModel.onSets("bench", "4")
+        assertEquals(4, saved("bench") { it.sets == 4 }.sets)
+
+        viewModel.onSets("bench", "0")
+        assertNull(saved("bench") { it.sets == null }.sets)
+
+        viewModel.onSets("bench", "3")
+        saved("bench") { it.sets == 3 }
+        viewModel.onSets("bench", "")
+        val baseline = saved("bench") { it.sets == null }
+        assertEquals(60.0, baseline.weightKg, "セット数を直しても、ほかの値は消えない")
+        assertEquals(10, baseline.reps)
+    }
+
+    @Test
+    fun `セット数も、画面を開き直したときの入力欄の初期値として出て、入力済みに数えられる`() = harness.run {
+        val viewModel = prepared(bench, plank)
+        viewModel.onSets("plank", "2")
+        saved("plank") { it.sets == 2 }
+
+        val state = newViewModel().state.first { it.rows.size == 2 }
+        assertEquals("2", state.rows.first { it.exerciseId == "plank" }.sets.initialText)
+        assertEquals("", state.rows.first { it.exerciseId == "bench" }.sets.initialText)
+        // 時間の種目でも、セット数は入れられる
+        assertTrue(state.rows.first { it.exerciseId == "plank" }.sets.enabled)
+        assertEquals(1, state.filledCount)
+    }
+
+    @Test
     fun `lb で打った重量は、kg に直して保存される`() = harness.run {
         data.settings.update { it.copy(weightUnit = WeightUnit.Lb) }
         val viewModel = prepared(bench)
@@ -162,5 +196,15 @@ class MigrationViewModelTest {
         assertEquals(120.0, MigrationInput.best("120", WeightUnit.Kg, plank))
         assertEquals(12, MigrationInput.count("12"))
         assertNull(MigrationInput.count(""))
+    }
+
+    @Test
+    fun `セット数の変換 1 以上だけ、上限を超えたら上限`() {
+        assertEquals(4, MigrationInput.setCount("4"))
+        assertEquals(1, MigrationInput.setCount("1"))
+        assertNull(MigrationInput.setCount("0"))
+        assertNull(MigrationInput.setCount(""))
+        assertNull(MigrationInput.setCount("abc"))
+        assertEquals(Baselines.MAX_SETS, MigrationInput.setCount("99"))
     }
 }

@@ -3,6 +3,7 @@ package io.github.otato.traininglog.feature.migration
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.otato.traininglog.designsystem.components.CellKeyboard
+import io.github.otato.traininglog.domain.logic.Baselines
 import io.github.otato.traininglog.domain.logic.WeightUnits
 import io.github.otato.traininglog.domain.model.Baseline
 import io.github.otato.traininglog.domain.model.BaselineDetail
@@ -37,6 +38,8 @@ data class MigrationRowUi(
     val weight: CellUi,
     /** 回数（時間の種目では秒数） */
     val reps: CellUi,
+    /** 直近のワークアウトでやったセット数（空欄でもよい） */
+    val sets: CellUi,
     val best: CellUi,
 )
 
@@ -101,6 +104,11 @@ class MigrationViewModel(
         if (exercise.recordType == RecordType.Duration) base.copy(durationSec = value) else base.copy(reps = value)
     }
 
+    /** セット数。空欄・0 は「入れていない」。 */
+    fun onSets(exerciseId: String, text: String) = edit(exerciseId) { base, _, _ ->
+        base.copy(sets = MigrationInput.setCount(text))
+    }
+
     fun onBest(exerciseId: String, text: String) = edit(exerciseId) { base, exercise, unit ->
         base.copy(best = MigrationInput.best(text, unit, exercise))
     }
@@ -141,6 +149,7 @@ class MigrationViewModel(
         } else {
             CellUi(baseline.reps?.toString().orEmpty(), true, CellKeyboard.Integer, "${exercise.name}の回数")
         }
+        val sets = CellUi(baseline.sets?.toString().orEmpty(), true, CellKeyboard.Integer, "${exercise.name}のセット数")
         val best = when {
             exercise.recordType == RecordType.WeightReps ||
                 (exercise.recordType == RecordType.Bodyweight && exercise.useAddedWeight) ->
@@ -156,6 +165,7 @@ class MigrationViewModel(
             meta = meta(exercise),
             weight = weight,
             reps = reps,
+            sets = sets,
             best = best,
         )
     }
@@ -188,6 +198,9 @@ internal object MigrationInput {
 
     /** 回数・秒数。 */
     fun count(text: String): Int? = text.trim().toIntOrNull()?.coerceAtLeast(0)
+
+    /** セット数。1 以上だけ（空欄・0 は「入れていない」）。上限を超えたら上限にする。 */
+    fun setCount(text: String): Int? = count(text)?.takeIf { it >= 1 }?.coerceAtMost(Baselines.MAX_SETS)
 
     /** 自己ベスト。重量の種目は kg、加重のない自重は回数、時間は秒（PersonalBests の尺度）。 */
     fun best(text: String, unit: WeightUnit, exercise: Exercise): Double? = when {
