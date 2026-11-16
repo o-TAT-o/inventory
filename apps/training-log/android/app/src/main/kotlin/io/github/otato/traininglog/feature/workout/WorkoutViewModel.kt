@@ -122,6 +122,14 @@ class WorkoutViewModel(
     private val draft = MutableStateFlow<Draft?>(null)
     private val contexts = MutableStateFlow<Map<String, ExerciseContext>>(emptyMap())
     private var undoAction: Undo? = null
+
+    /** 自分で記録を消して閉じる途中か（空のまま離れる・完了したセットがなくて破棄）。「見つかりません」を出さないために使う */
+    @Volatile
+    private var closing = false
+
+    /** 直前に出した画面の状態 */
+    @Volatile
+    private var lastUi: WorkoutUiState? = null
     private val planner = WorkoutPlanner(ids)
     private val addVariation = AddVariation(exercises, ids)
 
@@ -182,8 +190,9 @@ class WorkoutViewModel(
                     expandedIds = local.expandedIds,
                     lastCompletedId = local.lastCompletedId,
                     now = clock.instant(),
-                )
-            } ?: WorkoutUiState(loaded = true, missing = true)
+                ).also { lastUi = it }
+                // 自分で記録を消して閉じるときは、「見つかりません」を出さず、直前の表示のまま閉じる
+            } ?: lastUi?.takeIf { closing } ?: WorkoutUiState(loaded = true, missing = true)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WorkoutUiState())
 
@@ -385,7 +394,11 @@ class WorkoutViewModel(
     fun addSet() {
         viewModelScope.launch {
             val detail = currentDetail() ?: return@launch
-            val exercise = resolveTarget(detail)?.exercise ?: detail.exercises.lastOrNull() ?: return@launch
+            // すべて完了したあとの「もう1セット」は、最後に完了した種目に足す（並びの最後の種目とは限らない）
+            val exercise = resolveTarget(detail)?.exercise
+                ?: detail.exercises.firstOrNull { it.workoutExercise.id == local.value.lastCompletedId }
+                ?: detail.exercises.lastOrNull()
+                ?: return@launch
             addSetUseCase(exercise.workoutExercise.id, exercise.exercise, exercise.sets)
             local.update { it.copy(focusedWorkoutExerciseId = exercise.workoutExercise.id, selectedSetId = null) }
         }
@@ -590,6 +603,8 @@ class WorkoutViewModel(
     // ---- ワークアウト全体 ----
 
     fun changeDate(date: LocalDate) {
+        // 記録は、今日までの分。先の日付にはしない
+        if (date.isAfter(LocalDate.now(clock))) return
         viewModelScope.launch {
             workouts.updateDate(workoutId, date)
             // あとから入力は、今日以外の日付のためのもの。今日にしたら、ふつうの記録に戻す
@@ -608,9 +623,26 @@ class WorkoutViewModel(
                 return@launch
             }
             resolveTarget(detail)?.let { workouts.updateSetValues(currentDraft(it).toValues()) }
+            closing = true
             val kept = workouts.finishWorkout(workoutId, clock.instant())
+            if (kept) closing = false
             local.update { it.copy(rest = null) }
             _events.emit(if (kept) WorkoutEvent.Finished(workoutId) else WorkoutEvent.Discarded)
+        }
+    }
+
+    /**
+     * 画面を離れる（戻る）。種目が 1 つもないまま離れるときは、空の記録を残さない
+     * （残すと、まちがえて始めただけでも、ホームがずっと「記録の途中です」になる）。
+     */
+    fun leave() {
+        viewModelScope.launch {
+            val detail = currentDetail()
+            if (detail != null && !detail.workout.isFinished && detail.exercises.isEmpty()) {
+                closing = true
+                workouts.deleteWorkout(workoutId)
+            }
+            _events.emit(WorkoutEvent.Closed)
         }
     }
 

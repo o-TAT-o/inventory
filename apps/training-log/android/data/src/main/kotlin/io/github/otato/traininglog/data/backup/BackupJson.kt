@@ -56,7 +56,12 @@ object BackupJson {
         if (file.formatVersion > BackupSnapshot.FORMAT_VERSION) {
             throw BackupFormatException("このファイルは、新しい版のアプリで書き出したものです。アプリを新しくしてから、読み込んでください")
         }
-        return file.toSnapshot()
+        return try {
+            file.toSnapshot()
+        } catch (e: RuntimeException) {
+            // 日付の形式が違う、など
+            throw BackupFormatException("このファイルは、中身が壊れているため、読み込めません")
+        }
     }
 
     internal const val APP_NAME = "training-log"

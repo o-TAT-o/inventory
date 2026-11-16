@@ -113,6 +113,8 @@ data class HistoryUiState(
     val items: List<HistoryItemUi> = emptyList(),
     /** 選んだ日が、今日か（今日以外なら、始めるときに「記録のしかた」も選べる） */
     val selectedIsToday: Boolean = true,
+    /** 選んだ日が、今日より先か（先の日には、記録を始められない） */
+    val selectedIsFuture: Boolean = false,
     /** 見ている月のまとめ。「今月 8 回 · 胸 3 · 背中 3 · 脚 2」。記録がなければ null（F-ST-05） */
     val monthStats: String? = null,
     /** 始めるときに選べるルーティン */
@@ -171,6 +173,7 @@ class HistoryViewModel(
     /** 選んだ日の記録を、新しく始める（F-HI-05）。 */
     fun startOnSelected(routineId: String?, quickEntry: Boolean) {
         val date = state.value.selectedDate ?: return
+        if (state.value.selectedIsFuture) return
         viewModelScope.launch {
             if (blockedByActive()) return@launch
             _events.emit(startWorkout(date, routineId, quickEntry))
@@ -247,6 +250,7 @@ class HistoryViewModel(
             selectedLabel = formatDateWithDow(selectedDate),
             items = items,
             selectedIsToday = selectedDate == today,
+            selectedIsFuture = selectedDate.isAfter(today),
             monthStats = monthStats,
         )
     }
@@ -358,7 +362,9 @@ fun HistoryScreen(
                         }
                     }
                 }
-                OutlineButton("この日の記録を始める", onClick = { starting = true }, icon = AppIcons.Plus, modifier = Modifier.fillMaxWidth())
+                if (!state.selectedIsFuture) {
+                    OutlineButton("この日の記録を始める", onClick = { starting = true }, icon = AppIcons.Plus, modifier = Modifier.fillMaxWidth())
+                }
             }
         }
         SnackbarHost(hostState = snackbar, modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp))

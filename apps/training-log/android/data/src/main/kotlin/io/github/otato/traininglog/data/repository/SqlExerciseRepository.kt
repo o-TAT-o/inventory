@@ -68,10 +68,19 @@ internal class SqlExerciseRepository(
     override suspend fun deleteOrHide(id: String) {
         withContext(io) {
             db.transaction {
-                val used = queries.usageInWorkouts(id).executeAsOne() > 0 || queries.usageInRoutines(id).executeAsOne() > 0
-                if (used) queries.hideById(id) else queries.deleteById(id)
+                // バリエーション（フォーム）は、親の種目と一緒に消す。残すと、フォームの名前だけの種目になってしまう
+                queries.selectChildren(id).executeAsList().forEach { deleteOrHideOne(it.id) }
+                // 記録のあるバリエーションが（非表示で）残るなら、親も消さずに非表示にする（記録に、親の名前を出すため）
+                val childrenRemain = queries.selectChildren(id).executeAsList().isNotEmpty()
+                if (childrenRemain) queries.hideById(id) else deleteOrHideOne(id)
             }
         }
+    }
+
+    /** 記録やルーティンで使われていれば非表示にし、使われていなければ消す。 */
+    private fun deleteOrHideOne(id: String) {
+        val used = queries.usageInWorkouts(id).executeAsOne() > 0 || queries.usageInRoutines(id).executeAsOne() > 0
+        if (used) queries.hideById(id) else queries.deleteById(id)
     }
 
     override suspend fun nextSortOrder(): Int = withContext(io) {

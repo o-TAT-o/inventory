@@ -2,6 +2,7 @@ package io.github.otato.traininglog.feature.workout
 
 import android.Manifest
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import io.github.otato.traininglog.platform.AppForeground
@@ -45,6 +46,7 @@ import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
@@ -119,6 +121,8 @@ fun WorkoutRoute(
     val snackbar = remember { SnackbarHostState() }
     val context = LocalContext.current
     val latest by rememberUpdatedState(state)
+    // 戻る（画面のボタンも、端末の戻る操作も）は、ViewModel を通す。種目のない空の記録を、残さないため
+    BackHandler(onBack = viewModel::leave)
 
     // 休憩の終わりを、アプリが後ろにあるときも通知で知らせる（F-TM-03）。休憩が始まったら仕掛け、やめたら取り消す
     val restEndAt by viewModel.restEndAtMillis.collectAsStateWithLifecycle()
@@ -159,7 +163,7 @@ fun WorkoutRoute(
         formSheet = formSheet,
         snackbar = snackbar,
         actions = WorkoutActions(
-            onBack = onBack,
+            onBack = viewModel::leave,
             onFinish = viewModel::finish,
             onAddExercise = { onAddExercise(workoutId) },
             onOpenExercise = onOpenExercise,
@@ -370,7 +374,17 @@ fun WorkoutScreen(
 
     if (showDatePicker) {
         val initial = (state.date ?: LocalDate.now()).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
-        val pickerState = rememberDatePickerState(initialSelectedDateMillis = initial)
+        // 先の日付は選べない（記録は、今日までの分）
+        val lastSelectable = remember { LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli() }
+        val pickerState = rememberDatePickerState(
+            initialSelectedDateMillis = initial,
+            selectableDates = remember(lastSelectable) {
+                object : SelectableDates {
+                    override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis <= lastSelectable
+                    override fun isSelectableYear(year: Int): Boolean = year <= LocalDate.now().year
+                }
+            },
+        )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {

@@ -25,6 +25,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -94,9 +97,14 @@ fun ExercisePickerScreen(
     val colors = AppTheme.colors
     Column(modifier = Modifier.fillMaxSize()) {
         AppTopBar(title = if (state.multiSelect) "種目を選ぶ（いくつでも）" else "種目を選ぶ", onBack = onBack)
+        // 入力欄の文字は、その場で持つ（ViewModel の状態を経由して戻すと、日本語の変換中に文字が欠けることがある）
+        var query by rememberSaveable { mutableStateOf(state.query) }
         OutlinedTextField(
-            value = state.query,
-            onValueChange = onQuery,
+            value = query,
+            onValueChange = {
+                query = it
+                onQuery(it)
+            },
             singleLine = true,
             placeholder = { Text("種目名で検索") },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),

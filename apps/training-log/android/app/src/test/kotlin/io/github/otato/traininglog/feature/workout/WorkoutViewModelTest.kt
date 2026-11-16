@@ -1,5 +1,7 @@
 package io.github.otato.traininglog.feature.workout
 
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.CompletableDeferred
 import io.github.otato.traininglog.data.testing.TestDatabase
 import io.github.otato.traininglog.domain.logic.WorkoutPlanner
 import io.github.otato.traininglog.domain.model.AdjustmentField
@@ -486,5 +488,69 @@ class WorkoutViewModelTest {
 
         vm.changeDate(LocalDate.of(2026, 11, 14)) // 今日
         assertFalse(detail(workoutId).workout.quickEntry)
+    }
+
+    @Test
+    fun `種目のないまま離れると、空の記録は残らない。種目があれば、途中の記録として残る`() = harness.run {
+        val empty = StartWorkout(data.workouts, data.routines, data.exercises, clock, ids)(LocalDate.of(2026, 11, 14), null)
+        val vm = viewModel(empty)
+        background { vm.state.collect {} }
+        vm.state.first { it.loaded }
+        val closed = CompletableDeferred<WorkoutEvent>()
+        background { closed.complete(vm.events.first()) }
+
+        vm.leave()
+
+        assertEquals(WorkoutEvent.Closed, closed.await())
+        assertNull(data.workouts.observeWorkout(empty).first())
+        // 自分で消したので、「この記録は見つかりません」は出さない
+        delay(200)
+        assertFalse(vm.state.value.missing)
+
+        val withExercises = startPushWorkout()
+        val second = viewModel(withExercises)
+        background { second.state.collect {} }
+        second.state.first { it.dock != null }
+        val closedSecond = CompletableDeferred<WorkoutEvent>()
+        background { closedSecond.complete(second.events.first()) }
+
+        second.leave()
+
+        assertEquals(WorkoutEvent.Closed, closedSecond.await())
+        assertNotNull(data.workouts.observeWorkout(withExercises).first())
+    }
+
+    @Test
+    fun `すべて完了したあとの「もう1セット」は、最後に完了した種目に足される`() = harness.run {
+        val workoutId = startPushWorkout()
+        val vm = viewModel(workoutId)
+        background { vm.state.collect {} }
+        vm.state.first { it.dock != null }
+
+        // 先にインクライン（並びでは 2 番め）を終え、そのあとベンチプレス（1 番め）を終える
+        vm.shiftExercise(1)
+        repeat(2) { vm.complete() }
+        repeat(3) { vm.complete() }
+        vm.state.first { it.allDone }
+
+        vm.addSet()
+
+        val exercises = vm.state.first { !it.allDone }.exercises
+        assertEquals(listOf(4, 2), exercises.map { it.totalCount })
+        assertEquals("ベンチプレス　4 セット目", vm.state.value.dock?.title)
+    }
+
+    @Test
+    fun `日付は、先の日には変えられない`() = harness.run {
+        val workoutId = startPushWorkout()
+        val vm = viewModel(workoutId)
+        background { vm.state.collect {} }
+        vm.state.first { it.dock != null }
+
+        vm.changeDate(LocalDate.of(2026, 11, 15)) // 明日
+        vm.changeDate(LocalDate.of(2026, 11, 12)) // おととい
+
+        assertEquals(LocalDate.of(2026, 11, 12), vm.state.first { it.date == LocalDate.of(2026, 11, 12) }.date)
+        assertEquals(LocalDate.of(2026, 11, 12), detail(workoutId).workout.date)
     }
 }

@@ -1,5 +1,6 @@
 package io.github.otato.traininglog.feature.home
 
+import kotlinx.coroutines.delay
 import io.github.otato.traininglog.data.testing.TestDatabase
 import io.github.otato.traininglog.domain.model.Exercise
 import io.github.otato.traininglog.domain.model.HomeStripMode
@@ -171,5 +172,31 @@ class HomeViewModelTest {
         val detail = assertNotNull(data.workouts.observeWorkout(event.workoutId).first())
         assertEquals("push", detail.workout.routineId)
         assertTrue(detail.exercises.isNotEmpty())
+    }
+
+    @Test
+    fun `日付の帯は、前へ動かせて、今日のいる並びより先へは動かない。先の日は、始められない`() = harness.run {
+        val vm = viewModel()
+        background { vm.state.collect {} }
+        val first = vm.state.first { it.loaded }
+        // 今日は 11/14（土）。その週（月曜始まり）は 11/9〜11/15 で、11/15（日）は先の日
+        assertEquals(listOf(false, false, false, false, false, false, true), first.strip.map { it.isFuture })
+        assertNull(first.stripRange)
+
+        vm.shiftStrip(1) // 先へは動かない
+        assertEquals(LocalDate.of(2026, 11, 9), vm.state.value.strip.first().date)
+
+        vm.shiftStrip(-1)
+        val previous = vm.state.first { it.stripRange != null }
+        assertEquals(LocalDate.of(2026, 11, 2), previous.strip.first().date)
+        assertEquals("11/2 〜 11/8", previous.stripRange)
+
+        vm.resetStrip()
+        assertNull(vm.state.first { it.stripRange == null }.stripRange)
+
+        // 先の日では、記録を始めない
+        vm.start(routineId = null, date = LocalDate.of(2026, 11, 15))
+        delay(200)
+        assertNull(data.workouts.observeActiveWorkout().first())
     }
 }

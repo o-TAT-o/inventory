@@ -59,7 +59,10 @@ import io.github.otato.traininglog.ui.common.SetsLine
 import io.github.otato.traininglog.ui.common.appViewModel
 import io.github.otato.traininglog.ui.common.formatDateLong
 import io.github.otato.traininglog.ui.common.formatMonthDay
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -109,7 +112,14 @@ class WorkoutDoneViewModel(
     private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val messages: SharedFlow<String> = _messages.asSharedFlow()
 
+    /** メモの保存の待ち行列。新しい文字が来たら、古いものは捨てる（書く順番が入れ替わらない） */
+    private val memoQueue = Channel<String>(Channel.CONFLATED)
+
     init {
+        viewModelScope.launch {
+            // 画面を閉じた瞬間でも、書きかけの保存は最後までやる
+            for (memo in memoQueue) withContext(NonCancellable) { workouts.updateMemo(workoutId, memo) }
+        }
         viewModelScope.launch {
             val settings = settingsRepository.get()
             val detail = workouts.observeWorkout(workoutId).first() ?: return@launch
@@ -155,10 +165,10 @@ class WorkoutDoneViewModel(
         }
     }
 
-    /** メモは、打つたびに保存する。 */
+    /** メモは、打つたびに保存する。速く打っても、最後の文字が、順番どおりに書かれるようにする。 */
     fun setMemo(memo: String) {
         _state.update { it.copy(memo = memo) }
-        viewModelScope.launch { workouts.updateMemo(workoutId, memo) }
+        memoQueue.trySend(memo)
     }
 
     fun saveAsRoutine(name: String) {
@@ -236,9 +246,14 @@ fun WorkoutDoneScreen(
                         }
                     }
                     SectionLabel("ワークアウトのメモ", modifier = Modifier.padding(top = 4.dp, start = 4.dp))
+                    // 入力欄の文字は、その場で持つ（ViewModel の状態を経由して戻すと、日本語の変換中に文字が欠けることがある）
+                    var memo by remember { mutableStateOf(state.memo) }
                     OutlinedTextField(
-                        value = state.memo,
-                        onValueChange = onMemo,
+                        value = memo,
+                        onValueChange = {
+                            memo = it
+                            onMemo(it)
+                        },
                         placeholder = { Text("今日の記録にメモを書く") },
                         minLines = 2,
                         modifier = Modifier.fillMaxWidth(),

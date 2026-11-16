@@ -402,12 +402,13 @@ private fun WeekStrip(cells: List<DayCellUi>, onShift: (Int) -> Unit, onDayClick
                     .defaultMinSize(minHeight = 64.dp)
                     .clip(shape)
                     .then(if (cell.isToday) Modifier.border(2.dp, colors.primary, shape) else Modifier)
-                    .clickable(role = Role.Button, onClick = { onDayClick(cell) })
+                    .clickable(enabled = !cell.isFuture, role = Role.Button, onClick = { onDayClick(cell) })
                     .padding(vertical = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(cell.dowLabel, style = AppTheme.typography.caption, color = colors.sub)
-                Text(cell.dayNumber.toString(), style = AppTheme.typography.bodyStrong, color = colors.fg)
+                // 先の日は、押せないことが分かるように、薄くする
+                Text(cell.dayNumber.toString(), style = AppTheme.typography.bodyStrong, color = if (cell.isFuture) colors.sub else colors.fg)
                 Text(
                     cell.label ?: "",
                     style = AppTheme.typography.caption.copy(fontSize = 10.sp),

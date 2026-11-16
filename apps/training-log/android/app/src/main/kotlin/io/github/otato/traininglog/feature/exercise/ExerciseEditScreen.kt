@@ -295,9 +295,14 @@ fun ExerciseEditScreen(
             state.parentName?.let {
                 Text("「$it」のフォームです。部位や数え方は、このフォームだけ変えられます。", style = AppTheme.typography.caption, color = colors.sub)
             }
+            // 入力欄の文字は、その場で持つ（ViewModel の状態を経由して戻すと、日本語の変換中に文字が欠けることがある）
+            var name by remember(exercise.id) { mutableStateOf(exercise.name) }
             OutlinedTextField(
-                value = exercise.name,
-                onValueChange = { v -> onEdit { it.copy(name = v) } },
+                value = name,
+                onValueChange = { v ->
+                    name = v
+                    onEdit { it.copy(name = v) }
+                },
                 label = { Text("名前") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -429,9 +434,13 @@ fun ExerciseEditScreen(
                 }
             }
 
+            var memo by remember(exercise.id) { mutableStateOf(exercise.memo) }
             OutlinedTextField(
-                value = exercise.memo,
-                onValueChange = { v -> onEdit { it.copy(memo = v) } },
+                value = memo,
+                onValueChange = { v ->
+                    memo = v
+                    onEdit { it.copy(memo = v) }
+                },
                 label = { Text("メモ（フォームの注意点など）") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
@@ -528,12 +537,18 @@ fun ExerciseEditScreen(
 /** 調整項目 1 つの入力（項目名・数値か文字か・単位）。 */
 @Composable
 private fun FieldCard(field: AdjustmentField, onEdit: ((AdjustmentField) -> AdjustmentField) -> Unit, onRemove: () -> Unit) {
+    // 入力欄の文字は、その場で持つ（名前の欄と同じ理由）
+    var name by remember(field.id) { mutableStateOf(field.name) }
+    var unit by remember(field.id) { mutableStateOf(field.unit) }
     AppCard(cornerRadius = 16.dp, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
-                    value = field.name,
-                    onValueChange = { v -> onEdit { it.copy(name = v) } },
+                    value = name,
+                    onValueChange = { v ->
+                        name = v
+                        onEdit { it.copy(name = v) }
+                    },
                     label = { Text("項目名") },
                     placeholder = { Text("例: ベンチ角度") },
                     singleLine = true,
@@ -550,8 +565,11 @@ private fun FieldCard(field: AdjustmentField, onEdit: ((AdjustmentField) -> Adju
                 )
                 if (field.valueType == AdjustmentValueType.Number) {
                     OutlinedTextField(
-                        value = field.unit,
-                        onValueChange = { v -> onEdit { it.copy(unit = v) } },
+                        value = unit,
+                        onValueChange = { v ->
+                            unit = v
+                            onEdit { it.copy(unit = v) }
+                        },
                         label = { Text("単位（なくてもよい）") },
                         placeholder = { Text("例: °") },
                         singleLine = true,

@@ -47,8 +47,9 @@ jobs:
       - name: Lint
         run: ./gradlew :app:lintDebug --stacktrace
 
+      # ビルドの番号（この実行の番号とコミット）を、アプリのバージョンの表示に入れる。どのビルドを試しているかを、設定の画面で見分けるため
       - name: デバッグ APK をビルド
-        run: ./gradlew :app:assembleDebug --stacktrace
+        run: ./gradlew :app:assembleDebug -PbuildLabel="${{ github.run_number }}-${GITHUB_SHA::7}" --stacktrace
 
       - name: ビルドした APK の大きさ
         run: ls -l app/build/outputs/apk/debug/*.apk

@@ -75,6 +75,8 @@ data class DayCellUi(
     val isToday: Boolean,
     /** その日の記録（あれば開く） */
     val workoutId: String?,
+    /** 今日より先の日。記録は今日までの分なので、タップできない */
+    val isFuture: Boolean = false,
 )
 
 sealed interface HomeEvent {

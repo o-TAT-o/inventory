@@ -70,9 +70,9 @@ class HomeViewModel(
     /** 日付の帯を、何週ぶん動かしているか（0 が、今日のいる並び） */
     private val stripOffset = MutableStateFlow(0)
 
-    /** 日付の帯を、前（-1）・後（+1）へ 7 日動かす。 */
+    /** 日付の帯を、前（-1）・後（+1）へ 7 日動かす。今日のいる並びより先（未来）へは、動かさない。 */
     fun shiftStrip(delta: Int) {
-        stripOffset.value = (stripOffset.value + delta).coerceIn(-MAX_STRIP_WEEKS, MAX_STRIP_WEEKS)
+        stripOffset.value = (stripOffset.value + delta).coerceIn(-MAX_STRIP_WEEKS, 0)
     }
 
     /** 日付の帯を、今日のいる並びへ戻す。 */
@@ -116,6 +116,8 @@ class HomeViewModel(
 
     /** ワークアウトを始める。[date] は、始める日（今日以外もある。F-HI-05）。[quickEntry] は「あとから入力」（F-WO-21）。 */
     fun start(routineId: String?, date: LocalDate, quickEntry: Boolean = false) {
+        // 記録は、今日までの分。先の日付では始めない
+        if (state.value.today?.let { date.isAfter(it) } == true) return
         viewModelScope.launch {
             _events.emit(HomeEvent.OpenWorkout(startWorkout(date, routineId, quickEntry)))
         }
@@ -155,6 +157,7 @@ class HomeViewModel(
                     label = summary?.let { it.routineName ?: "自由" } ?: "今日".takeIf { date == inputs.today },
                     isToday = date == inputs.today,
                     workoutId = summary?.workout?.id,
+                    isFuture = date.isAfter(inputs.today),
                 )
             },
         )

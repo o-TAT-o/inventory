@@ -15,7 +15,8 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "0.1.0"
+        // CI は、ビルドの番号を付ける（例: 0.1.0 (57-4118849)）。どのビルドを試しているかを、設定の「バージョン」で見分けるため。手元のビルドには付かない
+        versionName = "0.1.0" + (providers.gradleProperty("buildLabel").orNull?.let { " ($it)" } ?: "")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // e2e は、1 つのテストごとに、アプリのデータを空にして始める（前のテストの記録が残らないように）
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
