@@ -50,10 +50,19 @@ internal class SqlSettingsRepository(
             autoStartRest = map["auto_start_rest"]?.toBooleanStrictOrNull() ?: d.autoStartRest,
             soundOn = map["sound_on"]?.toBooleanStrictOrNull() ?: d.soundOn,
             vibrationOn = map["vibration_on"]?.toBooleanStrictOrNull() ?: d.vibrationOn,
+            lastExportAtMillis = map["last_export_at"]?.toLongOrNull(),
+            autoBackup = map["auto_backup"]?.toBooleanStrictOrNull() ?: d.autoBackup,
+            lastAutoBackupAtMillis = map["last_auto_backup_at"]?.toLongOrNull(),
+            adsRemoved = map["ads_removed"]?.toBooleanStrictOrNull() ?: d.adsRemoved,
         )
     }
 
-    private fun serialize(s: AppSettings): Map<String, String> = mapOf(
+    private fun serialize(s: AppSettings): Map<String, String> = listOfNotNull(
+        s.lastExportAtMillis?.let { "last_export_at" to it.toString() },
+        s.lastAutoBackupAtMillis?.let { "last_auto_backup_at" to it.toString() },
+    ).toMap() + mapOf(
+        "auto_backup" to s.autoBackup.toString(),
+        "ads_removed" to s.adsRemoved.toString(),
         "weight_unit" to s.weightUnit.name,
         "weight_step_kg" to s.weightStepKg.toString(),
         "weight_step_lb" to s.weightStepLb.toString(),

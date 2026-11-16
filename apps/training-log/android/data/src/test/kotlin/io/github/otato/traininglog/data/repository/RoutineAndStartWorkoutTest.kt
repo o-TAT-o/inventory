@@ -81,7 +81,7 @@ class StartWorkoutTest {
     private val data = TestDatabase.create()
     private val ids = TestDatabase.sequentialIds("u")
     private val clock = Clock.fixed(Instant.parse("2026-11-14T10:00:00Z"), ZoneOffset.UTC)
-    private val start = StartWorkout(data.workouts, data.routines, clock, ids)
+    private val start = StartWorkout(data.workouts, data.routines, data.exercises, clock, ids)
     private val today = LocalDate.of(2026, 11, 14)
 
     @BeforeTest

@@ -43,3 +43,6 @@ DELETE FROM exercise_baseline WHERE exercise_id = ?;
 
 maxSortOrder:
 SELECT COALESCE(MAX(sort_order), -1) FROM exercise_baseline;
+
+deleteAllBaselines:
+DELETE FROM exercise_baseline;

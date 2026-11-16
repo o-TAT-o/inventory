@@ -172,7 +172,7 @@ DELETE FROM workout_exercise_gear WHERE workout_exercise_id = ?;
 
 -- 同じ種目の、直近の（終えた）ワークアウトの種目。excludeWorkoutId は NULL でもよい
 selectPreviousExercise:
-SELECT we.id AS workout_exercise_id, we.weight_mode, we.rep_mode, w.date
+SELECT we.id AS workout_exercise_id, we.exercise_id, we.weight_mode, we.rep_mode, w.date
 FROM workout_exercise we
 JOIN workout w ON w.id = we.workout_id
 WHERE we.exercise_id = :exerciseId
@@ -203,20 +203,81 @@ WHERE we.exercise_id = :exerciseId
   AND (:excludeWorkoutId IS NULL OR w.id != :excludeWorkoutId);
 
 selectHistoryExercises:
-SELECT we.id AS workout_exercise_id, we.weight_mode, we.rep_mode, w.date
+SELECT we.id AS workout_exercise_id, we.exercise_id, we.weight_mode, we.rep_mode, w.date
 FROM workout_exercise we
 JOIN workout w ON w.id = we.workout_id
-WHERE we.exercise_id = ? AND w.finished_at IS NOT NULL
+WHERE we.exercise_id IN :exerciseIds AND w.finished_at IS NOT NULL
 ORDER BY w.date DESC, w.started_at DESC;
 
 selectHistorySets:
 SELECT s.* FROM set_record s
 JOIN workout_exercise we ON we.id = s.workout_exercise_id
 JOIN workout w ON w.id = we.workout_id
-WHERE we.exercise_id = ? AND s.completed = 1 AND w.finished_at IS NOT NULL
+WHERE we.exercise_id IN :exerciseIds AND s.completed = 1 AND w.finished_at IS NOT NULL
 ORDER BY s.workout_exercise_id, s.sort_order;
 
 selectHistoryGear:
 SELECT g.workout_exercise_id, g.gear_id FROM workout_exercise_gear g
 JOIN workout_exercise we ON we.id = g.workout_exercise_id
-WHERE we.exercise_id = ?;
+WHERE we.exercise_id IN :exerciseIds;
+
+-- 同じ親のバリエーション（と親）の中で、直近の（終えた）ワークアウトの種目。初めて使うバリエーションの前回の目安に使う（F-EX-16）
+selectPreviousExerciseAmong:
+SELECT we.id AS workout_exercise_id, we.exercise_id, we.weight_mode, we.rep_mode, w.date
+FROM workout_exercise we
+JOIN workout w ON w.id = we.workout_id
+WHERE we.exercise_id IN :exerciseIds
+  AND w.finished_at IS NOT NULL
+  AND (:excludeWorkoutId IS NULL OR w.id != :excludeWorkoutId)
+  AND EXISTS (SELECT 1 FROM set_record s WHERE s.workout_exercise_id = we.id AND s.completed = 1)
+ORDER BY w.date DESC, w.started_at DESC
+LIMIT 1;
+
+-- ルーティンごとの、最後にやった日（ルーティン一覧の「前回 11/7」）
+selectLastDateByRoutine:
+SELECT routine_id, MAX(date) AS last_date FROM workout
+WHERE finished_at IS NOT NULL AND routine_id IS NOT NULL
+GROUP BY routine_id;
+
+-- ---- 並べ替え・付け替え ----
+
+updateWorkoutExerciseSort:
+UPDATE workout_exercise SET sort_order = :sortOrder WHERE id = :id;
+
+-- 親の種目で始めた記録の種目を、選んだバリエーションに付け替える（F-RT-10）。数え方も、そのバリエーションの値にする
+updateWorkoutExerciseExercise:
+UPDATE workout_exercise SET exercise_id = :exerciseId, weight_mode = :weightMode, rep_mode = :repMode WHERE id = :id;
+
+-- 記録を、ほかの種目へまとめて移す（親の記録を、バリエーションへ。F-EX-18）
+moveRecords:
+UPDATE workout_exercise SET exercise_id = :toExerciseId WHERE exercise_id = :fromExerciseId;
+
+-- ギアを使った回数（ワークアウトの種目の数）
+selectGearUsage:
+SELECT gear_id, COUNT(*) AS used FROM workout_exercise_gear GROUP BY gear_id;
+
+-- ---- 全データ（書き出し・読み込みに使う）----
+
+selectAllWorkouts:
+SELECT * FROM workout ORDER BY date, started_at;
+
+selectAllWorkoutExercises:
+SELECT * FROM workout_exercise ORDER BY workout_id, sort_order;
+
+selectAllSets:
+SELECT * FROM set_record ORDER BY workout_exercise_id, sort_order;
+
+selectAllWorkoutGear:
+SELECT * FROM workout_exercise_gear;
+
+deleteAllSets:
+DELETE FROM set_record;
+
+deleteAllWorkoutGear:
+DELETE FROM workout_exercise_gear;
+
+deleteAllWorkoutExercises:
+DELETE FROM workout_exercise;
+
+deleteAllWorkouts:
+DELETE FROM workout;

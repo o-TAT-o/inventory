@@ -100,6 +100,18 @@ internal class SqlRoutineRepository(
         queries.maxItemSortOrder(routineId).executeAsOne().toInt() + 1
     }
 
+    override suspend fun reorderRoutines(orderedIds: List<String>) {
+        withContext(io) {
+            db.transaction { orderedIds.forEachIndexed { index, id -> queries.updateRoutineSortOrder(index.toLong(), id) } }
+        }
+    }
+
+    override suspend fun reorderItems(routineId: String, orderedIds: List<String>) {
+        withContext(io) {
+            db.transaction { orderedIds.forEachIndexed { index, id -> queries.updateItemSortOrder(index.toLong(), id) } }
+        }
+    }
+
     private fun detail(routine: Routine, items: List<RoutineItem>, catalog: Map<String, Exercise>) = RoutineDetail(
         routine = routine,
         // 種目が（何らかの理由で）見つからない行は出さない

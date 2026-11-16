@@ -8,6 +8,7 @@ import io.github.otato.traininglog.data.db.ExerciseQueries
 import io.github.otato.traininglog.data.db.TrainingLogDatabase
 import io.github.otato.traininglog.data.toDomain
 import io.github.otato.traininglog.data.toLong
+import io.github.otato.traininglog.domain.model.AdjustmentField
 import io.github.otato.traininglog.domain.model.Exercise
 import io.github.otato.traininglog.domain.repository.ExerciseRepository
 import kotlinx.coroutines.CoroutineDispatcher
@@ -21,6 +22,8 @@ internal class SqlExerciseRepository(
 ) : ExerciseRepository {
     private val queries = db.exerciseQueries
     private val gearQueries = db.gearQueries
+    private val workoutQueries = db.workoutQueries
+    private val adjustmentQueries = db.adjustmentQueries
 
     override fun observeExercises(includeHidden: Boolean): Flow<List<Exercise>> {
         val query = if (includeHidden) queries.selectAll() else queries.selectVisible()
@@ -84,6 +87,52 @@ internal class SqlExerciseRepository(
                 if (gearQueries.count().executeAsOne() == 0L) {
                     PresetData.gear().forEach { gear ->
                         gearQueries.insertGear(gear.id, gear.name, gear.sortOrder.toLong(), gear.hidden.toLong())
+                    }
+                }
+            }
+        }
+    }
+
+    override suspend fun reorder(orderedIds: List<String>) {
+        withContext(io) {
+            db.transaction { orderedIds.forEachIndexed { index, id -> queries.updateSortOrder(index.toLong(), id) } }
+        }
+    }
+
+    override fun observeChildren(parentId: String): Flow<List<Exercise>> =
+        queries.selectChildren(parentId).asFlow().mapToList(io).map { rows -> rows.map { it.toDomain() }.filter { !it.hidden } }
+
+    override fun observeRecordCounts(): Flow<Map<String, Int>> =
+        queries.countRecords().asFlow().mapToList(io).map { rows -> rows.associate { it.exercise_id to it.records.toInt() } }
+
+    override suspend fun moveRecords(fromExerciseId: String, toExerciseId: String) {
+        withContext(io) { workoutQueries.moveRecords(toExerciseId = toExerciseId, fromExerciseId = fromExerciseId) }
+    }
+
+    override fun observeAdjustmentFields(exerciseId: String): Flow<List<AdjustmentField>> =
+        adjustmentQueries.selectFieldsOf(exerciseId).asFlow().mapToList(io).map { rows -> rows.map { it.toDomain() } }
+
+    override suspend fun getAdjustmentFields(exerciseId: String): List<AdjustmentField> = withContext(io) {
+        adjustmentQueries.selectFieldsOf(exerciseId).executeAsList().map { it.toDomain() }
+    }
+
+    override suspend fun saveAdjustmentFields(exerciseId: String, fields: List<AdjustmentField>) {
+        withContext(io) {
+            db.transaction {
+                val existing = adjustmentQueries.selectFieldsOf(exerciseId).executeAsList().map { it.id }.toSet()
+                // 無くなった項目は消す（記録した値も、一緒に消える）
+                (existing - fields.map { it.id }.toSet()).forEach { adjustmentQueries.deleteField(it) }
+                fields.forEachIndexed { index, field ->
+                    if (field.id in existing) {
+                        adjustmentQueries.updateField(
+                            name = field.name,
+                            valueType = field.valueType.name,
+                            unit = field.unit,
+                            sortOrder = index.toLong(),
+                            id = field.id,
+                        )
+                    } else {
+                        adjustmentQueries.insertField(field.id, exerciseId, field.name, field.valueType.name, field.unit, index.toLong())
                     }
                 }
             }

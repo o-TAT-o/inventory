@@ -143,7 +143,7 @@ class BaselineRepositoryTest {
         data.routines.saveRoutine(Routine("push", "Push"))
         data.routines.saveItem(RoutineItem("i1", "push", "bench"))
 
-        val workoutId = StartWorkout(data.workouts, data.routines, clock, TestDatabase.sequentialIds("s"))(today, "push")
+        val workoutId = StartWorkout(data.workouts, data.routines, data.exercises, clock, TestDatabase.sequentialIds("s"))(today, "push")
         val sets = assertNotNull(data.workouts.observeWorkout(workoutId).first()).exercises.single().sets
 
         assertEquals(3, sets.size)
@@ -171,7 +171,7 @@ class BaselineRepositoryTest {
 
         data.routines.saveRoutine(Routine("push", "Push"))
         data.routines.saveItem(RoutineItem("i1", "push", "bench"))
-        val workoutId = StartWorkout(data.workouts, data.routines, clock, TestDatabase.sequentialIds("s"))(today, "push")
+        val workoutId = StartWorkout(data.workouts, data.routines, data.exercises, clock, TestDatabase.sequentialIds("s"))(today, "push")
         val sets = assertNotNull(data.workouts.observeWorkout(workoutId).first()).exercises.single().sets
         assertEquals(4, sets.size)
         assertEquals(listOf(60.0, 60.0, 60.0, 60.0), sets.map { it.weightKg })

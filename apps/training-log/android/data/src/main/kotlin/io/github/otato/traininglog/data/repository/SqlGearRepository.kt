@@ -44,4 +44,13 @@ internal class SqlGearRepository(
     override suspend fun nextSortOrder(): Int = withContext(io) {
         queries.selectAll().executeAsList().maxOfOrNull { it.sort_order.toInt() }?.plus(1) ?: 0
     }
+
+    override suspend fun reorder(orderedIds: List<String>) {
+        withContext(io) {
+            db.transaction { orderedIds.forEachIndexed { index, id -> queries.updateSortOrder(index.toLong(), id) } }
+        }
+    }
+
+    override fun observeUsage(): Flow<Map<String, Int>> =
+        db.workoutQueries.selectGearUsage().asFlow().mapToList(io).map { rows -> rows.associate { it.gear_id to it.used.toInt() } }
 }

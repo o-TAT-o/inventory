@@ -23,3 +23,9 @@ UPDATE gear SET name = :name, sort_order = :sortOrder, hidden = :hidden WHERE id
 
 count:
 SELECT COUNT(*) FROM gear;
+
+updateSortOrder:
+UPDATE gear SET sort_order = :sortOrder WHERE id = :id;
+
+deleteAllGear:
+DELETE FROM gear;

@@ -19,6 +19,7 @@ import java.time.LocalDate
 class StartWorkout(
     private val workouts: WorkoutRepository,
     private val routines: RoutineRepository,
+    private val exercises: ExerciseRepository,
     private val clock: Clock,
     private val ids: IdGenerator = UuidGenerator,
     private val planner: WorkoutPlanner = WorkoutPlanner(ids),
@@ -33,7 +34,8 @@ class StartWorkout(
             val routine = checkNotNull(routines.getRoutine(routineId)) { "ルーティンが見つかりません: $routineId" }
             routine.items.sortedBy { it.item.sortOrder }.mapIndexed { index, detail ->
                 val previous = workouts.previousRecord(detail.exercise.id, excludeWorkoutId = null)
-                planner.plan(workoutId, index, detail.exercise, detail.item, previous)
+                val fields = exercises.getAdjustmentFields(detail.exercise.id)
+                planner.plan(workoutId, index, detail.exercise, detail.item, previous, fields)
             }
         }
         workouts.createWorkout(workout, planned)
@@ -50,7 +52,8 @@ class AddExerciseToWorkout(
     suspend operator fun invoke(workoutId: String, exerciseId: String, sortOrder: Int) {
         val exercise = checkNotNull(exercises.getExercise(exerciseId)) { "種目が見つかりません: $exerciseId" }
         val previous = workouts.previousRecord(exerciseId, excludeWorkoutId = workoutId)
-        workouts.addExercise(planner.plan(workoutId, sortOrder, exercise, previous = previous), workoutId)
+        val fields = exercises.getAdjustmentFields(exerciseId)
+        workouts.addExercise(planner.plan(workoutId, sortOrder, exercise, previous = previous, adjustmentFields = fields), workoutId)
     }
 }
 

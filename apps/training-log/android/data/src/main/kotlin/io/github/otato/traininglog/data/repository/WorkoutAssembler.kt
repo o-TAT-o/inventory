@@ -1,6 +1,7 @@
 package io.github.otato.traininglog.data.repository
 
 import io.github.otato.traininglog.domain.logic.Volume
+import io.github.otato.traininglog.domain.model.AdjustmentField
 import io.github.otato.traininglog.domain.model.Exercise
 import io.github.otato.traininglog.domain.model.SetRecord
 import io.github.otato.traininglog.domain.model.Workout
@@ -18,6 +19,8 @@ internal object WorkoutAssembler {
         sets: List<SetRecord>,
         gearByWorkoutExercise: Map<String, Set<String>>,
         catalog: Map<String, Exercise>,
+        fieldsByExercise: Map<String, List<AdjustmentField>> = emptyMap(),
+        valuesByWorkoutExercise: Map<String, Map<String, String>> = emptyMap(),
     ): WorkoutDetail {
         val setsByExercise = sets.groupBy { it.workoutExerciseId }
         val details = exercises.sortedBy { it.sortOrder }.mapNotNull { workoutExercise ->
@@ -27,6 +30,8 @@ internal object WorkoutAssembler {
                 exercise = exercise,
                 sets = setsByExercise[workoutExercise.id].orEmpty().sortedBy { it.sortOrder },
                 gearIds = gearByWorkoutExercise[workoutExercise.id].orEmpty(),
+                adjustmentFields = fieldsByExercise[workoutExercise.exerciseId].orEmpty(),
+                adjustments = valuesByWorkoutExercise[workoutExercise.id].orEmpty(),
             )
         }
         return WorkoutDetail(workout, details)

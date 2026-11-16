@@ -3,6 +3,8 @@ package io.github.otato.traininglog.data
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import io.github.otato.traininglog.data.testing.TestDatabase
+import io.github.otato.traininglog.domain.model.AdjustmentField
+import io.github.otato.traininglog.domain.model.AdjustmentValueType
 import io.github.otato.traininglog.domain.model.Baseline
 import io.github.otato.traininglog.domain.model.BodyPart
 import io.github.otato.traininglog.domain.model.Exercise
@@ -22,8 +24,8 @@ class SchemaMigrationTest {
     @Test
     fun `バージョンは、マイグレーションの数に合わせて上がっている`() {
         assertTrue(
-            DataModule.schema.version >= 3,
-            "最初の版（1）から、初期設定の表を足した版（2）、腕を二頭と三頭に分けて初期設定にセット数を足した版（3）以降",
+            DataModule.schema.version >= 4,
+            "最初の版（1）から、初期設定の表を足した版（2）、腕を二頭と三頭に分けて初期設定にセット数を足した版（3）、調整項目の表を足した版（4）以降",
         )
     }
 
@@ -34,8 +36,9 @@ class SchemaMigrationTest {
         val before = DataModule(driver, Dispatchers.Unconfined)
         before.exercises.save(Exercise(id = "bench", name = "ベンチプレス"))
 
-        // バージョン 1 の状態に戻す（初期設定の表がなかった頃）
+        // バージョン 1 の状態に戻す（初期設定の表も、調整項目の表もなかった頃）
         driver.execute(null, "DROP TABLE exercise_baseline", 0)
+        dropVersionFourTables(driver)
 
         DataModule.schema.migrate(driver, 1, DataModule.schema.version)
 
@@ -97,6 +100,26 @@ class SchemaMigrationTest {
         assertEquals(40.0, saved.best)
     }
 
+    @Test
+    fun `バージョン 3 のデータベースを移すと、記録はそのままで、調整項目の表が増える`() = runTest {
+        val driver = TestDatabase.newDriver()
+        DataModule.schema.create(driver)
+        val before = DataModule(driver, Dispatchers.Unconfined)
+        before.exercises.save(Exercise(id = "bench", name = "ベンチプレス", bodyPart = BodyPart.Chest))
+        // バージョン 3 の状態に戻す（調整項目の表がなかった頃）
+        dropVersionFourTables(driver)
+
+        DataModule.schema.migrate(driver, 3, DataModule.schema.version)
+
+        val after = DataModule(driver, Dispatchers.Unconfined)
+        assertEquals("ベンチプレス", assertNotNull(after.exercises.getExercise("bench")).name, "移す前の記録は残っている")
+        after.exercises.saveAdjustmentFields(
+            "bench",
+            listOf(AdjustmentField("angle", "bench", "ベンチ角度", AdjustmentValueType.Number, "°")),
+        )
+        assertEquals(listOf("ベンチ角度"), after.exercises.getAdjustmentFields("bench").map { it.name })
+    }
+
     /**
      * バージョン 2 の状態のデータベース: 部位が「腕」（Arms）の種目が 6 つ（プリセット 3、自分で作った種目 3）と、
      * 胸の種目が 1 つ。初期設定の表には、セット数の列がなく、バーベルカールの値が 1 行ある。
@@ -117,6 +140,7 @@ class SchemaMigrationTest {
         driver.execute(null, "UPDATE exercise SET body_part = 'Arms' WHERE id <> 'bench'", 0)
 
         driver.execute(null, "DROP TABLE exercise_baseline", 0)
+        dropVersionFourTables(driver)
         driver.execute(
             null,
             "CREATE TABLE exercise_baseline (" +
@@ -132,6 +156,12 @@ class SchemaMigrationTest {
             0,
         )
         return driver
+    }
+
+    /** バージョン 4 で足した、調整項目の表を消す（古い版の状態に戻すため）。 */
+    private fun dropVersionFourTables(driver: SqlDriver) {
+        driver.execute(null, "DROP TABLE adjustment_value", 0)
+        driver.execute(null, "DROP TABLE adjustment_field", 0)
     }
 
     private fun count(driver: SqlDriver, where: String): Long =

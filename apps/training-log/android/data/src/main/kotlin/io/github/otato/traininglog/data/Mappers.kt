@@ -8,7 +8,10 @@ import io.github.otato.traininglog.data.db.Set_record
 import io.github.otato.traininglog.data.db.Workout as WorkoutRow
 import io.github.otato.traininglog.data.db.Workout_exercise
 import io.github.otato.traininglog.data.db.Exercise as ExerciseRow
+import io.github.otato.traininglog.data.db.Adjustment_field
 import io.github.otato.traininglog.data.db.Exercise_baseline
+import io.github.otato.traininglog.domain.model.AdjustmentField
+import io.github.otato.traininglog.domain.model.AdjustmentValueType
 import io.github.otato.traininglog.domain.model.Baseline
 import io.github.otato.traininglog.domain.model.BodyPart
 import io.github.otato.traininglog.domain.model.Equipment
@@ -56,6 +59,15 @@ internal fun Exercise_baseline.toDomain() = Baseline(
     best = best,
     sortOrder = sort_order.toInt(),
     sets = sets?.toInt(),
+)
+
+internal fun Adjustment_field.toDomain() = AdjustmentField(
+    id = id,
+    exerciseId = exercise_id,
+    name = name,
+    valueType = AdjustmentValueType.entries.firstOrNull { it.name == value_type } ?: AdjustmentValueType.Number,
+    unit = unit,
+    sortOrder = sort_order.toInt(),
 )
 
 internal fun GearRow.toDomain() = Gear(id = id, name = name, sortOrder = sort_order.toInt(), hidden = hidden != 0L)

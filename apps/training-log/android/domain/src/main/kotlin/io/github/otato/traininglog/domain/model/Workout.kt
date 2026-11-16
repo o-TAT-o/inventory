@@ -66,6 +66,10 @@ data class WorkoutExerciseDetail(
     val exercise: Exercise,
     val sets: List<SetRecord>,
     val gearIds: Set<String> = emptySet(),
+    /** この種目の調整項目の定義（ベンチ角度など。F-EX-10） */
+    val adjustmentFields: List<AdjustmentField> = emptyList(),
+    /** この記録での、調整項目の値（項目の id → 値。F-WO-12）。入れていない項目は含まない */
+    val adjustments: Map<String, String> = emptyMap(),
 ) {
     val completedSets: List<SetRecord> get() = sets.filter { it.completed }
 
@@ -113,6 +117,15 @@ data class PreviousRecord(
     val gearIds: Set<String> = emptySet(),
     val isBaseline: Boolean = false,
     val setCountKnown: Boolean = true,
+    /** この記録をした種目（バリエーション）の id。履歴をバリエーションごとに分けて見るときに使う */
+    val exerciseId: String? = null,
+    /** そのときの調整項目の値（項目の id → 値） */
+    val adjustments: Map<String, String> = emptyMap(),
+    /**
+     * 初めて使うバリエーションの前回の目安として、同じ親のほかのバリエーションの記録を使ったときの、その名前（F-EX-16）。
+     * 自分自身の記録なら null。
+     */
+    val sourceExerciseName: String? = null,
 )
 
 /** ワークアウトを始めるとき・種目を足すときに作る、種目とセットの下書き。 */
@@ -120,4 +133,6 @@ data class PlannedWorkoutExercise(
     val workoutExercise: WorkoutExercise,
     val sets: List<SetRecord>,
     val gearIds: Set<String> = emptySet(),
+    /** 調整項目の値の初期値（前回の値。F-WO-12）。項目の id → 値 */
+    val adjustments: Map<String, String> = emptyMap(),
 )

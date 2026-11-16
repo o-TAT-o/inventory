@@ -29,7 +29,7 @@ class HomeViewModelTest {
     // 2026-11-14（土）の 10:00（UTC）。1日の区切り（4 時）より後なので、今日は 11/14
     private val clock = MutableClock.at("2026-11-14T10:00:00Z")
     private val today = LocalDate.of(2026, 11, 14)
-    private val start = StartWorkout(data.workouts, data.routines, clock, ids)
+    private val start = StartWorkout(data.workouts, data.routines, data.exercises, clock, ids)
 
     @BeforeTest
     fun setUp() = harness.setUp()

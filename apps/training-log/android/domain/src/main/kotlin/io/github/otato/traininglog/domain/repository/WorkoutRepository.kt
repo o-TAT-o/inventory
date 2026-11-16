@@ -31,8 +31,14 @@ interface WorkoutRepository {
     /** 最後に終えた、ルーティンありのワークアウトのルーティン id（次のルーティンの提案に使う）。 */
     fun observeLastRoutineId(): Flow<String?>
 
-    /** 種目の、これまでの記録（新しい順）。種目の詳細に使う（F-HI-03）。 */
-    fun observeExerciseHistory(exerciseId: String): Flow<List<PreviousRecord>>
+    /** ルーティンごとの、最後にやった日（終えたワークアウト）。ルーティン一覧の「前回 11/7」に使う。 */
+    fun observeLastDateByRoutine(): Flow<Map<String, LocalDate>>
+
+    /**
+     * 種目の、これまでの記録（新しい順）。種目の詳細に使う（F-HI-03）。
+     * [includeVariations] が true なら、バリエーションの記録もまとめて返す（F-ST-06。各記録の [PreviousRecord.exerciseId] で見分ける）。
+     */
+    fun observeExerciseHistory(exerciseId: String, includeVariations: Boolean = false): Flow<List<PreviousRecord>>
 
     // ---- ワークアウト ----
 
@@ -63,6 +69,18 @@ interface WorkoutRepository {
     suspend fun updateExerciseModes(workoutExerciseId: String, weightMode: WeightMode, repMode: RepMode)
 
     suspend fun setGear(workoutExerciseId: String, gearIds: Set<String>)
+
+    /** ワークアウトの中の種目の並びを変える（F-WO-13）。[orderedIds] は、ワークアウトの種目の id を、新しい順に並べたもの。 */
+    suspend fun reorderExercises(workoutId: String, orderedIds: List<String>)
+
+    /** 調整項目の値を入れる（F-WO-12）。[value] が null か空なら、値を消す。 */
+    suspend fun setAdjustment(workoutExerciseId: String, fieldId: String, value: String?)
+
+    /**
+     * 記録の種目を、別の種目（バリエーション）に付け替える（F-RT-10）。数え方は、付け替え先の種目の値にする。
+     * 完了していないセットの値は、[sets] が渡されたとき、それに置き換える（バリエーションの前回の値で用意し直すため）。
+     */
+    suspend fun changeExercise(workoutExerciseId: String, exercise: Exercise, sets: List<SetValues> = emptyList())
 
     // ---- セット ----
 

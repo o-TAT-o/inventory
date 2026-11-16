@@ -4,12 +4,14 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
 import io.github.otato.traininglog.data.db.TrainingLogDatabase
+import io.github.otato.traininglog.data.repository.SqlBackupRepository
 import io.github.otato.traininglog.data.repository.SqlBaselineRepository
 import io.github.otato.traininglog.data.repository.SqlExerciseRepository
 import io.github.otato.traininglog.data.repository.SqlGearRepository
 import io.github.otato.traininglog.data.repository.SqlRoutineRepository
 import io.github.otato.traininglog.data.repository.SqlSettingsRepository
 import io.github.otato.traininglog.data.repository.SqlWorkoutRepository
+import io.github.otato.traininglog.domain.repository.BackupRepository
 import io.github.otato.traininglog.domain.repository.BaselineRepository
 import io.github.otato.traininglog.domain.repository.ExerciseRepository
 import io.github.otato.traininglog.domain.repository.GearRepository
@@ -37,6 +39,7 @@ class DataModule(
     val workouts: WorkoutRepository = SqlWorkoutRepository(database, ioDispatcher, clock)
     val settings: SettingsRepository = SqlSettingsRepository(database, ioDispatcher)
     val baselines: BaselineRepository = SqlBaselineRepository(database, ioDispatcher, clock)
+    val backup: BackupRepository = SqlBackupRepository(database, ioDispatcher, clock)
 
     companion object {
         /** ドライバーを作るときに渡すスキーマ（テーブルの定義とマイグレーション）。 */

@@ -33,6 +33,14 @@ data class AppSettings(
     val autoStartRest: Boolean = true,
     val soundOn: Boolean = true,
     val vibrationOn: Boolean = true,
+    /** 最後に全データを書き出した時刻（エポックミリ秒）。まだなければ null（F-DA-09） */
+    val lastExportAtMillis: Long? = null,
+    /** 端末の中に、自動で世代バックアップを残すか（F-DA-10） */
+    val autoBackup: Boolean = true,
+    /** 最後に自動バックアップを作った時刻（エポックミリ秒） */
+    val lastAutoBackupAtMillis: Long? = null,
+    /** 広告を消す購入をしているか（F-AD-04）。購入の確認（復元）は、Google Play の仕組みで行う */
+    val adsRemoved: Boolean = false,
 ) {
     /** いまの単位での、± ボタンの刻み。 */
     val weightStep: Double

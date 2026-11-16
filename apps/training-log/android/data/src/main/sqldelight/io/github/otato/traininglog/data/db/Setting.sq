@@ -10,3 +10,6 @@ SELECT * FROM setting;
 -- 親テーブルを持たないので、INSERT OR REPLACE で安全に上書きできる
 upsert:
 INSERT OR REPLACE INTO setting (key, content) VALUES (?, ?);
+
+deleteAllSettings:
+DELETE FROM setting;

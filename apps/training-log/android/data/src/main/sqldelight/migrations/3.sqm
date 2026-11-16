@@ -1,0 +1,19 @@
+-- バージョン 3 → 4: 調整項目（ベンチ角度・シート位置など）の定義と、ワークアウトごとの値の表を足す。
+-- 表の定義は、Adjustment.sq と同じにする。
+CREATE TABLE adjustment_field (
+    id TEXT NOT NULL PRIMARY KEY,
+    exercise_id TEXT NOT NULL REFERENCES exercise(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    value_type TEXT NOT NULL,
+    unit TEXT NOT NULL DEFAULT '',
+    sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX adjustment_field_exercise ON adjustment_field(exercise_id);
+
+CREATE TABLE adjustment_value (
+    workout_exercise_id TEXT NOT NULL REFERENCES workout_exercise(id) ON DELETE CASCADE,
+    adjustment_field_id TEXT NOT NULL REFERENCES adjustment_field(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    PRIMARY KEY (workout_exercise_id, adjustment_field_id)
+);

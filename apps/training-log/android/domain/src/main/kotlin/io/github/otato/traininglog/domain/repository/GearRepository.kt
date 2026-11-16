@@ -11,4 +11,10 @@ interface GearRepository {
     suspend fun save(gear: Gear)
 
     suspend fun nextSortOrder(): Int
+
+    /** ギアの並びを変える（F-GR-01）。[orderedIds] は、ギアの id を、新しい順に並べたもの。 */
+    suspend fun reorder(orderedIds: List<String>)
+
+    /** ギアごとの、使った回数（ワークアウトの種目の数）。 */
+    fun observeUsage(): Flow<Map<String, Int>>
 }

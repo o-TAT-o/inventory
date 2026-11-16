@@ -71,7 +71,7 @@ class ExercisePickerViewModelTest {
     fun `ワークアウトに足すときは、初期設定にある種目も「追加済み」にならず、選ぶと足して戻る`() = harness.run {
         saveAll(bench)
         data.baselines.addExercises(listOf("bench"))
-        val workoutId = StartWorkout(data.workouts, data.routines, Clock.systemDefaultZone())(LocalDate.of(2026, 11, 16), null)
+        val workoutId = StartWorkout(data.workouts, data.routines, data.exercises, Clock.systemDefaultZone())(LocalDate.of(2026, 11, 16), null)
         val viewModel = viewModel(PickerMode.Workout, workoutId)
         assertTrue(viewModel.state.first { it.loaded }.addedIds.isEmpty())
 

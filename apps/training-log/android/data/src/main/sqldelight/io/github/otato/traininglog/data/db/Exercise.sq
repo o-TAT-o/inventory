@@ -66,3 +66,20 @@ SELECT COUNT(*) FROM workout_exercise WHERE exercise_id = ?;
 
 usageInRoutines:
 SELECT COUNT(*) FROM routine_item WHERE exercise_id = ?;
+
+selectChildren:
+SELECT * FROM exercise WHERE parent_id = ? ORDER BY sort_order, name;
+
+updateSortOrder:
+UPDATE exercise SET sort_order = :sortOrder WHERE id = :id;
+
+-- 記録（ワークアウトの種目）の数。バリエーションの一覧に「記録 24 回」と出すために使う
+countRecords:
+SELECT we.exercise_id, COUNT(*) AS records
+FROM workout_exercise we
+JOIN workout w ON w.id = we.workout_id
+WHERE w.finished_at IS NOT NULL
+GROUP BY we.exercise_id;
+
+deleteAllExercises:
+DELETE FROM exercise;

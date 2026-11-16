@@ -1,0 +1,65 @@
+-- 調整項目（ベンチ角度・シート位置など。F-EX-10）と、ワークアウトごとの値（F-WO-12）
+CREATE TABLE adjustment_field (
+    id TEXT NOT NULL PRIMARY KEY,
+    exercise_id TEXT NOT NULL REFERENCES exercise(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    -- 'Number'（数値）か 'Text'（文字）
+    value_type TEXT NOT NULL,
+    unit TEXT NOT NULL DEFAULT '',
+    sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX adjustment_field_exercise ON adjustment_field(exercise_id);
+
+CREATE TABLE adjustment_value (
+    workout_exercise_id TEXT NOT NULL REFERENCES workout_exercise(id) ON DELETE CASCADE,
+    adjustment_field_id TEXT NOT NULL REFERENCES adjustment_field(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    PRIMARY KEY (workout_exercise_id, adjustment_field_id)
+);
+
+selectAllFields:
+SELECT * FROM adjustment_field ORDER BY exercise_id, sort_order;
+
+selectFieldsOf:
+SELECT * FROM adjustment_field WHERE exercise_id = ? ORDER BY sort_order;
+
+insertField:
+INSERT INTO adjustment_field (id, exercise_id, name, value_type, unit, sort_order) VALUES (?, ?, ?, ?, ?, ?);
+
+updateField:
+UPDATE adjustment_field SET name = :name, value_type = :valueType, unit = :unit, sort_order = :sortOrder WHERE id = :id;
+
+deleteField:
+DELETE FROM adjustment_field WHERE id = ?;
+
+selectValuesOfWorkout:
+SELECT v.* FROM adjustment_value v
+JOIN workout_exercise we ON we.id = v.workout_exercise_id
+WHERE we.workout_id = ?;
+
+selectValuesOf:
+SELECT * FROM adjustment_value WHERE workout_exercise_id = ?;
+
+-- 子のテーブルなので、INSERT OR REPLACE で安全に上書きできる
+upsertValue:
+INSERT OR REPLACE INTO adjustment_value (workout_exercise_id, adjustment_field_id, content) VALUES (?, ?, ?);
+
+deleteValue:
+DELETE FROM adjustment_value WHERE workout_exercise_id = ? AND adjustment_field_id = ?;
+
+-- 種目の、これまでの記録（終えたワークアウト）の値。履歴・前回の値の表示に使う
+selectValuesOfExercises:
+SELECT v.* FROM adjustment_value v
+JOIN workout_exercise we ON we.id = v.workout_exercise_id
+JOIN workout w ON w.id = we.workout_id
+WHERE we.exercise_id IN :exerciseIds AND w.finished_at IS NOT NULL;
+
+selectAllValues:
+SELECT * FROM adjustment_value;
+
+deleteAllValues:
+DELETE FROM adjustment_value;
+
+deleteAllFields:
+DELETE FROM adjustment_field;

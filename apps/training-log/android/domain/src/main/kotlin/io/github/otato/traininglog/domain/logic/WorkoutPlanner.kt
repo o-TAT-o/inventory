@@ -2,12 +2,14 @@ package io.github.otato.traininglog.domain.logic
 
 import io.github.otato.traininglog.domain.IdGenerator
 import io.github.otato.traininglog.domain.UuidGenerator
+import io.github.otato.traininglog.domain.model.AdjustmentField
 import io.github.otato.traininglog.domain.model.Exercise
 import io.github.otato.traininglog.domain.model.PlannedWorkoutExercise
 import io.github.otato.traininglog.domain.model.PreviousRecord
 import io.github.otato.traininglog.domain.model.RecordType
 import io.github.otato.traininglog.domain.model.RoutineItem
 import io.github.otato.traininglog.domain.model.SetRecord
+import io.github.otato.traininglog.domain.model.SetValues
 import io.github.otato.traininglog.domain.model.WorkoutExercise
 
 /**
@@ -25,6 +27,7 @@ class WorkoutPlanner(private val ids: IdGenerator = UuidGenerator) {
         exercise: Exercise,
         routineItem: RoutineItem? = null,
         previous: PreviousRecord? = null,
+        adjustmentFields: List<AdjustmentField> = emptyList(),
     ): PlannedWorkoutExercise {
         val workoutExercise = WorkoutExercise(
             id = ids.next(),
@@ -53,11 +56,33 @@ class WorkoutPlanner(private val ids: IdGenerator = UuidGenerator) {
                 reference = reference,
             )
         }
+        // 調整項目の値は、前回の値が初期値になる（変えなければ入力不要。F-WO-12）。いまの項目にあるものだけ引き継ぐ
+        val fieldIds = adjustmentFields.map { it.id }.toSet()
         return PlannedWorkoutExercise(
             workoutExercise = workoutExercise,
             sets = sets,
             gearIds = previous?.gearIds.orEmpty(),
+            adjustments = previous?.adjustments.orEmpty().filterKeys { it in fieldIds },
         )
+    }
+
+    /**
+     * フォーム（バリエーション）を選び直したときに、完了していないセットを、そのフォームの前回の値で用意し直す（F-RT-10）。
+     * 完了したセットは変えない。前回の記録がなければ、何も返さない（いまの値のまま）。
+     */
+    fun refill(sets: List<SetRecord>, previous: PreviousRecord?): List<SetValues> {
+        val previousSets = previous?.sets.orEmpty()
+        if (previousSets.isEmpty()) return emptyList()
+        return sets.filter { !it.completed }.map { set ->
+            val reference = previousSets.getOrNull(set.sortOrder) ?: previousSets.last()
+            SetValues(
+                setId = set.id,
+                weightKg = reference.weightKg,
+                reps = reference.reps,
+                durationSec = reference.durationSec ?: set.durationSec,
+                distanceM = reference.distanceM ?: set.distanceM,
+            )
+        }
     }
 
     /** 「＋セット」で足すセット。直前のセットの値で用意される（F-WO-16）。 */

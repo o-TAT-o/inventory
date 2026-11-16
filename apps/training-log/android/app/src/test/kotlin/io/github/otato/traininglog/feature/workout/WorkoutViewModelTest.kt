@@ -49,7 +49,7 @@ class WorkoutViewModelTest {
         data.routines.saveRoutine(Routine("push", "Push", memo = "ベンチが空いていなければダンベルに変更"))
         data.routines.saveItem(RoutineItem("i1", "push", "bench", sortOrder = 0, targetSets = 3, targetWeightKg = 60.0, targetReps = 10, restAfterSeconds = 200))
         data.routines.saveItem(RoutineItem("i2", "push", "incline", sortOrder = 1, targetSets = 2, targetWeightKg = 20.0, targetReps = 10))
-        return StartWorkout(data.workouts, data.routines, clock, ids)(LocalDate.of(2026, 11, 14), "push")
+        return StartWorkout(data.workouts, data.routines, data.exercises, clock, ids)(LocalDate.of(2026, 11, 14), "push")
     }
 
     private fun viewModel(workoutId: String) = harness.track(

@@ -28,4 +28,10 @@ interface RoutineRepository {
 
     /** 次に使う並び順の番号（ルーティンの中の種目用）。 */
     suspend fun nextItemSortOrder(routineId: String): Int
+
+    /** ルーティンの並びを変える（F-UI-01）。[orderedIds] は、ルーティンの id を、新しい順に並べたもの。 */
+    suspend fun reorderRoutines(orderedIds: List<String>)
+
+    /** ルーティンの中の種目の並びを変える（F-RT-02）。[orderedIds] は、ルーティンの種目の id を、新しい順に並べたもの。 */
+    suspend fun reorderItems(routineId: String, orderedIds: List<String>)
 }

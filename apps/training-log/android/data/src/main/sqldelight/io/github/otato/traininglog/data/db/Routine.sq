@@ -69,3 +69,15 @@ DELETE FROM routine_item WHERE id = ?;
 
 maxItemSortOrder:
 SELECT COALESCE(MAX(sort_order), -1) FROM routine_item WHERE routine_id = ?;
+
+updateRoutineSortOrder:
+UPDATE routine SET sort_order = :sortOrder WHERE id = :id;
+
+updateItemSortOrder:
+UPDATE routine_item SET sort_order = :sortOrder WHERE id = :id;
+
+deleteAllItems:
+DELETE FROM routine_item;
+
+deleteAllRoutines:
+DELETE FROM routine;
