@@ -19,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -90,6 +89,9 @@ fun OutlineButton(
     )
 }
 
+/** 無効なボタンの、文字とアイコンの濃さ。 */
+private const val DISABLED_CONTENT_ALPHA = 0.4f
+
 @Composable
 private fun ButtonBody(
     text: String,
@@ -101,19 +103,23 @@ private fun ButtonBody(
     contentColor: Color,
     modifier: Modifier,
 ) {
+    // 無効のときの薄さは、文字とアイコンの色の濃さだけで表す。
+    // Modifier.alpha を、有効かどうかで付けたり外したりすると、無効から有効に変わった瞬間に、
+    // ボタン全体（背景も文字も）が描かれなくなることがあった（種目の追加の「保存」が見えなくなる不具合）。
+    // 修飾（Modifier）の並びは、状態が変わっても同じにしておく。
+    val shownColor = if (enabled) contentColor else contentColor.copy(alpha = DISABLED_CONTENT_ALPHA)
     Row(
         modifier = modifier
-            .alpha(if (enabled) 1f else 0.4f)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = horizontalPadding),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = contentColor, modifier = Modifier.size(24.dp))
+            Icon(icon, contentDescription = null, tint = shownColor, modifier = Modifier.size(24.dp))
             Spacer(Modifier.width(8.dp))
         }
-        Text(text, style = textStyle, color = contentColor, textAlign = TextAlign.Center)
+        Text(text, style = textStyle, color = shownColor, textAlign = TextAlign.Center)
     }
 }
 

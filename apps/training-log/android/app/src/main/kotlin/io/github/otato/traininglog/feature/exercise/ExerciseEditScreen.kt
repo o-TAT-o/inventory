@@ -1,5 +1,6 @@
 package io.github.otato.traininglog.feature.exercise
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -26,6 +27,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import io.github.otato.traininglog.designsystem.components.AppChip
+import io.github.otato.traininglog.designsystem.components.AppDivider
 import io.github.otato.traininglog.designsystem.components.AppTopBar
 import io.github.otato.traininglog.designsystem.components.ConfirmDialog
 import io.github.otato.traininglog.designsystem.components.OutlineButton
@@ -201,10 +203,21 @@ fun ExerciseEditScreen(
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
             )
-            PrimaryButton("保存", onClick = onSave, enabled = exercise.name.isNotBlank(), modifier = Modifier.fillMaxWidth())
             if (!state.isNew) {
                 OutlineButton("この種目を削除", onClick = { confirmDelete = true }, modifier = Modifier.fillMaxWidth())
             }
+        }
+        // 保存は、スクロールする内容の外（画面の下）に固定する。入力欄にフォーカスがあって
+        // キーボードが出ていても、いつも見えて、押せるように（キーボードの分は、画面全体が縮む）
+        Column(modifier = Modifier.fillMaxWidth().background(AppTheme.colors.surface)) {
+            AppDivider()
+            PrimaryButton(
+                "保存",
+                onClick = onSave,
+                enabled = exercise.name.isNotBlank(),
+                minHeight = 60.dp,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            )
         }
     }
     if (confirmDelete) {
