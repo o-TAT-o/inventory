@@ -4,3 +4,7 @@
     public static **[] values();
     public static ** valueOf(java.lang.String);
 }
+
+# 広告の SDK が使う WorkManager は、データベース（Room）の実装クラスを、名前から探して作る。
+# 消されると、起動した直後に落ちる（「Failed to create an instance of androidx.work.impl.WorkDatabase」）ので、残す。
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
