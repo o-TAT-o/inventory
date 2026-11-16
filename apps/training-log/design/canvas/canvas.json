@@ -35,7 +35,7 @@
     "C9_exercise_detail.dc.html": { "x": 440, "y": 7000, "w": 360, "h": 780, "title": "種目の詳細" },
     "C11_migrate.dc.html": { "x": 880, "y": 7000, "w": 360, "h": 780, "title": "乗り換え用の初期設定" },
     "C10_data.dc.html": { "x": 1320, "y": 7000, "w": 360, "h": 780, "title": "データ管理" },
-    "C7_exercise_edit.dc.html": { "x": 0, "y": 8200, "w": 360, "h": 1800, "title": "種目の編集" },
+    "C7_exercise_edit.dc.html": { "x": 0, "y": 8200, "w": 360, "h": 1890, "title": "種目の編集" },
     "C12_settings.dc.html": { "x": 440, "y": 8200, "w": 360, "h": 2000, "title": "設定" },
     "C13_gear.dc.html": { "x": 880, "y": 8200, "w": 360, "h": 780, "title": "ギアの管理" },
     "C14_tokens.dc.html": { "x": 0, "y": 10500, "w": 1280, "h": 1750, "title": "デザイントークンと部品" },

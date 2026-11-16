@@ -11,7 +11,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cursor:pointer}
-.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:1800px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+.app{--bg:#F4F6F9;--sf:#FFFFFF;--sf2:#E4E9F0;--fg:#141A22;--sub:#4D5766;--pri:#1F3A5F;--onpri:#FFFFFF;--con:#D6E3F5;--oncon:#0D2440;--line:#C5CCD6;--err:#BA1A1A;--inv:#2B3340;--oninv:#F1F3F7;--invact:#A9C7F0;width:360px;height:1890px;overflow:hidden;position:relative;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans JP','Yu Gothic UI',sans-serif;font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
 .app.dark{color-scheme:dark;--bg:#0F1318;--sf:#181D24;--sf2:#242B34;--fg:#E4E8EE;--sub:#9DA7B5;--pri:#A9C7F0;--onpri:#0B2748;--con:#263B56;--oncon:#D6E3F5;--line:#38414D;--err:#FFB4AB;--inv:#E4E8EE;--oninv:#141A22;--invact:#1F3A5F}
 .i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .i.s{width:18px;height:18px}
@@ -48,6 +48,8 @@ button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cu
 .lst .it .t{flex:1}
 .lst .it .t b{display:block;font-size:15px}
 .lst .it .t small{font-size:12px;color:var(--sub)}
+.btn.fill{background:var(--pri);color:var(--onpri);min-height:60px;font-size:18px}
+.foot{flex:none;margin-top:auto;padding:12px 16px;border-top:1px solid var(--line);background:var(--sf)}
 </style>
 </helmet>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -69,7 +71,7 @@ button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cu
 
   <div class="sec"><div class="lab">部位</div>
     <div class="chips">
-      <button type="button" class="chip" aria-pressed="false">胸</button><button type="button" class="chip" aria-pressed="true">背中</button><button type="button" class="chip" aria-pressed="false">脚</button><button type="button" class="chip" aria-pressed="false">肩</button><button type="button" class="chip" aria-pressed="false">腕</button><button type="button" class="chip" aria-pressed="false">腹</button><button type="button" class="chip" aria-pressed="false">全身</button><button type="button" class="chip" aria-pressed="false">有酸素</button>
+      <button type="button" class="chip" aria-pressed="false">胸</button><button type="button" class="chip" aria-pressed="true">背中</button><button type="button" class="chip" aria-pressed="false">脚</button><button type="button" class="chip" aria-pressed="false">肩</button><button type="button" class="chip" aria-pressed="false">二頭</button><button type="button" class="chip" aria-pressed="false">三頭</button><button type="button" class="chip" aria-pressed="false">腹</button><button type="button" class="chip" aria-pressed="false">全身</button><button type="button" class="chip" aria-pressed="false">有酸素</button>
     </div>
   </div>
 
@@ -125,9 +127,11 @@ button{font:inherit;color:inherit;background:none;border:0;text-align:inherit;cu
     <button type="button" class="btn line" style="color:var(--err)">この種目を非表示にする</button>
     <p class="help">記録がある種目は、削除せずに非表示にします。過去の記録は残ります。</p>
   </div>
+
+  <div class="foot"><button type="button" class="btn fill">保存</button></div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":1800}}'>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":360,"height":1890}}'>
 class Component extends DCLogic {
   renderVals() {
     return { themeClass: this.props.dark ? 'dark' : '' };
