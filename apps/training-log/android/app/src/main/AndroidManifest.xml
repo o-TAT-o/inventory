@@ -4,6 +4,8 @@
 
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 休憩の終わりを、時刻どおりに通知で知らせる（F-TM-03）。許可がなければ、少し遅れることがある仕掛け方になる -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <!--
         自動バックアップは使わない（データは端末の中だけ。バックアップは、ファイルへの書き出しで行う。F-DA-02）。
@@ -27,6 +29,36 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 休憩の終わりの時刻に呼ばれ、通知を出す -->
+        <receiver
+            android:name=".platform.RestAlarmReceiver"
+            android:exported="false" />
+
+        <!--
+            AdMob のアプリ ID。いまは Google が公開しているテスト用の ID（公開の前に、自分の ID に差し替える）。
+            広告の SDK は、広告を出す画面を初めて開いたときに、別のスレッドで読み込む（F-AD-07）。
+        -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.OPTIMIZE_INITIALIZATION"
+            android:value="true" />
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING"
+            android:value="true" />
+
+        <!-- 書き出したファイルを、共有機能でほかのアプリに渡す（F-DA-02） -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>

@@ -1,5 +1,11 @@
 package io.github.otato.traininglog.feature.workout
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import io.github.otato.traininglog.platform.AppForeground
+import io.github.otato.traininglog.platform.RestNotifier
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -80,6 +86,9 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
+/** 通知の許可を、このアプリの起動中にたずねたか（記録画面を開くたびに、たずねない）。 */
+private var notificationAsked = false
+
 /**
  * 記録画面。ViewModel を作り、状態と出来事（音・移動・取り消しの案内）を受け取って、[WorkoutScreen] に渡す。
  */
@@ -111,10 +120,26 @@ fun WorkoutRoute(
     val context = LocalContext.current
     val latest by rememberUpdatedState(state)
 
+    // 休憩の終わりを、アプリが後ろにあるときも通知で知らせる（F-TM-03）。休憩が始まったら仕掛け、やめたら取り消す
+    val restEndAt by viewModel.restEndAtMillis.collectAsStateWithLifecycle()
+    LaunchedEffect(restEndAt) {
+        val end = restEndAt
+        if (end != null && end > System.currentTimeMillis()) RestNotifier.schedule(context, end) else if (end == null) RestNotifier.cancel(context)
+    }
+    // 通知の許可（Android 13 以上）は、記録画面を開いたときに 1 回たずねる。断っても、画面の中の音とバイブは使える
+    val askNotification = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !RestNotifier.canNotify(context) && !notificationAsked) {
+            notificationAsked = true
+            askNotification.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
-                WorkoutEvent.RestFinished -> RestAlert.notify(context, latest.soundOn, latest.vibrationOn)
+                // アプリが後ろにあるときは、通知が知らせる
+                WorkoutEvent.RestFinished -> if (AppForeground.isForeground) RestAlert.notify(context, latest.soundOn, latest.vibrationOn)
                 // 案内は別に出す（出している間も、休憩の合図などの出来事を受け取り続ける）
                 is WorkoutEvent.Undoable -> launch {
                     snackbar.currentSnackbarData?.dismiss()

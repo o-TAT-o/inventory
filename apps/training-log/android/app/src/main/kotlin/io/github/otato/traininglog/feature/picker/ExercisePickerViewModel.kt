@@ -45,6 +45,10 @@ data class PickerRow(
     val exercise: Exercise,
     /** バリエーションのとき、親の種目名 */
     val parentName: String?,
+    /** 親の種目のとき、その下のバリエーション（フォーム）の数。0 なら、開閉の印を出さない */
+    val childCount: Int = 0,
+    /** バリエーションを開いているか */
+    val expanded: Boolean = false,
 )
 
 data class PickerUiState(
@@ -80,6 +84,9 @@ class ExercisePickerViewModel(
     private val filter = MutableStateFlow(Filter())
     private val selected = MutableStateFlow<Set<String>>(emptySet())
 
+    /** バリエーションを開いている、親の種目（F-EX-17。ふだんは、たたんでおく） */
+    private val expanded = MutableStateFlow<Set<String>>(emptySet())
+
     /** すでに初期設定の一覧にある種目。選べなくするためのもので、乗り換え用の初期設定のときだけ。ほかでは常に空 */
     private val addedIds: Flow<Set<String>> = if (mode == PickerMode.Migration) {
         baselines.observeBaselines().map { rows -> rows.map { it.exercise.id }.toSet() }
@@ -87,7 +94,7 @@ class ExercisePickerViewModel(
         flowOf(emptySet())
     }
 
-    val state: StateFlow<PickerUiState> = combine(exercises.observeExercises(), filter, selected, addedIds) { all, filter, selected, added ->
+    val state: StateFlow<PickerUiState> = combine(exercises.observeExercises(), filter, selected, addedIds, expanded) { all, filter, selected, added, open ->
         val names = all.associate { it.id to it.name }
         val visible = all.filter { exercise ->
             (mode != PickerMode.Migration || Baselines.isSupported(exercise)) &&
@@ -95,13 +102,17 @@ class ExercisePickerViewModel(
                 (filter.equipment == null || exercise.equipment == filter.equipment) &&
                 (filter.query.isBlank() || exercise.name.contains(filter.query.trim(), ignoreCase = true))
         }
-        // 親の種目の直後に、そのバリエーションを並べる（F-EX-17）
+        // 親の種目の直後に、そのバリエーションを並べる。ふだんはたたみ、親の「フォーム N」をタップすると開く。
+        // 名前で検索しているときは、開いて見せる（F-EX-17）
+        val searching = filter.query.isNotBlank()
         val parents = visible.filter { it.parentId == null || it.parentId !in names }
         val childrenByParent = visible.filter { it.parentId != null && it.parentId in names }.groupBy { it.parentId }
         val ordered = buildList {
             parents.forEach { parent ->
-                add(PickerRow(parent, null))
-                childrenByParent[parent.id].orEmpty().forEach { add(PickerRow(it, names[parent.id])) }
+                val children = childrenByParent[parent.id].orEmpty()
+                val isOpen = searching || parent.id in open
+                add(PickerRow(parent, null, childCount = children.size, expanded = isOpen))
+                if (isOpen) children.forEach { add(PickerRow(it, names[parent.id])) }
             }
             // 親が絞り込みで外れたバリエーションも出す
             childrenByParent.filterKeys { key -> parents.none { it.id == key } }.values.flatten().forEach {
@@ -133,6 +144,9 @@ class ExercisePickerViewModel(
     fun setBodyPart(bodyPart: BodyPart?) = filter.update { it.copy(bodyPart = bodyPart) }
 
     fun setEquipment(equipment: Equipment?) = filter.update { it.copy(equipment = equipment) }
+
+    /** 親の種目の下の、バリエーションを開く・たたむ。 */
+    fun toggleExpanded(exerciseId: String) = expanded.update { if (exerciseId in it) it - exerciseId else it + exerciseId }
 
     /** 種目をタップしたとき。まとめて選ぶモードでは、選択の入れ替え。それ以外は、足して戻る。 */
     fun pick(exerciseId: String) {

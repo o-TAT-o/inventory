@@ -10,7 +10,11 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import io.github.otato.traininglog.feature.data.DataRoute
 import io.github.otato.traininglog.feature.done.WorkoutDoneRoute
+import io.github.otato.traininglog.feature.gear.GearRoute
+import io.github.otato.traininglog.feature.settings.InfoKind
+import io.github.otato.traininglog.feature.settings.InfoScreen
 import io.github.otato.traininglog.feature.history.HistoryRoute
 import io.github.otato.traininglog.feature.home.HomeRoute
 import io.github.otato.traininglog.feature.migration.MigrationRoute
@@ -53,8 +57,20 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         composable(Routes.SETTINGS) {
             SettingsRoute(
                 onBack = { navController.popBackStack() },
+                onOpenGear = { navController.navigate(Routes.GEAR) },
+                onOpenData = { navController.navigate(Routes.DATA) },
+                onOpenInfo = { navController.navigate(Routes.info(it.route)) },
+            )
+        }
+        composable(Routes.GEAR) { GearRoute(onBack = { navController.popBackStack() }) }
+        composable(Routes.DATA) {
+            DataRoute(
+                onBack = { navController.popBackStack() },
                 onOpenMigration = { navController.navigate(Routes.MIGRATION) },
             )
+        }
+        composable(Routes.INFO, arguments = stringArg("kind")) { entry ->
+            InfoScreen(kind = InfoKind.fromRoute(entry.arg("kind")), onBack = { navController.popBackStack() })
         }
         composable(Routes.MIGRATION) {
             MigrationRoute(
@@ -128,6 +144,7 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
             ExerciseEditRoute(
                 exerciseId = entry.arg("exerciseId"),
                 onBack = { navController.popBackStack() },
+                onOpenExercise = { navController.navigate(Routes.exerciseEdit(it)) },
             )
         }
     }

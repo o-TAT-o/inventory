@@ -1,6 +1,27 @@
 package io.github.otato.traininglog.feature.settings
 
+import android.app.AlarmManager
+import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import io.github.otato.traininglog.designsystem.components.TextAction
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import io.github.otato.traininglog.designsystem.components.PrimaryButton
+import io.github.otato.traininglog.platform.AdBanner
+import io.github.otato.traininglog.ui.common.lastExportShort
+import io.github.otato.traininglog.ui.common.rememberContainer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -60,10 +81,62 @@ class SettingsViewModel(private val repository: SettingsRepository) : ViewModel(
 }
 
 @Composable
-fun SettingsRoute(onBack: () -> Unit, onOpenMigration: () -> Unit) {
+fun SettingsRoute(
+    onBack: () -> Unit,
+    onOpenGear: () -> Unit,
+    onOpenData: () -> Unit,
+    onOpenInfo: (InfoKind) -> Unit,
+) {
+    val container = rememberContainer()
     val viewModel = appViewModel<SettingsViewModel> { SettingsViewModel(it.data.settings) }
     val settings by viewModel.state.collectAsStateWithLifecycle()
-    SettingsScreen(settings, onBack, viewModel::update, onOpenMigration)
+    val billing = container.billing
+    val price by billing.price.collectAsStateWithLifecycle()
+    val message by billing.messages.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
+    val activity = LocalActivity.current
+    val context = LocalContext.current
+
+    // 休憩の通知を時刻どおりに出す許可（Android 12 以上）。設定の画面からもどったときに、確かめ直す
+    var exactAlarmMissing by remember { mutableStateOf(false) }
+    LifecycleResumeEffect(Unit) {
+        exactAlarmMissing = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            context.getSystemService(AlarmManager::class.java)?.canScheduleExactAlarms() == false
+        onPauseOrDispose {}
+    }
+
+    // 値段を取りにいき、購入済みかを確かめる（設定を開いたときだけ、Google Play につなぐ）
+    LaunchedEffect(billing) { billing.refresh() }
+    LaunchedEffect(message) {
+        message?.let {
+            billing.consumeMessage()
+            snackbar.showSnackbar(it.text)
+        }
+    }
+
+    SettingsScreen(
+        settings = settings,
+        dataSubtitle = lastExportShort(settings.lastExportAtMillis, container.clock),
+        price = price,
+        versionName = remember(context) { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "" },
+        exactAlarmMissing = exactAlarmMissing,
+        onAllowExactAlarm = {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                runCatching {
+                    context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}")))
+                }
+            }
+        },
+        debuggable = remember(context) { context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0 },
+        snackbar = snackbar,
+        onBack = onBack,
+        onUpdate = viewModel::update,
+        onOpenGear = onOpenGear,
+        onOpenData = onOpenData,
+        onOpenInfo = onOpenInfo,
+        onPurchase = { activity?.let(billing::purchase) },
+        onRestorePurchase = billing::restore,
+    )
 }
 
 /** 設定（F-SE-01〜08）。デザインの「設定」画面と同じ並びにしている。 */
@@ -71,14 +144,26 @@ fun SettingsRoute(onBack: () -> Unit, onOpenMigration: () -> Unit) {
 @Composable
 fun SettingsScreen(
     settings: AppSettings,
+    dataSubtitle: String,
+    price: String?,
+    versionName: String,
+    debuggable: Boolean,
+    exactAlarmMissing: Boolean,
+    onAllowExactAlarm: () -> Unit,
+    snackbar: SnackbarHostState,
     onBack: () -> Unit,
     onUpdate: ((AppSettings) -> AppSettings) -> Unit,
-    onOpenMigration: () -> Unit,
+    onOpenGear: () -> Unit,
+    onOpenData: () -> Unit,
+    onOpenInfo: (InfoKind) -> Unit,
+    onPurchase: () -> Unit,
+    onRestorePurchase: () -> Unit,
 ) {
     val colors = AppTheme.colors
     Column(modifier = Modifier.fillMaxSize()) {
         AppTopBar("設定", onBack = onBack)
-        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
+        Box(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
             Group("単位と入力") {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("重量の単位", style = AppTheme.typography.bodyStrong, color = colors.fg)
@@ -142,7 +227,7 @@ fun SettingsScreen(
                 StripOption("その週", "週の始まりに合わせて 7 日を並べる", settings.homeStripMode == HomeStripMode.Week) {
                     onUpdate { it.copy(homeStripMode = HomeStripMode.Week) }
                 }
-                StripOption("今日を真ん中", "前後 3 日ずつ", settings.homeStripMode == HomeStripMode.CenteredToday) {
+                StripOption("今日を真ん中", "前後 3 日ずつ。左右にスワイプして動かせる", settings.homeStripMode == HomeStripMode.CenteredToday) {
                     onUpdate { it.copy(homeStripMode = HomeStripMode.CenteredToday) }
                 }
                 StripOption("直近 7 日", "今日が右端。前日までの入力がしやすい", settings.homeStripMode == HomeStripMode.Last7Days) {
@@ -181,20 +266,68 @@ fun SettingsScreen(
                 SettingRow("バイブで知らせる") {
                     Switch(checked = settings.vibrationOn, onCheckedChange = { v -> onUpdate { it.copy(vibrationOn = v) } })
                 }
+                if (exactAlarmMissing) {
+                    AppDivider()
+                    SettingRow(
+                        "通知を、時刻どおりに出す",
+                        subtitle = "許可がないと、アプリを閉じているときの休憩の通知が、1 分ほど遅れることがあります",
+                    ) {
+                        TextAction("許可する", onClick = onAllowExactAlarm)
+                    }
+                }
             }
-            Group("データ") {
-                SettingRow(
-                    title = "乗り換え用の初期設定",
-                    subtitle = "前のアプリの直近の重量・回数・自己ベストを入れます",
-                    onClick = onOpenMigration,
-                ) {
-                    Icon(AppIcons.Right, contentDescription = null, tint = colors.sub)
+            Group("管理") {
+                LinkRow("ギアの管理", "ベルト・パワーグリップなど", onOpenGear)
+                AppDivider()
+                LinkRow("データ管理", dataSubtitle, onOpenData)
+            }
+            Group("広告") {
+                if (settings.adsRemoved) {
+                    SettingRow("広告を消す", subtitle = "購入済みです。広告は出ません") {
+                        Icon(AppIcons.Check, contentDescription = null, tint = colors.primary)
+                    }
+                } else {
+                    SettingRow("広告を消す", subtitle = "買い切り・ずっと非表示") {
+                        PrimaryButton(
+                            text = if (price != null) "$price で購入" else "購入",
+                            onClick = onPurchase,
+                            minHeight = 48.dp,
+                            textStyle = AppTheme.typography.bodyStrong,
+                            horizontalPadding = 16.dp,
+                        )
+                    }
+                }
+                AppDivider()
+                LinkRow("購入を復元", "機種変更や再インストールのあとに", onRestorePurchase)
+                if (debuggable) {
+                    AppDivider()
+                    SettingRow("（開発用）広告を消した状態にする", subtitle = "公開するアプリには出ません") {
+                        Switch(checked = settings.adsRemoved, onCheckedChange = { v -> onUpdate { it.copy(adsRemoved = v) } })
+                    }
                 }
             }
             Group("このアプリについて") {
-                SettingRow("バージョン") { Text("0.1.0", style = AppTheme.typography.body, color = colors.sub) }
+                LinkRow("利用規約", null) { onOpenInfo(InfoKind.Terms) }
+                AppDivider()
+                LinkRow("プライバシーポリシー", null) { onOpenInfo(InfoKind.Privacy) }
+                AppDivider()
+                LinkRow("ライセンス表示", null) { onOpenInfo(InfoKind.Licenses) }
+                AppDivider()
+                SettingRow("バージョン") { Text(versionName, style = AppTheme.typography.body, color = colors.sub) }
             }
         }
+        SnackbarHost(hostState = snackbar, modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp))
+        }
+        // 広告を消す購入をしていれば、何も出ない（F-AD-02）
+        AdBanner()
+    }
+}
+
+/** 「題名／補足 ›」の、タップで次の画面へ進む行。 */
+@Composable
+private fun LinkRow(title: String, subtitle: String?, onClick: () -> Unit) {
+    SettingRow(title = title, subtitle = subtitle, onClick = onClick) {
+        Icon(AppIcons.Right, contentDescription = null, tint = AppTheme.colors.sub)
     }
 }
 

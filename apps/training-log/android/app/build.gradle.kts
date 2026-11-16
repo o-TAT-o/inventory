@@ -69,6 +69,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.sqldelight.android.driver)
+    implementation(libs.play.services.ads)
+    implementation(libs.billing.ktx)
 
     testImplementation(testFixtures(project(":data")))
     // Android のモジュールでは、テストの枠組み（JUnit4）を自動では選ばないので、明示する

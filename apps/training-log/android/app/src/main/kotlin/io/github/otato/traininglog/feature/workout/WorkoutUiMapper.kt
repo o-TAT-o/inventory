@@ -212,7 +212,7 @@ object WorkoutUiMapper {
         if (field.valueType == AdjustmentValueType.Number) "${field.name} $value${field.unit}" else "${field.name} $value"
 
     /** 自己ベストのセットの下に出す説明。「最大重量の更新　これまで 62.5 kg 合計」 */
-    private fun pbNote(exercise: WorkoutExerciseDetail, previousBest: Double?, unit: WeightUnit): String? {
+    fun pbNote(exercise: WorkoutExerciseDetail, previousBest: Double?, unit: WeightUnit): String? {
         previousBest ?: return null
         val ex = exercise.exercise
         return when (ex.recordType) {

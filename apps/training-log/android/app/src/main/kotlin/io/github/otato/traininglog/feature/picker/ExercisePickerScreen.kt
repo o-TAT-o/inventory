@@ -1,5 +1,9 @@
 package io.github.otato.traininglog.feature.picker
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -69,6 +73,7 @@ fun ExercisePickerRoute(
         onBodyPart = viewModel::setBodyPart,
         onEquipment = viewModel::setEquipment,
         onPick = viewModel::pick,
+        onToggleExpanded = viewModel::toggleExpanded,
         onConfirm = viewModel::confirmSelection,
         onCreateExercise = onCreateExercise,
     )
@@ -82,6 +87,7 @@ fun ExercisePickerScreen(
     onBodyPart: (BodyPart?) -> Unit,
     onEquipment: (Equipment?) -> Unit,
     onPick: (String) -> Unit,
+    onToggleExpanded: (String) -> Unit,
     onConfirm: () -> Unit,
     onCreateExercise: () -> Unit,
 ) {
@@ -154,6 +160,29 @@ fun ExercisePickerScreen(
                         Text("追加済み", style = AppTheme.typography.caption, color = colors.sub)
                     } else {
                         Tag(row.exercise.weightMode.tag(row.exercise.equipment))
+                    }
+                    if (row.childCount > 0) {
+                        // フォーム違いは、たたんでおく。ここをタップすると、下に開く
+                        Row(
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .defaultMinSize(minHeight = 44.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable(
+                                    role = Role.Button,
+                                    onClickLabel = if (row.expanded) "フォームをたたむ" else "フォームを開く",
+                                ) { onToggleExpanded(row.exercise.id) }
+                                .padding(horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("フォーム ${row.childCount}", style = AppTheme.typography.caption, color = colors.primary)
+                            Icon(
+                                if (row.expanded) AppIcons.Up else AppIcons.Down,
+                                contentDescription = null,
+                                tint = colors.primary,
+                                modifier = Modifier.padding(start = 2.dp).size(18.dp),
+                            )
+                        }
                     }
                 }
                 AppDivider()

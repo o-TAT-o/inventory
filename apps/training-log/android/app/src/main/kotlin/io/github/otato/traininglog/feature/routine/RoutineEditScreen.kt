@@ -135,7 +135,7 @@ class RoutineEditViewModel(
             removedItem = target?.item
             previousOrder = null
             routines.deleteItem(itemId)
-            if (target != null) _events.emit(RoutineEditEvent.ItemRemoved(target.exercise.name))
+            if (target != null) _events.emit(RoutineEditEvent.ItemRemoved(target.displayName))
         }
     }
 
@@ -377,7 +377,7 @@ private fun RoutineItemCard(
         ) {
             ReorderHandle(handle)
             Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
-                Text(exercise.name, style = AppTheme.typography.bodyStrong, color = colors.fg)
+                Text(detail.displayName, style = AppTheme.typography.bodyStrong, color = colors.fg)
                 when {
                     expanded -> Text(
                         "${exercise.equipment.label()} · 目標と休憩を設定中",

@@ -17,12 +17,14 @@ import io.github.otato.traininglog.domain.usecase.StartWorkout
 import io.github.otato.traininglog.ui.common.PreviousUi
 import io.github.otato.traininglog.ui.common.RecordFormat
 import io.github.otato.traininglog.ui.common.formatDateWithDow
+import io.github.otato.traininglog.ui.common.formatMonthDay
 import io.github.otato.traininglog.ui.common.formatVolume
 import io.github.otato.traininglog.ui.common.jaShort
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -65,9 +67,25 @@ class HomeViewModel(
         DayBoundary.today(clock, s.dayBoundaryHour)
     }.distinctUntilChanged()
 
+    /** 日付の帯を、何週ぶん動かしているか（0 が、今日のいる並び） */
+    private val stripOffset = MutableStateFlow(0)
+
+    /** 日付の帯を、前（-1）・後（+1）へ 7 日動かす。 */
+    fun shiftStrip(delta: Int) {
+        stripOffset.value = (stripOffset.value + delta).coerceIn(-MAX_STRIP_WEEKS, MAX_STRIP_WEEKS)
+    }
+
+    /** 日付の帯を、今日のいる並びへ戻す。 */
+    fun resetStrip() {
+        stripOffset.value = 0
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     private val strip: Flow<Pair<List<LocalDate>, List<WorkoutSummary>>> =
-        combine(today, settings) { today, s -> HomeStrip.days(today, s.homeStripMode, s.weekStart) }
+        combine(today, settings, stripOffset) { today, s, offset ->
+            // 左右にスワイプすると、7 日ずつ前後へ動く（F-HI-06）
+            HomeStrip.days(today, s.homeStripMode, s.weekStart).map { it.plusDays(offset * 7L) }
+        }
             .distinctUntilChanged()
             .flatMapLatest { days -> workouts.observeSummaries(days.first(), days.last()).map { days to it } }
 
@@ -127,6 +145,7 @@ class HomeViewModel(
                     dateText = workout.date.takeIf { it != inputs.today }?.let(::formatDateWithDow),
                 )
             },
+            stripRange = if (inputs.today in days) null else "${formatMonthDay(days.first())} 〜 ${formatMonthDay(days.last())}",
             strip = days.map { date ->
                 val summary = summaries.firstOrNull { it.workout.date == date }
                 DayCellUi(
@@ -160,7 +179,7 @@ class HomeViewModel(
                 weightMode = exercise.workoutExercise.weightMode,
                 repMode = exercise.workoutExercise.repMode,
                 unit = settings.weightUnit,
-            )?.let { line -> HighlightUi(exercise.exercise.name, line, hasMore = withSets.size > 1) }
+            )?.let { line -> HighlightUi(exercise.fullName, line, hasMore = withSets.size > 1) }
         }
         return LastWorkoutUi(dateText = formatDateWithDow(summary.workout.date), headline = headline, highlight = highlight)
     }
@@ -180,7 +199,7 @@ class HomeViewModel(
                         ?.let { PreviousUi.of(record, it) }
                 }
                 NextItemUi(
-                    name = detail.exercise.name,
+                    name = detail.displayName,
                     previous = previousUi,
                     setsText = "${detail.item.targetSets ?: previous?.sets?.size ?: DEFAULT_SETS} セット",
                 )
@@ -191,6 +210,9 @@ class HomeViewModel(
 
     private companion object {
         const val MINUTE_MILLIS = 60_000L
+
+        /** 日付の帯を動かせる範囲（前後 2 年ぶん） */
+        const val MAX_STRIP_WEEKS = 104
         const val MAX_ROWS = 3
         const val DEFAULT_SETS = 3
     }

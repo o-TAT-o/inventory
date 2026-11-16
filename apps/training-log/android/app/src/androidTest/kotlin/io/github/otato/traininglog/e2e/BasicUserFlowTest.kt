@@ -12,8 +12,11 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.waitUntilAtLeastOneExists
+import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import io.github.otato.traininglog.MainActivity
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,6 +36,20 @@ import org.junit.runner.RunWith
 class BasicUserFlowTest {
     @get:Rule
     val compose = createAndroidComposeRule<MainActivity>()
+
+    /**
+     * 通知の許可は、先に与えておく。記録画面を開いたときに出る、許可をたずねる OS のダイアログが、
+     * 操作の上にかぶさらないようにする（アプリのデータを消すと、許可も消えるので、毎回与える）。
+     */
+    @Before
+    fun grantNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            instrumentation.uiAutomation
+                .executeShellCommand("pm grant ${instrumentation.targetContext.packageName} android.permission.POST_NOTIFICATIONS")
+                .close()
+        }
+    }
 
     /** 記録の基本: 自由に記録を始め、種目を足し、セットを完了して終える。履歴で見られる。 */
     @Test

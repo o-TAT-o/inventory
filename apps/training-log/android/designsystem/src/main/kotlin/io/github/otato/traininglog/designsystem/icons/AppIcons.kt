@@ -66,6 +66,21 @@ object AppIcons {
     /** 取り込む（下向きの矢印と受け皿） */
     val Import = stroke("import", "M12 4v11M8 11l4 4 4-4M5 19h14")
 
+    /** 鉛筆（編集） */
+    val Edit = stroke("edit", "M4 20l1-4.5L16.5 4a2.1 2.1 0 0 1 3 3L8 18.5z", "M14.5 6l3 3")
+
+    /** メモ */
+    val Note = stroke("note", "M5 4h14v16H5z", "M8.5 9h7M8.5 13h7")
+
+    /** 書き出す（上向きの矢印と受け皿） */
+    val Export = stroke("export", "M12 15V4M8 8l4-4 4 4M5 19h14")
+
+    /** 表（CSV） */
+    val Table = stroke("table", "M5 5h14v14H5zM5 10h14M5 14.5h14M11 5v14")
+
+    /** 巻き戻す（バックアップから戻す） */
+    val Restore = stroke("restore", "M4 12a8 8 0 1 0 2.6-5.9L4 8.5M4 4v4.5h4.5", "M12 8v4l3 2")
+
     /** 乗り換え（行き来する矢印） */
     val Swap = stroke("swap", "M7 7h11l-3-3M17 17H6l3 3")
     val Play = filled("play", "M8 5l11 7-11 7z")

@@ -1,5 +1,12 @@
 package io.github.otato.traininglog.feature.home
 
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
+import io.github.otato.traininglog.designsystem.components.TextAction
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -79,6 +86,8 @@ fun HomeRoute(
     HomeScreen(
         state = state,
         onStart = { routineId, date, quickEntry -> viewModel.start(routineId, date, quickEntry) },
+        onShiftStrip = viewModel::shiftStrip,
+        onResetStrip = viewModel::resetStrip,
         onOpenWorkout = onOpenWorkout,
         onOpenSettings = onOpenSettings,
         onOpenRoutines = onOpenRoutines,
@@ -90,6 +99,8 @@ fun HomeRoute(
 fun HomeScreen(
     state: HomeUiState,
     onStart: (routineId: String?, date: LocalDate, quickEntry: Boolean) -> Unit,
+    onShiftStrip: (Int) -> Unit,
+    onResetStrip: () -> Unit,
     onOpenWorkout: (String) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenRoutines: () -> Unit,
@@ -124,9 +135,20 @@ fun HomeScreen(
         }
 
         // 操作するものは下。日付の帯と、開始ボタン
-        WeekStrip(cells = state.strip, onDayClick = { cell ->
-            if (cell.workoutId != null) onOpenWorkout(cell.workoutId) else pendingDay = cell
-        })
+        state.stripRange?.let { range ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(range, style = AppTheme.typography.caption, color = AppTheme.colors.sub, modifier = Modifier.weight(1f))
+                TextAction("今日へ", onClick = onResetStrip)
+            }
+        }
+        WeekStrip(
+            cells = state.strip,
+            onShift = onShiftStrip,
+            onDayClick = { cell -> if (cell.workoutId != null) onOpenWorkout(cell.workoutId) else pendingDay = cell },
+        )
         Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp)) {
             val active = state.active
             val next = state.next
@@ -343,11 +365,35 @@ private fun NoRoutineHint(onOpenRoutines: () -> Unit) {
     }
 }
 
-/** ホームの日付の帯。日付をタップすると、その日の記録を開く（記録がなければ、新しく始める）。 */
+/**
+ * ホームの日付の帯。日付をタップすると、その日の記録を開く（記録がなければ、新しく始める）。
+ * 左右にスワイプすると、7 日ずつ前後へ動く（右へ払うと前の週。F-HI-06）。
+ */
 @Composable
-private fun WeekStrip(cells: List<DayCellUi>, onDayClick: (DayCellUi) -> Unit) {
+private fun WeekStrip(cells: List<DayCellUi>, onShift: (Int) -> Unit, onDayClick: (DayCellUi) -> Unit) {
     val colors = AppTheme.colors
-    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)) {
+    val shift by rememberUpdatedState(onShift)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .pointerInput(Unit) {
+                val threshold = 56.dp.toPx()
+                var dragged = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = { dragged = 0f },
+                    onDragEnd = {
+                        if (dragged > threshold) shift(-1) else if (dragged < -threshold) shift(1)
+                    },
+                ) { _, amount -> dragged += amount }
+            }
+            .semantics {
+                customActions = listOf(
+                    CustomAccessibilityAction("前の 7 日") { shift(-1); true },
+                    CustomAccessibilityAction("次の 7 日") { shift(1); true },
+                )
+            },
+    ) {
         cells.forEach { cell ->
             val shape = RoundedCornerShape(10.dp)
             Column(

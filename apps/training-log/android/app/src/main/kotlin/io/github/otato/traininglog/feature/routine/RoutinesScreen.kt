@@ -133,7 +133,7 @@ class RoutinesViewModel(
         RoutinesUiState(
             loaded = true,
             rows = list.map { detail ->
-                val names = detail.items.map { it.exercise.name }
+                val names = detail.items.map { it.displayName }
                 val last = lastDates[detail.routine.id]?.let { "前回 ${formatDateWithDow(it)}" }
                 RoutineRowUi(
                     id = detail.routine.id,

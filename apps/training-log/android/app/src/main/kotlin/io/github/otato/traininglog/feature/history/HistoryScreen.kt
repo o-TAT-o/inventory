@@ -1,5 +1,18 @@
 package io.github.otato.traininglog.feature.history
 
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import io.github.otato.traininglog.designsystem.components.PrimaryButton
+import io.github.otato.traininglog.domain.logic.PeriodStats
+import io.github.otato.traininglog.domain.repository.RoutineRepository
+import io.github.otato.traininglog.domain.usecase.CopyWorkout
+import io.github.otato.traininglog.feature.home.RoutineChoice
+import io.github.otato.traininglog.feature.home.StartSheet
+import io.github.otato.traininglog.platform.AdBanner
+import kotlinx.coroutines.flow.first
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -98,13 +111,21 @@ data class HistoryUiState(
     val selectedDate: LocalDate? = null,
     val selectedLabel: String = "",
     val items: List<HistoryItemUi> = emptyList(),
+    /** 選んだ日が、今日か（今日以外なら、始めるときに「記録のしかた」も選べる） */
+    val selectedIsToday: Boolean = true,
+    /** 見ている月のまとめ。「今月 8 回 · 胸 3 · 背中 3 · 脚 2」。記録がなければ null（F-ST-05） */
+    val monthStats: String? = null,
+    /** 始めるときに選べるルーティン */
+    val routines: List<RoutineChoice> = emptyList(),
 )
 
 /** 履歴（月のカレンダーと、選んだ日の記録。F-HI-01、F-HI-02）。 */
 class HistoryViewModel(
     private val workouts: WorkoutRepository,
+    routines: RoutineRepository,
     settingsRepository: SettingsRepository,
     private val startWorkout: StartWorkout,
+    private val copyWorkout: CopyWorkout,
     private val clock: Clock,
 ) : ViewModel() {
     private val month = MutableStateFlow<YearMonth?>(null)
@@ -119,6 +140,9 @@ class HistoryViewModel(
             val first = shown.atDay(1).with(TemporalAdjusters.previousOrSame(s.firstDay()))
             val last = shown.atEndOfMonth().with(TemporalAdjusters.nextOrSame(s.firstDay().minus(1)))
             workouts.observeSummaries(first, last).map { summaries -> build(s, shown, sel ?: today, today, first, last, summaries) }
+        }
+        .combine(routines.observeRoutines()) { state, list ->
+            state.copy(routines = list.sortedBy { it.routine.sortOrder }.map { RoutineChoice(it.routine.id, it.routine.name) })
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, HistoryUiState())
 
@@ -139,9 +163,35 @@ class HistoryViewModel(
         selected.value = null
     }
 
-    fun startOnSelected() {
+    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 1)
+
+    /** 画面の下に出す案内。 */
+    val messages: SharedFlow<String> = _messages.asSharedFlow()
+
+    /** 選んだ日の記録を、新しく始める（F-HI-05）。 */
+    fun startOnSelected(routineId: String?, quickEntry: Boolean) {
         val date = state.value.selectedDate ?: return
-        viewModelScope.launch { _events.emit(startWorkout(date, routineId = null)) }
+        viewModelScope.launch {
+            if (blockedByActive()) return@launch
+            _events.emit(startWorkout(date, routineId, quickEntry))
+        }
+    }
+
+    /** 過去のワークアウトをコピーして、今日のワークアウトを始める（F-HI-04）。 */
+    fun copyToToday(workoutId: String) {
+        viewModelScope.launch {
+            if (blockedByActive()) return@launch
+            val today = DayBoundary.today(clock, settings.first().dayBoundaryHour)
+            val id = copyWorkout(workoutId, today)
+            if (id != null) _events.emit(id) else _messages.emit("コピーできる記録がありません")
+        }
+    }
+
+    /** 記録の途中のワークアウトがあるときは、新しく始めない（途中の記録が、置き去りにならないように）。 */
+    private suspend fun blockedByActive(): Boolean {
+        val active = workouts.observeActiveWorkout().first() ?: return false
+        _messages.emit("記録の途中のワークアウトがあります（${formatDateWithDow(active.date)}）。先に、そちらを終えてください")
+        return true
     }
 
     private fun AppSettings.firstDay(): DayOfWeek = if (weekStart == WeekStart.Sunday) DayOfWeek.SUNDAY else DayOfWeek.MONDAY
@@ -183,6 +233,11 @@ class HistoryViewModel(
                 inProgress = !summary.workout.isFinished,
             )
         }
+        val stats = PeriodStats.of(summaries.filter { YearMonth.from(it.workout.date) == shown })
+        val monthName = if (shown == YearMonth.from(today)) "今月" else "${shown.monthValue}月"
+        val monthStats = if (stats.workoutCount == 0) null else (
+            listOf("$monthName ${stats.workoutCount} 回") + stats.byBodyPart.take(4).map { (part, count) -> "${part.label()} $count" }
+            ).joinToString(" · ")
         return HistoryUiState(
             loaded = true,
             monthLabel = formatYearMonth(shown.atDay(1)),
@@ -191,6 +246,8 @@ class HistoryViewModel(
             selectedDate = selectedDate,
             selectedLabel = formatDateWithDow(selectedDate),
             items = items,
+            selectedIsToday = selectedDate == today,
+            monthStats = monthStats,
         )
     }
 }
@@ -198,12 +255,23 @@ class HistoryViewModel(
 @Composable
 fun HistoryRoute(onOpenWorkout: (String) -> Unit) {
     val viewModel = appViewModel<HistoryViewModel> {
-        HistoryViewModel(it.data.workouts, it.data.settings, it.startWorkout, it.clock)
+        HistoryViewModel(
+            workouts = it.data.workouts,
+            routines = it.data.routines,
+            settingsRepository = it.data.settings,
+            startWorkout = it.startWorkout,
+            copyWorkout = CopyWorkout(it.data.workouts, it.data.exercises, it.clock),
+            clock = it.clock,
+        )
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(viewModel) { viewModel.openWorkout.collect(onOpenWorkout) }
+    LaunchedEffect(viewModel) { viewModel.messages.collect { launch { snackbar.showSnackbar(it) } } }
     HistoryScreen(
         state = state,
+        snackbar = snackbar,
+        onCopyToToday = viewModel::copyToToday,
         onSelect = viewModel::select,
         onShiftMonth = viewModel::shiftMonth,
         onToday = viewModel::goToToday,
@@ -215,17 +283,21 @@ fun HistoryRoute(onOpenWorkout: (String) -> Unit) {
 @Composable
 fun HistoryScreen(
     state: HistoryUiState,
+    snackbar: SnackbarHostState,
+    onCopyToToday: (String) -> Unit,
     onSelect: (LocalDate) -> Unit,
     onShiftMonth: (Long) -> Unit,
     onToday: () -> Unit,
     onOpenWorkout: (String) -> Unit,
-    onStartOnSelected: () -> Unit,
+    onStartOnSelected: (routineId: String?, quickEntry: Boolean) -> Unit,
 ) {
     val colors = AppTheme.colors
+    var starting by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize()) {
         AppTopBar("履歴", actions = { TextAction("今日", onClick = onToday) })
         if (!state.loaded) return@Column
-        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
+        Box(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -247,28 +319,77 @@ fun HistoryScreen(
                     }
                 }
             }
+            state.monthStats?.let {
+                Text(it, style = AppTheme.typography.caption, color = colors.sub, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+            }
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SectionLabel(state.selectedLabel)
                 if (state.items.isEmpty()) {
                     Text("この日の記録はありません", style = AppTheme.typography.body, color = colors.sub)
                 }
                 state.items.forEach { item ->
-                    AppCard(
-                        modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { onOpenWorkout(item.workoutId) },
-                        cornerRadius = 16.dp,
-                    ) {
+                    AppCard(modifier = Modifier.fillMaxWidth(), cornerRadius = 16.dp) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(item.title + if (item.inProgress) "（記録中）" else "", style = AppTheme.typography.heading, color = colors.fg)
                             Text(item.stats, style = AppTheme.typography.caption, color = colors.sub)
                             Spacer(Modifier.height(4.dp))
                             Text(item.exercises, style = AppTheme.typography.body, color = colors.fg)
+                            Spacer(Modifier.height(12.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlineButton(
+                                    if (item.inProgress) "続きを記録" else "開く・直す",
+                                    onClick = { onOpenWorkout(item.workoutId) },
+                                    minHeight = 52.dp,
+                                    textStyle = AppTheme.typography.bodyStrong,
+                                    horizontalPadding = 8.dp,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                if (!item.inProgress) {
+                                    PrimaryButton(
+                                        "コピーして今日やる",
+                                        onClick = { onCopyToToday(item.workoutId) },
+                                        minHeight = 52.dp,
+                                        textStyle = AppTheme.typography.bodyStrong,
+                                        horizontalPadding = 8.dp,
+                                        modifier = Modifier.weight(1.3f),
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-                OutlineButton("この日の記録を始める", onClick = onStartOnSelected, icon = AppIcons.Plus, modifier = Modifier.fillMaxWidth())
+                OutlineButton("この日の記録を始める", onClick = { starting = true }, icon = AppIcons.Plus, modifier = Modifier.fillMaxWidth())
             }
         }
+        SnackbarHost(hostState = snackbar, modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp))
+        }
+        // 広告を消す購入をしていれば、何も出ない（F-AD-02）
+        AdBanner()
     }
+
+    if (starting) {
+        StartOnDaySheet(
+            state = state,
+            onDismiss = { starting = false },
+            onPick = { routineId, quickEntry ->
+                starting = false
+                onStartOnSelected(routineId, quickEntry)
+            },
+        )
+    }
+}
+
+@Composable
+private fun StartOnDaySheet(state: HistoryUiState, onDismiss: () -> Unit, onPick: (String?, Boolean) -> Unit) {
+    StartSheet(
+        title = "${state.selectedLabel}の記録を始める",
+        routines = state.routines,
+        confirmText = "この日の記録を始める",
+        // 今日以外の日は、記録のしかた（ふつうに記録 / あとから入力）も選べる（F-HI-05、F-WO-21）
+        showRecordingStyle = !state.selectedIsToday,
+        onDismiss = onDismiss,
+        onPick = onPick,
+    )
 }
 
 @Composable

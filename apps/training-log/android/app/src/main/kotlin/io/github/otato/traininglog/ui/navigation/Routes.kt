@@ -14,6 +14,16 @@ object Routes {
 
     const val SETTINGS = "settings"
 
+    /** ギアの管理（F-GR-01） */
+    const val GEAR = "gear"
+
+    /** データ管理（書き出し・復元。F-DA-02〜04） */
+    const val DATA = "data"
+
+    /** 利用規約・プライバシーポリシー・ライセンス表示。kind は terms・privacy・licenses */
+    const val INFO = "info/{kind}"
+    fun info(kind: String) = "info/$kind"
+
     /** 乗り換え用の初期設定（F-DA-05） */
     const val MIGRATION = "migration"
 

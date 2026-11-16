@@ -85,7 +85,9 @@ object RecordFormat {
                 repsText = done.joinToString(" · ") { "${distanceKmText(it.distanceM ?: 0.0)} km ${formatMmSs((it.durationSec ?: 0).toLong())}" },
             )
             else -> {
-                val weights = done.map { it.weightKg }.distinct()
+                // 重量が全部同じなら 1 つにまとめる。違うセットがあれば、セットごとに並べる（回数と 1 対 1 で読めるように）
+                val sameWeight = done.map { it.weightKg }.distinct().size == 1
+                val weights = if (sameWeight) listOf(done.first().weightKg) else done.map { it.weightKg }
                 val weightText = if (exercise.usesWeight) {
                     // 自重の加重は、先頭の値の表記に合わせる（0 や補助が混ざっても読める）
                     weights.joinToString(" · ") { WeightUnits.formatKg(it, unit) }.let { numbers ->
@@ -99,7 +101,7 @@ object RecordFormat {
                     weightText(0.0, exercise, unit)
                 }
                 val reps = done.map { it.reps }
-                val repsBody = if (reps.distinct().size == 1 && reps.size > 1) {
+                val repsBody = if (sameWeight && reps.distinct().size == 1 && reps.size > 1) {
                     "× ${reps.first()} を ${reps.size} セット"
                 } else {
                     "× " + reps.joinToString(" · ")

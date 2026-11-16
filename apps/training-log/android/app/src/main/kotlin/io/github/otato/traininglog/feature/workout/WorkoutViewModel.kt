@@ -204,6 +204,14 @@ class WorkoutViewModel(
     )
 
     /** 休憩タイマーの表示（1 秒ごとに変わるので、状態とは別に出す）。 */
+    /**
+     * 休憩が終わる時刻（エポックミリ秒）。休憩していなければ null。
+     * アプリが後ろにあるときも通知で知らせるために、画面がこの時刻に目覚ましを仕掛ける（F-TM-03）。
+     */
+    val restEndAtMillis: StateFlow<Long?> = local.map { it.rest?.endAtMillis }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     val rest: StateFlow<RestUi?> = combine(local.map { it.rest }.distinctUntilChanged(), ticker) { rest, now ->
         rest?.let {
             val remaining = (it.endAtMillis - now + 999) / 1000

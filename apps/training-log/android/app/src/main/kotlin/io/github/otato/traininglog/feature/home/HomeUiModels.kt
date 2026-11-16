@@ -15,6 +15,8 @@ data class HomeUiState(
     /** 記録中のワークアウト（あれば「再開」を出す） */
     val active: ActiveUi? = null,
     val strip: List<DayCellUi> = emptyList(),
+    /** 日付の帯を、今日のいない週へ動かしているときの、その範囲（「11/2 〜 11/8」）。動かしていなければ null（F-HI-06） */
+    val stripRange: String? = null,
 ) {
     /** はじめて開いた状態（記録の途中も、終えた記録も、ルーティンもない）。乗り換えの入口を出す。 */
     val isFirstTime: Boolean get() = loaded && active == null && last == null && !hasRoutines

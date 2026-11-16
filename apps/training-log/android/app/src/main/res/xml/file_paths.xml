@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 書き出したファイルを、共有機能でほかのアプリに渡すための場所（F-DA-02、F-DA-04）。キャッシュの中の exports だけを渡せる -->
+<paths>
+    <cache-path name="exports" path="exports/" />
+</paths>

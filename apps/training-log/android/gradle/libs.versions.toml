@@ -15,6 +15,8 @@ reorderable = "3.1.0"
 androidxTestExtJunit = "1.3.0"
 androidxTestRunner = "1.7.0"
 androidxTestOrchestrator = "1.6.1"
+playServicesAds = "25.5.0"
+billing = "9.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -44,6 +46,9 @@ sqldelight-android-driver = { group = "app.cash.sqldelight", name = "android-dri
 sqldelight-sqlite-driver = { group = "app.cash.sqldelight", name = "sqlite-driver", version.ref = "sqldelight" }
 # minSdk 26（Android 8.0）の SQLite（3.18）で使える SQL だけを書くように、方言を合わせる
 sqldelight-dialect-sqlite318 = { group = "app.cash.sqldelight", name = "sqlite-3-18-dialect", version.ref = "sqldelight" }
+# 広告（F-AD-01）と、広告を消す買い切り（F-AD-04）。どちらも、使う画面を初めて開いたときに読み込む（F-AD-07）
+play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServicesAds" }
+billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 
