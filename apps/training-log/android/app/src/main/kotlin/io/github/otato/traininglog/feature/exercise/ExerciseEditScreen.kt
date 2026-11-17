@@ -13,6 +13,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import io.github.otato.traininglog.designsystem.components.dismissKeyboardOnTouch
+import io.github.otato.traininglog.domain.model.defaultWeightMode
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -121,6 +127,12 @@ class ExerciseEditViewModel(
 
     private var watching: Job? = null
 
+    /**
+     * 重量の数え方を、自分で選んだか。選んだあとは、器具を変えても、自動では変えない。
+     * すでにある種目は、選んである扱いにする（器具だけ直したときに、数え方が勝手に変わらないように）。
+     */
+    private var weightModeChosen = false
+
     init {
         viewModelScope.launch {
             val existing = if (exerciseId == NEW) null else exercises.getExercise(exerciseId)
@@ -132,6 +144,7 @@ class ExerciseEditViewModel(
                 fields = if (existing == null) emptyList() else exercises.getAdjustmentFields(exercise.id),
                 parentName = exercise.parentId?.let { exercises.getExercise(it)?.name },
             )
+            weightModeChosen = existing != null
             if (existing != null) watch(exercise.id)
         }
     }
@@ -151,6 +164,16 @@ class ExerciseEditViewModel(
 
     fun edit(transform: (Exercise) -> Exercise) {
         _state.update { s -> s.exercise?.let { s.copy(exercise = transform(it)) } ?: s }
+    }
+
+    /** 器具を選ぶ。新しい種目では、重量の数え方も器具に合わせる（ダンベルなら「片手」）。自分で選んだあとは、変えない。 */
+    fun setEquipment(equipment: Equipment) = edit {
+        it.copy(equipment = equipment, weightMode = if (weightModeChosen) it.weightMode else equipment.defaultWeightMode)
+    }
+
+    fun setWeightMode(mode: WeightMode) {
+        weightModeChosen = true
+        edit { it.copy(weightMode = mode) }
     }
 
     fun addField() {
@@ -241,6 +264,8 @@ fun ExerciseEditRoute(exerciseId: String, onBack: () -> Unit, onOpenExercise: (e
         defaultStepText = settings?.let { "${WeightUnits.format(it.weightStep)} ${WeightUnits.label(it.weightUnit)}" } ?: "",
         onBack = onBack,
         onEdit = viewModel::edit,
+        onSetEquipment = viewModel::setEquipment,
+        onSetWeightMode = viewModel::setWeightMode,
         onAddField = viewModel::addField,
         onEditField = viewModel::editField,
         onRemoveField = viewModel::removeField,
@@ -262,6 +287,8 @@ fun ExerciseEditScreen(
     defaultStepText: String,
     onBack: () -> Unit,
     onEdit: ((Exercise) -> Exercise) -> Unit,
+    onSetEquipment: (Equipment) -> Unit,
+    onSetWeightMode: (WeightMode) -> Unit,
     onAddField: () -> Unit,
     onEditField: (id: String, (AdjustmentField) -> AdjustmentField) -> Unit,
     onRemoveField: (id: String) -> Unit,
@@ -272,6 +299,7 @@ fun ExerciseEditScreen(
     onDelete: () -> Unit,
 ) {
     val colors = AppTheme.colors
+    val focusManager = LocalFocusManager.current
     val exercise = state.exercise
     var confirmDelete by remember { mutableStateOf(false) }
     var addingVariation by remember { mutableStateOf(false) }
@@ -289,7 +317,8 @@ fun ExerciseEditScreen(
         )
         if (exercise == null) return@Column
         Column(
-            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp),
+            // 入力欄の外に触れたら、キーボードをしまう（名前を入れたあと、下の項目を選びやすいように）
+            modifier = Modifier.weight(1f).dismissKeyboardOnTouch().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             state.parentName?.let {
@@ -305,6 +334,9 @@ fun ExerciseEditScreen(
                 },
                 label = { Text("名前") },
                 singleLine = true,
+                // キーボードの「完了」で、キーボードをしまう
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                 modifier = Modifier.fillMaxWidth(),
             )
             Section("部位") {
@@ -330,16 +362,16 @@ fun ExerciseEditScreen(
             }
             Section("器具") {
                 Equipment.entries.forEach { equipment ->
-                    AppChip(equipment.label(), exercise.equipment == equipment, { onEdit { it.copy(equipment = equipment) } })
+                    AppChip(equipment.label(), exercise.equipment == equipment, { onSetEquipment(equipment) })
                 }
             }
             if (exercise.recordType == RecordType.WeightReps) {
                 Section("重量の数え方") {
-                    AppChip("合計", exercise.weightMode == WeightMode.Total, { onEdit { it.copy(weightMode = WeightMode.Total) } })
+                    AppChip("合計", exercise.weightMode == WeightMode.Total, { onSetWeightMode(WeightMode.Total) })
                     AppChip(
                         if (exercise.equipment == Equipment.Dumbbell) "片手" else "片側",
                         exercise.weightMode == WeightMode.PerSide,
-                        { onEdit { it.copy(weightMode = WeightMode.PerSide) } },
+                        { onSetWeightMode(WeightMode.PerSide) },
                     )
                 }
             }
@@ -356,7 +388,13 @@ fun ExerciseEditScreen(
                         Text("加重（補助）を使う", style = AppTheme.typography.bodyStrong, color = colors.fg)
                         Text("ウェイトベスト・ディップベルト・アシストマシンなど", style = AppTheme.typography.caption, color = colors.sub)
                     }
-                    Switch(checked = exercise.useAddedWeight, onCheckedChange = { v -> onEdit { it.copy(useAddedWeight = v) } })
+                    Switch(
+                        checked = exercise.useAddedWeight,
+                        onCheckedChange = { v ->
+                            focusManager.clearFocus()
+                            onEdit { it.copy(useAddedWeight = v) }
+                        },
+                    )
                 }
             }
             if (exercise.usesWeight) {

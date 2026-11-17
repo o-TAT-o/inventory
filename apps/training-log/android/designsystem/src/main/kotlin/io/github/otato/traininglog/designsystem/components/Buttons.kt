@@ -134,9 +134,10 @@ private fun ButtonBody(
     // ボタン全体（背景も文字も）が描かれなくなることがあった（種目の追加の「保存」が見えなくなる不具合）。
     // 修飾（Modifier）の並びは、状態が変わっても同じにしておく。
     val shownColor = if (enabled) contentColor else contentColor.copy(alpha = DISABLED_CONTENT_ALPHA)
+    val click = rememberFocusClearingClick(onClick)
     Row(
         modifier = modifier
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .clickable(enabled = enabled, role = Role.Button, onClick = click)
             .padding(horizontal = horizontalPadding),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
@@ -159,11 +160,12 @@ fun AppIconButton(
     tint: Color = AppTheme.colors.fg,
     size: Dp = 48.dp,
 ) {
+    val click = rememberFocusClearingClick(onClick)
     Box(
         modifier = modifier
             .size(size)
             .clip(CircleShape)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(role = Role.Button, onClick = click)
             .semantics { this.contentDescription = contentDescription },
         contentAlignment = Alignment.Center,
     ) {
@@ -179,11 +181,12 @@ fun TextAction(
     modifier: Modifier = Modifier,
     color: Color = AppTheme.colors.primary,
 ) {
+    val click = rememberFocusClearingClick(onClick)
     Box(
         modifier = modifier
             .defaultMinSize(minHeight = 44.dp)
             .clip(RoundedCornerShape(12.dp))
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(role = Role.Button, onClick = click)
             .padding(horizontal = 10.dp),
         contentAlignment = Alignment.Center,
     ) {

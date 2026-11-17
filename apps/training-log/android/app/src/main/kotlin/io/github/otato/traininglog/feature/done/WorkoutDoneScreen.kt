@@ -36,6 +36,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import io.github.otato.traininglog.designsystem.components.AppCard
+import io.github.otato.traininglog.designsystem.components.dismissKeyboardOnTouch
 import io.github.otato.traininglog.designsystem.components.AppDivider
 import io.github.otato.traininglog.designsystem.components.AppTopBar
 import io.github.otato.traininglog.designsystem.components.OutlineButton
@@ -214,7 +215,7 @@ fun WorkoutDoneScreen(
         Box(modifier = Modifier.weight(1f)) {
             if (state.loaded) {
                 Column(
-                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 16.dp),
+                    modifier = Modifier.fillMaxSize().dismissKeyboardOnTouch().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {

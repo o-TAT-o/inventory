@@ -39,6 +39,7 @@ fun AppChip(
 ) {
     val colors = AppTheme.colors
     val shape = RoundedCornerShape(12.dp)
+    val click = rememberFocusClearingClick(onClick)
     Box(
         modifier = modifier
             .defaultMinSize(minHeight = 44.dp)
@@ -47,7 +48,7 @@ fun AppChip(
                 if (selected) Modifier.background(colors.container)
                 else Modifier.border(BorderStroke(1.dp, colors.line), shape),
             )
-            .clickable(role = Role.Checkbox, onClick = onClick)
+            .clickable(role = Role.Checkbox, onClick = click)
             .semantics { this.selected = selected }
             .padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center,

@@ -48,6 +48,13 @@ enum class Equipment {
     Other,
 }
 
+/**
+ * 器具ごとの、重量の数え方の初期値。ダンベルは片手ずつ持つので「片側」（画面では「片手」）、それ以外は「合計」。
+ * 種目を新しく作るとき、器具を選ぶと、これに合わせる。
+ */
+val Equipment.defaultWeightMode: WeightMode
+    get() = if (this == Equipment.Dumbbell) WeightMode.PerSide else WeightMode.Total
+
 /** 部位（F-EX-03）。腕は、二頭と三頭に分けて持つ。 */
 enum class BodyPart {
     Chest,

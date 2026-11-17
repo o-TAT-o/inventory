@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.otato.traininglog.designsystem.theme.AppTheme
@@ -34,6 +35,7 @@ fun AppSegmented(
 ) {
     val colors = AppTheme.colors
     val shape = RoundedCornerShape(12.dp)
+    val focusManager = LocalFocusManager.current
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -48,7 +50,11 @@ fun AppSegmented(
                     .weight(1f)
                     .height(48.dp)
                     .then(if (selected) Modifier.background(colors.container) else Modifier)
-                    .clickable(role = Role.Tab) { onSelect(index) }
+                    .clickable(role = Role.Tab) {
+                        // 入力欄のフォーカスを外して、キーボードをしまう（ほかの押せる部品と同じ）
+                        focusManager.clearFocus()
+                        onSelect(index)
+                    }
                     .semantics { this.selected = selected },
                 contentAlignment = Alignment.Center,
             ) {

@@ -101,12 +101,13 @@ fun StepButton(
     /** false にすると、離したときに 1 回動く（スクロールする画面の中では、押した瞬間に動かさない） */
     fireOnPress: Boolean = true,
 ) {
+    val click = rememberFocusClearingClick(onClick)
     Box(
         modifier = modifier
             .size(width = 48.dp, height = 56.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(AppTheme.colors.surfaceVariant)
-            .repeatingClickable(fireOnPress = fireOnPress, onClick = onClick)
+            .repeatingClickable(fireOnPress = fireOnPress, onClick = click)
             .semantics {
                 role = Role.Button
                 this.contentDescription = contentDescription
@@ -175,12 +176,13 @@ fun CompactStepper(
 /** 小さな ± ボタン。長押しで、だんだん速く増減する。スクロールする画面の中で使うので、離したときに 1 回動く。 */
 @Composable
 private fun SmallStepButton(icon: ImageVector, contentDescription: String, onClick: () -> Unit) {
+    val click = rememberFocusClearingClick(onClick)
     Box(
         modifier = Modifier
             .size(44.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(AppTheme.colors.surfaceVariant)
-            .repeatingClickable(fireOnPress = false, onClick = onClick)
+            .repeatingClickable(fireOnPress = false, onClick = click)
             .semantics {
                 role = Role.Button
                 this.contentDescription = contentDescription

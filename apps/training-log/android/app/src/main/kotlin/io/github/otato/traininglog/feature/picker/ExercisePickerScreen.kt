@@ -3,6 +3,7 @@ package io.github.otato.traininglog.feature.picker
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import io.github.otato.traininglog.designsystem.components.dismissKeyboardOnTouch
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -135,7 +136,8 @@ fun ExercisePickerScreen(
         }
         Spacer(Modifier.height(4.dp))
         AppDivider()
-        LazyColumn(modifier = Modifier.weight(1f)) {
+        // 一覧を動かしたら、検索のキーボードをしまう（一覧を広く見られるように）
+        LazyColumn(modifier = Modifier.weight(1f).dismissKeyboardOnTouch()) {
             items(state.rows, key = { it.exercise.id }) { row ->
                 val added = row.exercise.id in state.addedIds
                 val checked = added || row.exercise.id in state.selectedIds

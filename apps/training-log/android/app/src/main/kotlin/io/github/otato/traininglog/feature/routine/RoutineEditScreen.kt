@@ -1,5 +1,6 @@
 package io.github.otato.traininglog.feature.routine
 
+import io.github.otato.traininglog.designsystem.components.dismissKeyboardOnTouch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -269,7 +270,8 @@ fun RoutineEditScreen(
         var name by remember(detail.routine.id) { mutableStateOf(detail.routine.name) }
         var memo by remember(detail.routine.id) { mutableStateOf(detail.routine.memo) }
         Box(modifier = Modifier.weight(1f)) {
-        LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+        // 入力欄（名前・メモ）の外に触れたら、キーボードをしまう
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize().dismissKeyboardOnTouch()) {
             item(key = "header") {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedTextField(

@@ -1,5 +1,7 @@
 package io.github.otato.traininglog.feature.exercise
 
+import io.github.otato.traininglog.domain.model.WeightMode
+import io.github.otato.traininglog.domain.model.Equipment
 import io.github.otato.traininglog.data.testing.TestDatabase
 import io.github.otato.traininglog.domain.logic.ChartMetric
 import io.github.otato.traininglog.domain.logic.ChartPeriod
@@ -237,5 +239,36 @@ class ExerciseScreensViewModelTest {
 
         viewModel.reorder(listOf(added.id) + before.map { it.id })
         assertEquals("液体チョーク", viewModel.rows.first { it.first().id == added.id }.first().name)
+    }
+
+    @Test
+    fun `新しい種目でダンベルを選ぶと、重量の数え方が片手になる。自分で選んだあとは、器具を変えても変わらない`() = harness.run {
+        val viewModel = editViewModel("new")
+        val initial = assertNotNull(viewModel.state.first { it.loaded }.exercise)
+        assertEquals(WeightMode.Total, initial.weightMode)
+
+        viewModel.setEquipment(Equipment.Dumbbell)
+        assertEquals(WeightMode.PerSide, viewModel.state.value.exercise?.weightMode)
+        // ダンベル以外に変えたら、合計に戻る
+        viewModel.setEquipment(Equipment.Barbell)
+        assertEquals(WeightMode.Total, viewModel.state.value.exercise?.weightMode)
+
+        // 自分で選んだら、そのあとは器具に合わせない
+        viewModel.setWeightMode(WeightMode.Total)
+        viewModel.setEquipment(Equipment.Dumbbell)
+        assertEquals(Equipment.Dumbbell, viewModel.state.value.exercise?.equipment)
+        assertEquals(WeightMode.Total, viewModel.state.value.exercise?.weightMode)
+    }
+
+    @Test
+    fun `すでにある種目は、器具を変えても、重量の数え方は自動では変わらない`() = harness.run {
+        data.exercises.save(row.copy(equipment = Equipment.Machine, weightMode = WeightMode.PerSide))
+        val viewModel = editViewModel("row")
+        viewModel.state.first { it.loaded }
+
+        viewModel.setEquipment(Equipment.Cable)
+
+        assertEquals(Equipment.Cable, viewModel.state.value.exercise?.equipment)
+        assertEquals(WeightMode.PerSide, viewModel.state.value.exercise?.weightMode)
     }
 }

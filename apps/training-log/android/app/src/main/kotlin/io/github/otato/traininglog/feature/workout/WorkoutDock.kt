@@ -1,5 +1,6 @@
 package io.github.otato.traininglog.feature.workout
 
+import io.github.otato.traininglog.designsystem.components.dismissKeyboardOnTouch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -301,6 +302,7 @@ fun ExerciseDetailSheet(
     ModalBottomSheet(onDismissRequest = close, containerColor = colors.surface) {
         Column(
             modifier = Modifier
+                .dismissKeyboardOnTouch()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 24.dp),
