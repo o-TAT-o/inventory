@@ -384,6 +384,8 @@ object WorkoutUiMapper {
             workoutExerciseId = exercise.workoutExercise.id,
             exerciseId = ex.id,
             title = "${exercise.title}　$number セット目",
+            exerciseName = exercise.title,
+            setLabel = "$number セット目",
             subtitle = subtitle,
             fields = fields,
             editingCompleted = target.editingCompleted,
@@ -393,7 +395,9 @@ object WorkoutUiMapper {
                 workoutExerciseId = exercise.workoutExercise.id,
                 exerciseName = exercise.title,
                 subtitle = listOfNotNull(
-                    ex.equipment.label() + " · 重量は" + exercise.workoutExercise.weightMode.label(ex.equipment),
+                    ex.equipment.label(),
+                    // 重量の数え方は、重量 × 回数の種目だけに出す（自重・時間・距離の種目には、合計も片側もない）
+                    ("重量は" + exercise.workoutExercise.weightMode.label(ex.equipment)).takeIf { ex.recordType == RecordType.WeightReps },
                     exercise.formName?.let { "フォーム: $it" },
                 ).joinToString(" · "),
                 equipment = ex.equipment,

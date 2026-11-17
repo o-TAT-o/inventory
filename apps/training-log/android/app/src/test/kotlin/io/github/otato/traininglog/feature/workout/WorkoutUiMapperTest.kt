@@ -1,5 +1,6 @@
 package io.github.otato.traininglog.feature.workout
 
+import io.github.otato.traininglog.domain.model.RecordType
 import io.github.otato.traininglog.domain.model.AdjustmentField
 import io.github.otato.traininglog.domain.model.AdjustmentValueType
 import io.github.otato.traininglog.domain.model.AppSettings
@@ -301,5 +302,45 @@ class WorkoutUiMapperTest {
         )
         val state = map(twoExercises, contexts = mapOf("bench" to ExerciseContext(previous, 26.0)))
         assertEquals("「膝をベンチにつく」の直近 11/7", state.exercises[0].previous?.label)
+    }
+
+    @Test
+    fun `詳細のパネルの副題に、重量の数え方が出るのは、重量と回数の種目だけ`() {
+        val weighted = map(detail(today, exercise("we1", 0, incline, set("a1", "we1", 0, 20.0, 10, false))))
+        assertEquals("ダンベル · 重量は片手", weighted.dock?.detail?.subtitle)
+
+        val dips = Exercise(id = "dips", name = "ディップス", equipment = Equipment.Bodyweight, recordType = RecordType.Bodyweight, useAddedWeight = true)
+        val bodyweight = map(detail(today, exercise("we1", 0, dips, set("a1", "we1", 0, 0.0, 10, false))))
+        assertEquals("自重", bodyweight.dock?.detail?.subtitle)
+    }
+
+    @Test
+    fun `メモは、あるものだけが出る。前回のメモは、同じ種目の実際の記録に書いたものだけ`() {
+        val own = PreviousRecord(
+            date = today.minusDays(7),
+            sets = listOf(set("p1", "old", 0, 60.0, 10, true)),
+            weightMode = WeightMode.Total,
+            repMode = RepMode.Normal,
+            memo = "3セット目でフォームが崩れた",
+        )
+        val withNotes = bench.copy(memo = "肩甲骨を寄せる")
+        val written = exercise("we1", 0, withNotes, set("a1", "we1", 0, 60.0, 10, false))
+            .let { it.copy(workoutExercise = it.workoutExercise.copy(memo = "今日は調子がいい")) }
+
+        val state = map(detail(today, written), contexts = mapOf("bench" to ExerciseContext(previous = own, bestBefore = null)))
+        val ui = state.exercises.single()
+        assertEquals("3セット目でフォームが崩れた", ui.previousMemo)
+        assertEquals("今日は調子がいい", ui.memo)
+        assertEquals("肩甲骨を寄せる", ui.exerciseMemo)
+        assertEquals("3セット目でフォームが崩れた", state.dock?.detail?.previousMemo)
+        assertEquals("肩甲骨を寄せる", state.dock?.detail?.exerciseMemo)
+
+        // ほかのフォームの記録を目安にしているときと、メモがないときは、出さない
+        val fromSibling = own.copy(sourceExerciseName = "ナローグリップ")
+        val plain = exercise("we1", 0, bench, set("a1", "we1", 0, 60.0, 10, false))
+        val none = map(detail(today, plain), contexts = mapOf("bench" to ExerciseContext(previous = fromSibling, bestBefore = null))).exercises.single()
+        assertNull(none.previousMemo)
+        assertNull(none.memo)
+        assertNull(none.exerciseMemo)
     }
 }

@@ -22,6 +22,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -170,7 +171,18 @@ private fun ActiveDock(dock: DockUi, actions: DockActions) {
                     .padding(vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(dock.title, style = AppTheme.typography.heading, color = colors.fg, maxLines = 1)
+                // 名前が長いときは、名前のほうを省略する。何セット目かは、いつも読めるようにする
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        dock.exerciseName,
+                        style = AppTheme.typography.heading,
+                        color = colors.fg,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    Text(dock.setLabel, style = AppTheme.typography.heading, color = colors.fg, maxLines = 1)
+                }
                 Text(dock.subtitle, style = AppTheme.typography.caption, color = colors.sub, maxLines = 1)
             }
             AppIconButton(

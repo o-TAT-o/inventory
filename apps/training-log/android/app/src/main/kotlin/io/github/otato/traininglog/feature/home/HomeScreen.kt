@@ -411,12 +411,12 @@ private fun WeekStrip(cells: List<DayCellUi>, onShift: (Int) -> Unit, onDayClick
                 Text(cell.dayNumber.toString(), style = AppTheme.typography.bodyStrong, color = if (cell.isFuture) colors.sub else colors.fg)
                 Text(
                     cell.label ?: "",
-                    style = AppTheme.typography.caption.copy(fontSize = 10.sp),
+                    // 行の高さは、文字の大きさに合わせて決める（端末の文字を大きくしていると、決め打ちの高さでは切れる）
+                    style = AppTheme.typography.caption.copy(fontSize = 10.sp, lineHeight = 14.sp),
                     fontWeight = FontWeight.Bold,
                     color = colors.fg,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.height(14.dp),
                 )
             }
         }

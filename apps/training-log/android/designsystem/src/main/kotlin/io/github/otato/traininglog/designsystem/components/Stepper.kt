@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -137,14 +138,15 @@ fun ValueStepper(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .height(56.dp)
+                // 高さは決め打ちにしない（端末の文字を大きくしていると、下の単位が切れる）
+                .defaultMinSize(minHeight = 56.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .clickable(role = Role.Button, onClick = onValueClick),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             Text(valueText, style = AppTheme.typography.number, color = AppTheme.colors.fg, textAlign = TextAlign.Center)
-            Text(unitText, style = AppTheme.typography.caption, color = AppTheme.colors.sub, textAlign = TextAlign.Center)
+            Text(unitText, style = AppTheme.typography.caption, color = AppTheme.colors.sub, textAlign = TextAlign.Center, maxLines = 1)
         }
         StepButton(AppIcons.Plus, plusLabel, onPlus)
     }

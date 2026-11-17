@@ -110,6 +110,10 @@ data class DockUi(
     val exerciseId: String,
     /** 「ベンチプレス　2 セット目」 */
     val title: String,
+    /** 種目の名前だけ（長いときは、ここを省略して、何セット目かは必ず出す） */
+    val exerciseName: String = "",
+    /** 「2 セット目」 */
+    val setLabel: String = "",
     /** 「前回 60 kg × 8」 */
     val subtitle: String,
     val fields: List<FieldUi>,
