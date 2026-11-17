@@ -584,4 +584,33 @@ class WorkoutViewModelTest {
         reopened.finish()
         assertNull(restTimer.state.first { it == null })
     }
+
+    @Test
+    fun `種目のメモは、見出しに出て、次に同じ種目をやるときに「前回のメモ」として出る`() = harness.run {
+        // 1 回め: ベンチプレスにメモを書いて、1 セットやって終える
+        val first = startPushWorkout(date = LocalDate.of(2026, 11, 12))
+        val firstVm = viewModel(first)
+        background { firstVm.state.collect {} }
+        val bench = firstVm.state.first { it.dock != null }.exercises[0]
+        assertNull(bench.previousMemo)
+        assertNull(bench.memo)
+
+        firstVm.setExerciseMemo(bench.workoutExerciseId, "3セット目でフォームが崩れた")
+        assertEquals("3セット目でフォームが崩れた", firstVm.state.first { it.exercises[0].memo != null }.exercises[0].memo)
+        firstVm.complete()
+        firstVm.finish()
+        data.workouts.observeWorkout(first).first { it?.workout?.isFinished == true }
+
+        // 2 回め: 前回のメモが、見出しと、詳細のパネルに出る
+        val second = StartWorkout(data.workouts, data.routines, data.exercises, clock, ids)(LocalDate.of(2026, 11, 14), "push")
+        val secondVm = viewModel(second)
+        background { secondVm.state.collect {} }
+        val state = secondVm.state.first { it.exercises.firstOrNull()?.previousMemo != null }
+
+        assertEquals("3セット目でフォームが崩れた", state.exercises[0].previousMemo)
+        assertNull(state.exercises[0].memo, "この記録のメモは、まだ書いていない")
+        assertEquals("3セット目でフォームが崩れた", state.dock?.detail?.previousMemo)
+        // 前回やらなかった種目（インクライン）には、出ない
+        assertNull(state.exercises[1].previousMemo)
+    }
 }

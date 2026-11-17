@@ -67,6 +67,12 @@ data class ExerciseUi(
     val hasPersonalBest: Boolean,
     /** 並べ替え中（種目の見出しだけにたたんだとき）の 2 行目。「マシン · 目標 3 セット」 */
     val dragMeta: String,
+    /** 前回、この種目に書いたメモ。なければ null。前回の記録の下に出して、読み返せるようにする（F-WO-08） */
+    val previousMemo: String? = null,
+    /** この記録に書いた、種目のメモ。なければ null */
+    val memo: String? = null,
+    /** 種目そのものに書いてあるメモ（フォームの注意点など。F-EX-07）。なければ null */
+    val exerciseMemo: String? = null,
 )
 
 data class SetRowUi(
@@ -127,6 +133,10 @@ data class DetailUi(
     val showWeightMode: Boolean,
     val showRepMode: Boolean,
     val memo: String,
+    /** 前回、この種目に書いたメモ。なければ null */
+    val previousMemo: String? = null,
+    /** 種目そのものに書いてあるメモ（フォームの注意点など）。なければ null */
+    val exerciseMemo: String? = null,
 )
 
 data class GearChipUi(val id: String, val name: String, val selected: Boolean)

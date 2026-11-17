@@ -1,6 +1,10 @@
 package io.github.otato.traininglog.designsystem.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
@@ -100,6 +104,49 @@ fun TextInputDialog(
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(field.text.trim()) }, enabled = valid) { Text("決定") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("キャンセル") }
+        },
+    )
+}
+
+/**
+ * メモを書くダイアログ。何行でも書ける。空にして保存すると、メモを消す。
+ * [notes] は、入力欄の上に出す、読むだけの行（「前回: …」など。書くときの手がかりにする）。
+ */
+@Composable
+fun MemoInputDialog(
+    title: String,
+    initialText: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+    placeholder: String = "",
+    notes: List<String> = emptyList(),
+) {
+    var field by remember { mutableStateOf(TextFieldValue(initialText, TextRange(initialText.length))) }
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                notes.forEach { Text(it, style = AppTheme.typography.caption, color = AppTheme.colors.sub) }
+                OutlinedTextField(
+                    value = field,
+                    onValueChange = { field = it },
+                    placeholder = { Text(placeholder) },
+                    minLines = 3,
+                    maxLines = 6,
+                    modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(field.text.trim()) }) { Text("保存") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("キャンセル") }

@@ -145,6 +145,8 @@ data class PreviousRecord(
     val exerciseId: String? = null,
     /** そのときの調整項目の値（項目の id → 値） */
     val adjustments: Map<String, String> = emptyMap(),
+    /** そのときに書いた、種目のメモ（「3セット目でフォームが崩れた」など。F-WO-08）。次に同じ種目をやるときと、種目の詳細で読み返す */
+    val memo: String = "",
     /**
      * 初めて使うバリエーションの前回の目安として、同じ親のほかのバリエーションの記録を使ったときの、その名前（F-EX-16）。
      * 自分自身の記録なら null。

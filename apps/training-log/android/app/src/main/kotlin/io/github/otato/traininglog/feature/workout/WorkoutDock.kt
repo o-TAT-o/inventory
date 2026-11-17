@@ -22,6 +22,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -299,7 +300,12 @@ fun ExerciseDetailSheet(
         onDismiss()
     }
 
-    ModalBottomSheet(onDismissRequest = close, containerColor = colors.surface) {
+    // 開いたときに、全部を見せる（半分だけ開くと、メモの欄がキーボードや端に隠れて、スクロールが要る）
+    ModalBottomSheet(
+        onDismissRequest = close,
+        containerColor = colors.surface,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
         Column(
             modifier = Modifier
                 .dismissKeyboardOnTouch()
@@ -331,6 +337,20 @@ fun ExerciseDetailSheet(
                     }
                 }
             }
+            // メモは、数え方より上に置く（よく使うものを、スクロールしなくても届く所に）
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                SectionLabel("この種目のメモ")
+                // 書くときの手がかりに、いつものメモ（種目に書いた注意点）と、前回のメモを出す
+                detail.exerciseMemo?.let { Text("いつものメモ: $it", style = AppTheme.typography.caption, color = colors.sub) }
+                detail.previousMemo?.let { Text("前回のメモ: $it", style = AppTheme.typography.caption, color = colors.sub) }
+                OutlinedTextField(
+                    value = memo,
+                    onValueChange = { memo = it },
+                    placeholder = { Text("この日の記録にメモを書く（例: 3セット目でフォームが崩れた）") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                )
+            }
             if (detail.showWeightMode || detail.showRepMode) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     LabelWithHint("数え方", "今日の記録だけ変わります")
@@ -353,16 +373,6 @@ fun ExerciseDetailSheet(
                         )
                     }
                 }
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                SectionLabel("この種目のメモ")
-                OutlinedTextField(
-                    value = memo,
-                    onValueChange = { memo = it },
-                    placeholder = { Text("今日の記録にメモを書く（例: 3セット目でフォームが崩れた）") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                )
             }
             TonalButton("とじる", onClick = close, modifier = Modifier.fillMaxWidth())
         }

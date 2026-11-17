@@ -316,4 +316,21 @@ class ExerciseScreensViewModelTest {
         picker.setBodyPart(calves)
         assertEquals(listOf("カーフレイズ（片脚）"), picker.state.first { it.bodyPart == calves }.rows.map { it.exercise.name })
     }
+
+    @Test
+    fun `種目の詳細の記録には、その日に書いたメモが出る`() = harness.run {
+        data.exercises.save(row)
+        val workoutId = StartWorkout(data.workouts, data.routines, data.exercises, clock)(today.minusDays(2), null)
+        AddExerciseToWorkout(data.workouts, data.exercises)(workoutId, "row", 0)
+        val exercise = assertNotNull(data.workouts.observeWorkout(workoutId).first()).exercises.single()
+        data.workouts.updateExerciseMemo(exercise.workoutExercise.id, "左だけ 1 回少ない")
+        data.workouts.setCompleted(exercise.sets.first().id, true, clock.instant())
+        data.workouts.finishWorkout(workoutId, clock.instant())
+        record("row", today.minusDays(1), 24.0)
+
+        val sessions = detailViewModel("row").state.first { it.sessions.size == 2 }.sessions
+
+        // 新しい順。メモを書いた日にだけ出る
+        assertEquals(listOf("", "左だけ 1 回少ない"), sessions.map { it.memo })
+    }
 }

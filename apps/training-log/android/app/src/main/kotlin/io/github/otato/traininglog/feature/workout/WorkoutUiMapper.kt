@@ -204,8 +204,17 @@ object WorkoutUiMapper {
             summary = line?.let { listOfNotNull(it.weightText.takeIf(String::isNotEmpty), it.tag, it.repsText).joinToString(" ") }.orEmpty(),
             hasPersonalBest = bestIds.isNotEmpty(),
             dragMeta = "${ex.equipment.label()} · 目標 ${exercise.sets.size} セット",
+            previousMemo = previousMemo(context?.previous),
+            memo = exercise.workoutExercise.memo.takeIf { it.isNotBlank() },
+            exerciseMemo = ex.memo.takeIf { it.isNotBlank() },
         )
     }
+
+    /**
+     * 前回のメモ。同じ種目の、実際の記録に書いたものだけ（ほかのフォームの記録や、乗り換え用の初期設定からは出さない）。
+     */
+    private fun previousMemo(previous: PreviousRecord?): String? =
+        previous?.takeIf { !it.isBaseline && it.sourceExerciseName == null }?.memo?.takeIf { it.isNotBlank() }
 
     /** 調整項目の値の表記。「ベンチ角度 30°」「グリップ ワイド」 */
     fun adjustmentText(field: AdjustmentField, value: String): String =
@@ -407,6 +416,8 @@ object WorkoutUiMapper {
                 showWeightMode = ex.recordType == RecordType.WeightReps,
                 showRepMode = ex.usesReps,
                 memo = exercise.workoutExercise.memo,
+                previousMemo = previousMemo(previous),
+                exerciseMemo = ex.memo.takeIf { it.isNotBlank() },
             ),
         )
     }

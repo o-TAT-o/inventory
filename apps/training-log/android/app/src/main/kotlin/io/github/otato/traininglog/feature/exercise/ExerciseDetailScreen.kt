@@ -96,6 +96,8 @@ data class SessionUi(
     val line: SetsLine,
     /** ギアと調整項目。「リストストラップ · ベンチ角度 30°」 */
     val extras: String,
+    /** その日に書いた、種目のメモ（F-WO-08）。なければ空 */
+    val memo: String = "",
 )
 
 /** グラフ。[points] は古い順。値は、表示する単位に直してある。 */
@@ -239,6 +241,7 @@ class ExerciseDetailViewModel(
                         formName = owner.name.takeIf { variationId == null && owner.parentId != null },
                         line = line,
                         extras = (gearText + adjustText).joinToString(" · "),
+                        memo = record.memo.trim(),
                     )
                 }
             },
@@ -407,6 +410,12 @@ private fun SessionRow(session: SessionUi) {
                 session.line.tag?.let { Tag(it) }
                 Text(session.line.repsText, style = AppTheme.typography.caption, color = colors.sub)
                 if (session.extras.isNotEmpty()) Text("· ${session.extras}", style = AppTheme.typography.caption, color = colors.sub)
+            }
+            if (session.memo.isNotEmpty()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 2.dp)) {
+                    Icon(AppIcons.Note, contentDescription = "メモ", tint = colors.sub, modifier = Modifier.padding(top = 1.dp).size(14.dp))
+                    Text(session.memo, style = AppTheme.typography.caption, color = colors.sub)
+                }
             }
         }
         AppDivider()

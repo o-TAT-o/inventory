@@ -1,6 +1,8 @@
 package io.github.otato.traininglog.feature.history
 
+import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarHost
+import io.github.otato.traininglog.designsystem.components.MemoInputDialog
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -101,6 +103,8 @@ data class HistoryItemUi(
     val stats: String,
     val exercises: String,
     val inProgress: Boolean,
+    /** ワークアウトのメモ（完了画面で書いたもの。F-WO-08）。なければ空 */
+    val memo: String = "",
 )
 
 data class HistoryUiState(
@@ -170,6 +174,11 @@ class HistoryViewModel(
     /** 画面の下に出す案内。 */
     val messages: SharedFlow<String> = _messages.asSharedFlow()
 
+    /** ワークアウトのメモを直す。空にすると、消える。 */
+    fun setMemo(workoutId: String, memo: String) {
+        viewModelScope.launch { workouts.updateMemo(workoutId, memo) }
+    }
+
     /** 選んだ日の記録を、新しく始める（F-HI-05）。 */
     fun startOnSelected(routineId: String?, quickEntry: Boolean) {
         val date = state.value.selectedDate ?: return
@@ -234,6 +243,7 @@ class HistoryViewModel(
                 ).joinToString(" · "),
                 exercises = summary.exerciseNames.joinToString("、").ifEmpty { "まだ記録がありません" },
                 inProgress = !summary.workout.isFinished,
+                memo = summary.workout.memo.trim(),
             )
         }
         val stats = PeriodStats.of(summaries.filter { YearMonth.from(it.workout.date) == shown })
@@ -276,6 +286,7 @@ fun HistoryRoute(onOpenWorkout: (String) -> Unit) {
         state = state,
         snackbar = snackbar,
         onCopyToToday = viewModel::copyToToday,
+        onSetMemo = viewModel::setMemo,
         onSelect = viewModel::select,
         onShiftMonth = viewModel::shiftMonth,
         onToday = viewModel::goToToday,
@@ -289,6 +300,7 @@ fun HistoryScreen(
     state: HistoryUiState,
     snackbar: SnackbarHostState,
     onCopyToToday: (String) -> Unit,
+    onSetMemo: (workoutId: String, memo: String) -> Unit,
     onSelect: (LocalDate) -> Unit,
     onShiftMonth: (Long) -> Unit,
     onToday: () -> Unit,
@@ -297,6 +309,7 @@ fun HistoryScreen(
 ) {
     val colors = AppTheme.colors
     var starting by remember { mutableStateOf(false) }
+    var editingMemo by remember { mutableStateOf<HistoryItemUi?>(null) }
     Column(modifier = Modifier.fillMaxSize()) {
         AppTopBar("履歴", actions = { TextAction("今日", onClick = onToday) })
         if (!state.loaded) return@Column
@@ -338,6 +351,19 @@ fun HistoryScreen(
                             Text(item.stats, style = AppTheme.typography.caption, color = colors.sub)
                             Spacer(Modifier.height(4.dp))
                             Text(item.exercises, style = AppTheme.typography.body, color = colors.fg)
+                            if (item.memo.isNotEmpty()) {
+                                // 完了画面で書いたメモ。タップで直せる
+                                Row(
+                                    modifier = Modifier
+                                        .padding(top = 6.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable(role = Role.Button, onClickLabel = "メモを直す") { editingMemo = item },
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                ) {
+                                    Icon(AppIcons.Note, contentDescription = "メモ", tint = colors.sub, modifier = Modifier.padding(top = 2.dp).size(16.dp))
+                                    Text(item.memo, style = AppTheme.typography.caption, color = colors.sub)
+                                }
+                            }
                             Spacer(Modifier.height(12.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 OutlineButton(
@@ -371,6 +397,18 @@ fun HistoryScreen(
         }
         // 広告を消す購入をしていれば、何も出ない（F-AD-02）
         AdBanner()
+    }
+
+    editingMemo?.let { item ->
+        MemoInputDialog(
+            title = "${state.selectedLabel}のメモ",
+            initialText = item.memo,
+            onConfirm = {
+                onSetMemo(item.workoutId, it)
+                editingMemo = null
+            },
+            onDismiss = { editingMemo = null },
+        )
     }
 
     if (starting) {

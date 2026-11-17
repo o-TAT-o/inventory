@@ -62,12 +62,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.otato.traininglog.designsystem.components.AppBanner
 import io.github.otato.traininglog.designsystem.components.AppDivider
 import io.github.otato.traininglog.designsystem.components.AppIconButton
 import io.github.otato.traininglog.designsystem.components.ConfirmDialog
+import io.github.otato.traininglog.designsystem.components.MemoInputDialog
 import io.github.otato.traininglog.designsystem.components.NumberInputDialog
 import io.github.otato.traininglog.designsystem.components.OutlineButton
 import io.github.otato.traininglog.designsystem.components.ReorderHandle
@@ -235,6 +237,8 @@ fun WorkoutScreen(
     var showFinishConfirm by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showDateSheet by remember { mutableStateOf(false) }
+    // メモを書いている種目（ワークアウトの種目の id）
+    var memoFor by remember { mutableStateOf<String?>(null) }
     // 種目をドラッグして並べ替えている間（見出しだけにたたみ、帯を出し、下のパネルを薄くする）
     var dragging by remember { mutableStateOf(false) }
 
@@ -278,7 +282,7 @@ fun WorkoutScreen(
         state.routineMemo?.let { if (!dragging) MemoRow(it) }
 
         Box(modifier = Modifier.weight(1f)) {
-            ExerciseList(state = state, actions = actions, onDraggingChange = { dragging = it })
+            ExerciseList(state = state, actions = actions, onDraggingChange = { dragging = it }, onEditMemo = { memoFor = it })
             SnackbarHost(hostState = snackbar, modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp))
         }
 
@@ -324,6 +328,29 @@ fun WorkoutScreen(
                 onSetMemo = { actions.onSetMemo(detail.workoutExerciseId, it) },
             )
         } ?: run { showDetail = false }
+    }
+
+    memoFor?.let { id ->
+        val exercise = state.exercises.firstOrNull { it.workoutExerciseId == id }
+        if (exercise == null) {
+            memoFor = null
+        } else {
+            MemoInputDialog(
+                title = "${exercise.name}のメモ",
+                initialText = exercise.memo.orEmpty(),
+                placeholder = "例: 3セット目でフォームが崩れた",
+                // 書くときの手がかりに、いつものメモ（種目に書いた注意点）と、前回のメモを出す
+                notes = listOfNotNull(
+                    exercise.exerciseMemo?.let { "いつものメモ: $it" },
+                    exercise.previousMemo?.let { "前回のメモ: $it" },
+                ),
+                onConfirm = {
+                    actions.onSetMemo(id, it)
+                    memoFor = null
+                },
+                onDismiss = { memoFor = null },
+            )
+        }
     }
 
     formSheet?.let { sheet ->
@@ -498,6 +525,7 @@ private fun ExerciseList(
     state: WorkoutUiState,
     actions: WorkoutActions,
     onDraggingChange: (Boolean) -> Unit,
+    onEditMemo: (workoutExerciseId: String) -> Unit,
 ) {
     val listState = rememberLazyListState()
     val reorder = rememberReorderState(
@@ -535,6 +563,7 @@ private fun ExerciseList(
                     scrollTarget = scrollTarget,
                     onScrolled = { scrollTarget = null },
                     actions = actions,
+                    onEditMemo = { onEditMemo(exercise.workoutExerciseId) },
                 )
             }
         }
@@ -566,6 +595,7 @@ private fun ExerciseBlock(
     scrollTarget: String?,
     onScrolled: () -> Unit,
     actions: WorkoutActions,
+    onEditMemo: () -> Unit,
 ) {
     val colors = AppTheme.colors
     val shape = RoundedCornerShape(16.dp)
@@ -593,6 +623,7 @@ private fun ExerciseBlock(
                         onOpenExercise = { actions.onOpenExercise(exercise.exerciseId) },
                         onOpenForm = { actions.onOpenFormSheet(exercise.workoutExerciseId) },
                         onRemove = { actions.onRemoveExercise(exercise.workoutExerciseId) },
+                        onEditMemo = onEditMemo,
                     )
                 }
             }
@@ -659,6 +690,7 @@ private fun ExerciseHeader(
     onOpenExercise: () -> Unit,
     onOpenForm: () -> Unit,
     onRemove: () -> Unit,
+    onEditMemo: () -> Unit,
 ) {
     val colors = AppTheme.colors
     Row(
@@ -691,18 +723,44 @@ private fun ExerciseHeader(
                 )
             }
             exercise.previous?.let { PreviousLine(it, chevron = true, modifier = Modifier.clickable(role = Role.Button, onClick = onOpenExercise)) }
+            // メモは、書いてあるときだけ出す。前回のメモは、挙げる前に読み返すため。この記録のメモは、タップで直せる
+            exercise.previousMemo?.let { MemoLine("前回のメモ", it) }
+            exercise.memo?.let {
+                MemoLine(
+                    "メモ",
+                    it,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button, onClickLabel = "メモを直す", onClick = onEditMemo),
+                )
+            }
         }
-        ExerciseMenu(exercise = exercise, onOpenForm = onOpenForm, onOpenDetail = onOpenExercise, onRemove = onRemove)
+        ExerciseMenu(exercise = exercise, onEditMemo = onEditMemo, onOpenForm = onOpenForm, onOpenDetail = onOpenExercise, onRemove = onRemove)
     }
 }
 
-/** 種目の「⋮」メニュー。フォームを選ぶ・種目の詳細・外す（外したあとは、元に戻せる）。 */
+/** 「(メモの印) 前回のメモ: 3セット目でフォームが崩れた」。長いメモは、3 行までにする。 */
 @Composable
-private fun ExerciseMenu(exercise: ExerciseUi, onOpenForm: () -> Unit, onOpenDetail: () -> Unit, onRemove: () -> Unit) {
+private fun MemoLine(label: String, text: String, modifier: Modifier = Modifier) {
+    val colors = AppTheme.colors
+    Row(modifier = modifier.padding(vertical = 3.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(AppIcons.Note, contentDescription = null, tint = colors.sub, modifier = Modifier.padding(top = 1.dp).size(14.dp))
+        Text("$label: $text", style = AppTheme.typography.caption, color = colors.sub, maxLines = 3, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** 種目の「⋮」メニュー。メモを書く・フォームを選ぶ・種目の詳細・外す（外したあとは、元に戻せる）。 */
+@Composable
+private fun ExerciseMenu(exercise: ExerciseUi, onEditMemo: () -> Unit, onOpenForm: () -> Unit, onOpenDetail: () -> Unit, onRemove: () -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box {
         AppIconButton(AppIcons.More, "${exercise.name}のメニュー", { open = true })
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = { Text(if (exercise.memo != null) "メモを直す" else "メモを書く") },
+                onClick = {
+                    open = false
+                    onEditMemo()
+                },
+            )
             DropdownMenuItem(
                 text = { Text(if (exercise.formLabel != null) "フォームを選ぶ" else "フォームを追加") },
                 onClick = {

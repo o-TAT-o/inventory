@@ -177,7 +177,7 @@ DELETE FROM workout_exercise_gear WHERE workout_exercise_id = ?;
 
 -- 同じ種目の、直近の（終えた）ワークアウトの種目。excludeWorkoutId は NULL でもよい
 selectPreviousExercise:
-SELECT we.id AS workout_exercise_id, we.exercise_id, we.weight_mode, we.rep_mode, w.date
+SELECT we.id AS workout_exercise_id, we.exercise_id, we.weight_mode, we.rep_mode, we.memo, w.date
 FROM workout_exercise we
 JOIN workout w ON w.id = we.workout_id
 WHERE we.exercise_id = :exerciseId
@@ -208,7 +208,7 @@ WHERE we.exercise_id = :exerciseId
   AND (:excludeWorkoutId IS NULL OR w.id != :excludeWorkoutId);
 
 selectHistoryExercises:
-SELECT we.id AS workout_exercise_id, we.exercise_id, we.weight_mode, we.rep_mode, w.date
+SELECT we.id AS workout_exercise_id, we.exercise_id, we.weight_mode, we.rep_mode, we.memo, w.date
 FROM workout_exercise we
 JOIN workout w ON w.id = we.workout_id
 WHERE we.exercise_id IN :exerciseIds AND w.finished_at IS NOT NULL

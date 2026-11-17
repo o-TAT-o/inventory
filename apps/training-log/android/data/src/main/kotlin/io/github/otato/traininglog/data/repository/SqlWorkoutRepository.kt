@@ -169,6 +169,7 @@ internal class SqlWorkoutRepository(
                         gearIds = gearBySession[session.workout_exercise_id].orEmpty().toSet(),
                         exerciseId = session.exercise_id,
                         adjustments = adjustmentsBySession[session.workout_exercise_id].orEmpty().toMap(),
+                        memo = session.memo,
                     )
                 }
             }
@@ -337,6 +338,7 @@ internal class SqlWorkoutRepository(
                 exerciseId = own.exercise_id,
                 adjustments = adjustmentQueries.selectValuesOf(own.workout_exercise_id).executeAsList()
                     .associate { it.adjustment_field_id to it.content },
+                memo = own.memo,
             )
         }
         // 初めて使うバリエーションは、同じ親のほかのバリエーション（と親）の直近の記録を、前回の目安にする（F-EX-16）。
