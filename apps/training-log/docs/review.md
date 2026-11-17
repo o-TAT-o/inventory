@@ -5,7 +5,7 @@
 
 - 最終更新: 2026-11-17
 - いまの開発ビルド: **16**（設定の「バージョン」に `0.1.0 (16-…)` と出る。番号が小さければ、古いビルド）
-- 入れ方: [プレリリース `training-log-dev`](https://github.com/o-TAT-o/inventory/releases/tag/training-log-dev) の `training-log-debug.apk` を、上書きで入れる
+- 入れ方: [プレリリース `training-log-dev`](https://github.com/p-ota-q/inventory/releases/tag/training-log-dev) の `training-log-debug.apk` を、上書きで入れる
 
 ## 判断の物差し
 

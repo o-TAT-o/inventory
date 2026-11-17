@@ -142,7 +142,7 @@ code --install-extension pixel-pal-0.0.1.vsix
 
 ```sh
 SHA=$(git rev-parse HEAD)
-BASE=https://github.com/o-TAT-o/inventory
+BASE=https://github.com/p-ota-q/inventory
 DIR=lab/typescript/vscode-grogu
 npx vsce package --no-dependencies --baseContentUrl $BASE/blob/$SHA/$DIR --baseImagesUrl $BASE/raw/$SHA/$DIR
 ```

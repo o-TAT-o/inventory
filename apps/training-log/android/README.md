@@ -4,7 +4,7 @@
 
 - 要件定義: [`../docs/requirements.md`](../docs/requirements.md)
 - 画面のデザイン: [`../design/README.md`](../design/README.md)
-- 進行の記録: [Issue #5](https://github.com/o-TAT-o/inventory/issues/5)
+- 進行の記録: [Issue #5](https://github.com/p-ota-q/inventory/issues/5)
 
 ## 動かす・確かめる
 
@@ -22,7 +22,7 @@ echo "sdk.dir=/path/to/Android/Sdk" > local.properties
 ```
 
 エミュレーターや実機に入れるときは、`adb install -r app/build/outputs/apk/debug/app-debug.apk`。
-main に push すると、CI が同じ内容を確かめ、デバッグ APK を GitHub の [プレリリース `training-log-dev`](https://github.com/o-TAT-o/inventory/releases/tag/training-log-dev) に置きます（スマホのブラウザから入れられます。署名の鍵は `app/debug.keystore` で共通なので、上書きインストールできます）。
+main に push すると、CI が同じ内容を確かめ、デバッグ APK を GitHub の [プレリリース `training-log-dev`](https://github.com/p-ota-q/inventory/releases/tag/training-log-dev) に置きます（スマホのブラウザから入れられます。署名の鍵は `app/debug.keystore` で共通なので、上書きインストールできます）。
 
 ## 構成（責任ごとにモジュールを分ける）
 
@@ -108,4 +108,4 @@ ViewModel のテストは、仮想時間（`runTest`）ではなく本物の時�
 
 ## いまは入れていないもの
 
-要件定義で「Could」としたものと、v1.x に回したものは、入れていません: セットの種類（ウォームアップ・ドロップ。F-WO-09）、スーパーセット（F-RT-09）、バーの重さを含める設定（F-EX-12）、セットごとのギア（F-GR-05）、グラフのギアでの絞り込み（F-GR-06）、体重の記録、クラウドへのバックアップ（F-DA-11）。詳しくは [Issue #5](https://github.com/o-TAT-o/inventory/issues/5)。
+要件定義で「Could」としたものと、v1.x に回したものは、入れていません: セットの種類（ウォームアップ・ドロップ。F-WO-09）、スーパーセット（F-RT-09）、バーの重さを含める設定（F-EX-12）、セットごとのギア（F-GR-05）、グラフのギアでの絞り込み（F-GR-06）、体重の記録、クラウドへのバックアップ（F-DA-11）。詳しくは [Issue #5](https://github.com/p-ota-q/inventory/issues/5)。
