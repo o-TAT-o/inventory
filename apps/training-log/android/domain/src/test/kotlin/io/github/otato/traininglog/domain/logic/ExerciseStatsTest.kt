@@ -100,23 +100,25 @@ class ExerciseStatsTest {
 
     @Test
     fun `月のまとめは、終えたワークアウトだけを数え、部位は多い順に並ぶ`() {
-        fun summary(id: String, finished: Boolean, vararg parts: BodyPart) = WorkoutSummary(
+        fun summary(id: String, finished: Boolean, parts: List<BodyPart>) = WorkoutSummary(
             workout = Workout(id, day, startedAt = Instant.EPOCH, finishedAt = if (finished) Instant.EPOCH else null),
             routineName = null,
             completedSetCount = 3,
             volumeKg = 0.0,
             exerciseNames = emptyList(),
-            bodyParts = parts.toList(),
+            bodyParts = parts,
         )
+        val calves = BodyPart.custom("ふくらはぎ")
         val stats = PeriodStats.of(
             listOf(
-                summary("a", true, BodyPart.Chest, BodyPart.Triceps),
-                summary("b", true, BodyPart.Back),
-                summary("c", true, BodyPart.Chest),
-                summary("d", false, BodyPart.Legs),
+                summary("a", true, listOf(BodyPart.Chest, BodyPart.Triceps, calves)),
+                summary("b", true, listOf(BodyPart.Back)),
+                summary("c", true, listOf(BodyPart.Chest)),
+                summary("d", false, listOf(BodyPart.Legs)),
             ),
         )
         assertEquals(3, stats.workoutCount)
-        assertEquals(listOf(BodyPart.Chest to 2, BodyPart.Back to 1, BodyPart.Triceps to 1), stats.byBodyPart)
+        // 同じ回数なら、部位の並び順。利用者が足した部位は、そのあと
+        assertEquals(listOf(BodyPart.Chest to 2, BodyPart.Back to 1, BodyPart.Triceps to 1, calves to 1), stats.byBodyPart)
     }
 }

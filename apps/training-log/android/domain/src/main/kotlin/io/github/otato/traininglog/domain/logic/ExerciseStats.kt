@@ -106,7 +106,10 @@ object PeriodStats {
         val parts = finished.flatMap { it.bodyParts.distinct() }
             .groupingBy { it }.eachCount()
             .toList()
-            .sortedWith(compareByDescending<Pair<BodyPart, Int>> { it.second }.thenBy { it.first.ordinal })
+            // 同じ回数なら、部位の並び順（利用者が足した部位は、そのあと）
+            .sortedWith(compareByDescending<Pair<BodyPart, Int>> { it.second }.thenBy { order(it.first) })
         return MonthStats(finished.size, parts)
     }
+
+    private fun order(part: BodyPart): Int = BodyPart.entries.indexOf(part).let { if (it < 0) Int.MAX_VALUE else it }
 }

@@ -132,4 +132,18 @@ class BackupRepositoryTest {
         assertEquals("\"他の\"\"人\"\"\"", CsvExport.escape("他の\"人\""))
         assertEquals("普通", CsvExport.escape("普通"))
     }
+
+    @Test
+    fun `利用者が足した部位は、保存しても、書き出して別の端末に読み込んでも、名前のまま残る`() = runTest {
+        val calves = BodyPart.custom("ふくらはぎ")
+        data.exercises.save(Exercise(id = "calf", name = "カーフレイズ", bodyPart = calves))
+        assertEquals(calves, data.exercises.getExercise("calf")?.bodyPart)
+
+        val text = BackupJson.encode(data.backup.snapshot())
+        val other = TestDatabase.create(clock = clock)
+        other.backup.restore(BackupJson.decode(text))
+
+        assertEquals(calves, other.exercises.getExercise("calf")?.bodyPart)
+        assertEquals("ふくらはぎ", other.exercises.getExercise("calf")?.bodyPart?.name)
+    }
 }

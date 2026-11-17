@@ -1,5 +1,6 @@
 package io.github.otato.traininglog.feature.exercise
 
+import io.github.otato.traininglog.domain.model.BodyPart
 import io.github.otato.traininglog.domain.model.WeightMode
 import io.github.otato.traininglog.domain.model.Equipment
 import io.github.otato.traininglog.data.testing.TestDatabase
@@ -270,5 +271,49 @@ class ExerciseScreensViewModelTest {
 
         assertEquals(Equipment.Cable, viewModel.state.value.exercise?.equipment)
         assertEquals(WeightMode.PerSide, viewModel.state.value.exercise?.weightMode)
+    }
+
+    // ---- 部位を足す ----
+
+    @Test
+    fun `部位は、名前を付けて足せる。保存すると、ほかの種目の選択肢と、種目選択の絞り込みにも出る`() = harness.run {
+        val viewModel = editViewModel("new")
+        viewModel.state.first { it.loaded }
+        viewModel.edit { it.copy(name = "カーフレイズ（片脚）") }
+
+        viewModel.addBodyPart(" ふくらはぎ ")
+        assertEquals("ふくらはぎ", viewModel.state.value.exercise?.bodyPart?.name)
+        // 用意した部位と同じ名前を打ったら、その部位を選ぶだけ（同じ名前の部位は増えない）
+        viewModel.addBodyPart("前腕")
+        assertEquals(BodyPart.Forearms, viewModel.state.value.exercise?.bodyPart)
+        viewModel.addBodyPart("ふくらはぎ")
+
+        val done = CompletableDeferred<ExerciseEditEvent>()
+        background { done.complete(viewModel.events.first()) }
+        viewModel.save()
+        done.await()
+
+        val calves = BodyPart.custom("ふくらはぎ")
+        assertEquals(calves, data.exercises.observeExercises().first().single().bodyPart)
+        // ほかの種目を作るときの選択肢に出る
+        val other = editViewModel("new")
+        assertTrue(calves in other.state.first { it.loaded && it.usedBodyParts.isNotEmpty() }.usedBodyParts)
+        // 種目選択の絞り込みにも出て、絞り込める
+        val workoutId = StartWorkout(data.workouts, data.routines, data.exercises, clock)(today, null)
+        val picker = harness.track(
+            ExercisePickerViewModel(
+                mode = PickerMode.Workout,
+                targetId = workoutId,
+                exercises = data.exercises,
+                routines = data.routines,
+                workouts = data.workouts,
+                baselines = data.baselines,
+                addExerciseToWorkout = AddExerciseToWorkout(data.workouts, data.exercises),
+            ),
+        )
+        val parts = picker.state.first { it.loaded }.bodyParts
+        assertEquals(BodyPart.entries.dropLast(1) + calves + BodyPart.Other, parts)
+        picker.setBodyPart(calves)
+        assertEquals(listOf("カーフレイズ（片脚）"), picker.state.first { it.bodyPart == calves }.rows.map { it.exercise.name })
     }
 }

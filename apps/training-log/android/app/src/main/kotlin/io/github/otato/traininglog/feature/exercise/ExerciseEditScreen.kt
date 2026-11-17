@@ -70,6 +70,7 @@ import io.github.otato.traininglog.domain.model.WeightUnit
 import io.github.otato.traininglog.domain.repository.ExerciseRepository
 import io.github.otato.traininglog.domain.usecase.AddVariation
 import io.github.otato.traininglog.ui.common.appViewModel
+import io.github.otato.traininglog.ui.common.bodyPartOf
 import io.github.otato.traininglog.ui.common.label
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -97,6 +98,8 @@ data class ExerciseEditUiState(
     val parentName: String? = null,
     /** この種目そのものに付いている記録の数。バリエーションへまとめて移せる（F-EX-18） */
     val ownRecordCount: Int = 0,
+    /** ほかの種目で使っている部位（利用者が足した部位を、選択肢に出すため） */
+    val usedBodyParts: List<BodyPart> = emptyList(),
 ) {
     val isVariation: Boolean get() = exercise?.parentId != null
 
@@ -137,15 +140,18 @@ class ExerciseEditViewModel(
         viewModelScope.launch {
             val existing = if (exerciseId == NEW) null else exercises.getExercise(exerciseId)
             val exercise = existing ?: Exercise(id = ids.next(), name = "", sortOrder = exercises.nextSortOrder())
-            _state.value = ExerciseEditUiState(
-                loaded = true,
-                isNew = existing == null,
-                exercise = exercise,
-                fields = if (existing == null) emptyList() else exercises.getAdjustmentFields(exercise.id),
-                parentName = exercise.parentId?.let { exercises.getExercise(it)?.name },
-            )
+            val fields = if (existing == null) emptyList() else exercises.getAdjustmentFields(exercise.id)
+            val parentName = exercise.parentId?.let { exercises.getExercise(it)?.name }
+            // 下の「使っている部位」が先に入っていることがあるので、置き換えずに、足す
+            _state.update {
+                it.copy(loaded = true, isNew = existing == null, exercise = exercise, fields = fields, parentName = parentName)
+            }
             weightModeChosen = existing != null
             if (existing != null) watch(exercise.id)
+        }
+        // 利用者が足した部位は、それを使う種目がある間だけ、選択肢に出る
+        viewModelScope.launch {
+            exercises.observeExercises().collect { list -> _state.update { it.copy(usedBodyParts = list.map { e -> e.bodyPart }.distinct()) } }
         }
     }
 
@@ -174,6 +180,12 @@ class ExerciseEditViewModel(
     fun setWeightMode(mode: WeightMode) {
         weightModeChosen = true
         edit { it.copy(weightMode = mode) }
+    }
+
+    /** 部位を、名前で足して選ぶ（「ふくらはぎ」など）。用意した部位と同じ名前なら、その部位を選ぶだけ。 */
+    fun addBodyPart(name: String) {
+        if (name.isBlank()) return
+        edit { it.copy(bodyPart = bodyPartOf(name)) }
     }
 
     fun addField() {
@@ -265,6 +277,7 @@ fun ExerciseEditRoute(exerciseId: String, onBack: () -> Unit, onOpenExercise: (e
         onBack = onBack,
         onEdit = viewModel::edit,
         onSetEquipment = viewModel::setEquipment,
+        onAddBodyPart = viewModel::addBodyPart,
         onSetWeightMode = viewModel::setWeightMode,
         onAddField = viewModel::addField,
         onEditField = viewModel::editField,
@@ -288,6 +301,7 @@ fun ExerciseEditScreen(
     onBack: () -> Unit,
     onEdit: ((Exercise) -> Exercise) -> Unit,
     onSetEquipment: (Equipment) -> Unit,
+    onAddBodyPart: (name: String) -> Unit,
     onSetWeightMode: (WeightMode) -> Unit,
     onAddField: () -> Unit,
     onEditField: (id: String, (AdjustmentField) -> AdjustmentField) -> Unit,
@@ -303,6 +317,7 @@ fun ExerciseEditScreen(
     val exercise = state.exercise
     var confirmDelete by remember { mutableStateOf(false) }
     var addingVariation by remember { mutableStateOf(false) }
+    var addingBodyPart by remember { mutableStateOf(false) }
     var choosingMoveTarget by remember { mutableStateOf(false) }
     var moveTarget by remember { mutableStateOf<VariationRowUi?>(null) }
 
@@ -340,9 +355,11 @@ fun ExerciseEditScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
             Section("部位") {
-                BodyPart.entries.forEach { part ->
+                // 用意した部位と、種目で使っている（または、いま足した）部位。最後の「追加」で、名前を付けて足せる
+                BodyPart.available(state.usedBodyParts + exercise.bodyPart).forEach { part ->
                     AppChip(part.label(), exercise.bodyPart == part, { onEdit { it.copy(bodyPart = part) } })
                 }
+                AppChip("追加", selected = false, onClick = { addingBodyPart = true }, icon = AppIcons.Plus)
             }
             Section("記録の種類") {
                 RecordType.entries.forEach { type ->
@@ -515,6 +532,18 @@ fun ExerciseEditScreen(
                 onDelete()
             },
             onDismiss = { confirmDelete = false },
+        )
+    }
+    if (addingBodyPart) {
+        TextInputDialog(
+            title = "部位を追加",
+            initialText = "",
+            label = "部位の名前（例: ふくらはぎ）",
+            onConfirm = {
+                addingBodyPart = false
+                onAddBodyPart(it)
+            },
+            onDismiss = { addingBodyPart = false },
         )
     }
     if (addingVariation) {

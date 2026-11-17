@@ -55,6 +55,8 @@ data class PickerUiState(
     val query: String = "",
     val bodyPart: BodyPart? = null,
     val equipment: Equipment? = null,
+    /** 絞り込みに出す部位（用意した部位と、種目で使っている、利用者が足した部位） */
+    val bodyParts: List<BodyPart> = BodyPart.entries,
     val rows: List<PickerRow> = emptyList(),
     val loaded: Boolean = false,
     /** まとめて選ぶモード（乗り換え用の初期設定） */
@@ -123,6 +125,7 @@ class ExercisePickerViewModel(
             query = filter.query,
             bodyPart = filter.bodyPart,
             equipment = filter.equipment,
+            bodyParts = BodyPart.available(all.map { it.bodyPart }),
             rows = ordered,
             loaded = true,
             multiSelect = mode == PickerMode.Migration,

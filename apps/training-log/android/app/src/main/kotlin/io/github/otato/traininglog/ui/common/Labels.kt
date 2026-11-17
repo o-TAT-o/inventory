@@ -26,10 +26,22 @@ fun BodyPart.label(): String = when (this) {
     BodyPart.Shoulders -> "肩"
     BodyPart.Biceps -> "二頭"
     BodyPart.Triceps -> "三頭"
+    BodyPart.Forearms -> "前腕"
     BodyPart.Abs -> "腹"
     BodyPart.FullBody -> "全身"
     BodyPart.Cardio -> "有酸素"
     BodyPart.Other -> "その他"
+    // 利用者が足した部位は、付けた名前のまま
+    else -> name
+}
+
+/**
+ * 画面で打った名前から、部位を求める。用意した部位と同じ名前（「胸」など）なら、その部位にする
+ * （同じ名前の部位が 2 つできないように）。それ以外は、利用者が足した部位になる。
+ */
+fun bodyPartOf(label: String): BodyPart {
+    val trimmed = label.trim()
+    return BodyPart.entries.firstOrNull { it.label() == trimmed } ?: BodyPart.custom(trimmed)
 }
 
 fun RecordType.label(): String = when (this) {

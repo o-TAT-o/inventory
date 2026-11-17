@@ -71,10 +71,13 @@ object CsvExport {
         BodyPart.Shoulders -> "肩"
         BodyPart.Biceps -> "二頭"
         BodyPart.Triceps -> "三頭"
+        BodyPart.Forearms -> "前腕"
         BodyPart.Abs -> "腹"
         BodyPart.FullBody -> "全身"
         BodyPart.Cardio -> "有酸素"
         BodyPart.Other -> "その他"
+        // 利用者が足した部位は、付けた名前のまま
+        else -> part.name
     }
 
     private fun equipmentLabel(equipment: Equipment): String = when (equipment) {

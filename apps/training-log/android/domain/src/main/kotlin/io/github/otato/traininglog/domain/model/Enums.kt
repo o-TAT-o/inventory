@@ -55,27 +55,63 @@ enum class Equipment {
 val Equipment.defaultWeightMode: WeightMode
     get() = if (this == Equipment.Dumbbell) WeightMode.PerSide else WeightMode.Total
 
-/** 部位（F-EX-03）。腕は、二頭と三頭に分けて持つ。 */
-enum class BodyPart {
-    Chest,
-    Back,
-    Legs,
-    Shoulders,
-    Biceps,
-    Triceps,
-    Abs,
-    FullBody,
-    Cardio,
-    Other,
-    ;
+/**
+ * 部位（F-EX-03）。あらかじめ用意したもの（胸・背中・…。腕は、二頭・三頭・前腕に分ける）と、
+ * 利用者が自分で足したもの（「ふくらはぎ」「お尻」など）がある。
+ *
+ * [name] は、保存に使う名前。用意した部位は英語の名前（`Chest`）、利用者が足した部位は、付けた名前そのもの。
+ * 利用者が足した部位を管理する一覧は持たない。その部位の種目がある間だけ、選択肢に出る（[available]）。
+ */
+@JvmInline
+value class BodyPart private constructor(val name: String) {
+    /** あらかじめ用意した部位か（利用者が足した部位なら false）。 */
+    val isPreset: Boolean get() = this in entries
+
+    override fun toString(): String = name
 
     companion object {
+        val Chest = BodyPart("Chest")
+        val Back = BodyPart("Back")
+        val Legs = BodyPart("Legs")
+        val Shoulders = BodyPart("Shoulders")
+        val Biceps = BodyPart("Biceps")
+        val Triceps = BodyPart("Triceps")
+        val Forearms = BodyPart("Forearms")
+        val Abs = BodyPart("Abs")
+        val FullBody = BodyPart("FullBody")
+        val Cardio = BodyPart("Cardio")
+        val Other = BodyPart("Other")
+
+        /** あらかじめ用意した部位（画面に並べる順）。 */
+        val entries: List<BodyPart> = listOf(Chest, Back, Legs, Shoulders, Biceps, Triceps, Forearms, Abs, FullBody, Cardio, Other)
+
+        /** 利用者が足す部位の、名前の長さの上限（チップや一覧に収まるように）。 */
+        const val MAX_CUSTOM_LENGTH = 10
+
         /**
-         * 保存された名前から部位を求める。昔の「腕」（`Arms`）は二頭として読み、知らない名前は「その他」にする。
-         * データベースは移行で変換するが、昔の名前が残ったファイルなどがあっても、読めなくならないようにする。
+         * 保存された名前から部位を求める。用意した部位の名前なら、その部位。昔の「腕」（`Arms`）は二頭として読む。
+         * それ以外は、利用者が足した部位として、名前のまま持つ。空なら「その他」。
          */
-        fun fromName(name: String): BodyPart =
-            entries.firstOrNull { it.name == name } ?: if (name == "Arms") Biceps else Other
+        fun fromName(name: String): BodyPart {
+            val trimmed = name.trim()
+            return when {
+                trimmed.isEmpty() -> Other
+                trimmed == "Arms" -> Biceps
+                else -> entries.firstOrNull { it.name == trimmed } ?: BodyPart(trimmed)
+            }
+        }
+
+        /** 利用者が付けた名前から、部位を作る。前後の空白を除き、長すぎる名前は切る。空なら「その他」。 */
+        fun custom(label: String): BodyPart = fromName(label.trim().take(MAX_CUSTOM_LENGTH))
+
+        /**
+         * 選択肢に出す部位。用意した部位に、いま種目で使っている、利用者が足した部位（[used] に出てきた順）を足す。
+         * 「その他」は、最後に置く。
+         */
+        fun available(used: Iterable<BodyPart>): List<BodyPart> {
+            val custom = used.filter { !it.isPreset }.distinct()
+            return entries.filter { it != Other } + custom + Other
+        }
     }
 }
 

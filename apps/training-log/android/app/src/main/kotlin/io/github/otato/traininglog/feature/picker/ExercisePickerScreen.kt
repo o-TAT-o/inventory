@@ -116,7 +116,7 @@ fun ExercisePickerScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item { AppChip("すべての部位", selected = state.bodyPart == null, onClick = { onBodyPart(null) }) }
-            items(BodyPart.entries.toList()) { part ->
+            items(state.bodyParts) { part ->
                 AppChip(part.label(), selected = state.bodyPart == part, onClick = { onBodyPart(if (state.bodyPart == part) null else part) })
             }
         }
