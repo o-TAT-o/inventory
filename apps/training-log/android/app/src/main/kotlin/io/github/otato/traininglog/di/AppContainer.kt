@@ -7,7 +7,12 @@ import io.github.otato.traininglog.data.DataModule
 import io.github.otato.traininglog.domain.usecase.AddExerciseToWorkout
 import io.github.otato.traininglog.domain.usecase.AddSet
 import io.github.otato.traininglog.domain.usecase.StartWorkout
+import io.github.otato.traininglog.feature.workout.RestTimer
+import io.github.otato.traininglog.platform.AppForeground
 import io.github.otato.traininglog.platform.BackupFiles
+import io.github.otato.traininglog.platform.NotifyingRestAlarm
+import io.github.otato.traininglog.platform.PrefsRestStorage
+import io.github.otato.traininglog.ui.common.RestAlert
 import io.github.otato.traininglog.platform.RemoveAdsBilling
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +52,22 @@ class AppContainer(context: Context) {
 
     /** 書き出し・読み込み・自動バックアップのファイルまわり */
     val backupFiles = BackupFiles(context.applicationContext, data.backup, data.settings, clock)
+
+    /**
+     * 休憩タイマー。アプリ全体で 1 つ。記録画面を離れても・アプリが落ちても、休憩が続くように、ここで持つ。
+     * アプリが前に出ているときは、どの画面を見ていても、音とバイブで知らせる。後ろにあるときは、通知で知らせる。
+     */
+    val restTimer = RestTimer(
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
+        clock = clock,
+        storage = PrefsRestStorage(context),
+        alarm = NotifyingRestAlarm(context),
+        isForeground = { AppForeground.isForeground },
+        alert = {
+            val settings = data.settings.get()
+            RestAlert.notify(context.applicationContext, settings.soundOn, settings.vibrationOn)
+        },
+    )
 
     /** 広告を消す買い切り。Google Play には、使うときにはじめてつなぐ */
     val billing = RemoveAdsBilling(context, data.settings, CoroutineScope(SupervisorJob() + Dispatchers.Main))

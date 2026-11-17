@@ -22,6 +22,7 @@ import io.github.otato.traininglog.testing.MutableClock
 import io.github.otato.traininglog.testing.ViewModelTestHarness
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
+import java.util.concurrent.atomic.AtomicInteger
 import java.time.Instant
 import java.time.LocalDate
 import kotlin.test.AfterTest
@@ -43,6 +44,12 @@ class WorkoutViewModelTest {
     private val data = TestDatabase.create()
     private val clock = MutableClock.at("2026-11-14T10:00:00Z")
     private val ids = TestDatabase.sequentialIds("t")
+
+    /** 休憩の終わりを知らせた回数（音・バイブの代わり） */
+    private val alerts = AtomicInteger()
+
+    /** 休憩タイマー。アプリ全体で 1 つのもの。ViewModel を作り直しても、同じものを使う */
+    private val restTimer by lazy { RestTimer(harness.newScope(), clock, alert = { alerts.incrementAndGet() }) }
 
     @BeforeTest
     fun setUp() = harness.setUp()
@@ -79,6 +86,7 @@ class WorkoutViewModelTest {
             settingsRepository = data.settings,
             addSetUseCase = AddSet(data.workouts, WorkoutPlanner(ids)),
             clock = clock,
+            restTimer = restTimer,
         ),
     )
 
@@ -153,8 +161,6 @@ class WorkoutViewModelTest {
     @Test
     fun `休憩の時間になると、一度だけ知らせて、終わった表示になる`() = harness.run {
         val vm = viewModel(startPushWorkout())
-        val events = mutableListOf<WorkoutEvent>()
-        background { vm.events.toList(events) }
         background { vm.state.collect {} }
         background { vm.rest.collect {} }
         vm.state.first { it.dock != null }
@@ -164,7 +170,9 @@ class WorkoutViewModelTest {
         val rest = assertNotNull(vm.rest.first { it?.ended == true })
 
         assertTrue(rest.text.startsWith("+"))
-        assertEquals(1, events.count { it == WorkoutEvent.RestFinished })
+        restTimer.state.first { it?.notified == true }
+        delay(700) // もう一度は知らせない
+        assertEquals(1, alerts.get())
     }
 
     @Test
@@ -552,5 +560,28 @@ class WorkoutViewModelTest {
 
         assertEquals(LocalDate.of(2026, 11, 12), vm.state.first { it.date == LocalDate.of(2026, 11, 12) }.date)
         assertEquals(LocalDate.of(2026, 11, 12), detail(workoutId).workout.date)
+    }
+
+    @Test
+    fun `休憩は、記録画面を閉じて開き直しても続く。終えると止まる`() = harness.run {
+        val workoutId = startPushWorkout()
+        val first = viewModel(workoutId)
+        background { first.state.collect {} }
+        first.state.first { it.dock != null }
+        first.complete()
+        assertEquals("1:30", assertNotNull(first.rest.first { it != null }).text)
+
+        // ホームへ戻って（ViewModel が消えて）、20 秒後に開き直す
+        clock.advanceSeconds(20)
+        val reopened = viewModel(workoutId)
+        background { reopened.state.collect {} }
+        assertEquals("1:10", assertNotNull(reopened.rest.first { it != null }).text)
+
+        // ほかのワークアウトの画面には、出ない
+        val other = StartWorkout(data.workouts, data.routines, data.exercises, clock, ids)(LocalDate.of(2026, 11, 14), null)
+        assertNull(viewModel(other).rest.first())
+
+        reopened.finish()
+        assertNull(restTimer.state.first { it == null })
     }
 }

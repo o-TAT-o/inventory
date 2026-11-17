@@ -50,14 +50,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.LocalDate
-import kotlin.math.max
 import kotlin.math.roundToLong
 
 /** 画面に伝える一度きりの出来事（状態ではなく、音を鳴らす・画面を移るなど）。 */
 sealed interface WorkoutEvent {
-    /** 休憩の時間になった（音・バイブ） */
-    data object RestFinished : WorkoutEvent
-
     /** 取り消せる操作をした（セットの削除・種目を外す・種目の並べ替え）。元に戻す案内を出す（F-WO-17、F-UI-03） */
     data class Undoable(val message: String) : WorkoutEvent
 
@@ -87,6 +83,8 @@ class WorkoutViewModel(
     settingsRepository: SettingsRepository,
     private val addSetUseCase: AddSet,
     private val clock: Clock,
+    /** 休憩タイマー。画面を離れても・アプリが落ちても続くように、アプリ全体で 1 つのものを使う */
+    private val restTimer: RestTimer,
     private val ids: IdGenerator = UuidGenerator,
 ) : ViewModel() {
 
@@ -98,7 +96,6 @@ class WorkoutViewModel(
     private data class Local(
         val focusedWorkoutExerciseId: String? = null,
         val selectedSetId: String? = null,
-        val rest: RestState? = null,
         /** すべて完了してたたまれた種目のうち、タップして開いたもの */
         val expandedIds: Set<String> = emptySet(),
         /** いちばん最近、セットを完了した種目（全部が終わるまで、たたまずに残す） */
@@ -111,12 +108,6 @@ class WorkoutViewModel(
         data class ExerciseRemoved(val detail: WorkoutExerciseDetail) : Undo
         data class Reordered(val previousOrder: List<String>) : Undo
     }
-
-    private data class RestState(
-        val endAtMillis: Long,
-        val totalSec: Int,
-        val notified: Boolean = false,
-    )
 
     private val local = MutableStateFlow(Local())
     private val draft = MutableStateFlow<Draft?>(null)
@@ -212,16 +203,12 @@ class WorkoutViewModel(
         val unit: io.github.otato.traininglog.domain.model.WeightUnit,
     )
 
-    /** 休憩タイマーの表示（1 秒ごとに変わるので、状態とは別に出す）。 */
-    /**
-     * 休憩が終わる時刻（エポックミリ秒）。休憩していなければ null。
-     * アプリが後ろにあるときも通知で知らせるために、画面がこの時刻に目覚ましを仕掛ける（F-TM-03）。
-     */
-    val restEndAtMillis: StateFlow<Long?> = local.map { it.rest?.endAtMillis }
-        .distinctUntilChanged()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    /** このワークアウトの休憩（動いているもの）。ほかのワークアウトの休憩は、出さない。 */
+    private val runningRest: Flow<RunningRest?> =
+        restTimer.state.map { it?.takeIf { rest -> rest.workoutId == workoutId } }.distinctUntilChanged()
 
-    val rest: StateFlow<RestUi?> = combine(local.map { it.rest }.distinctUntilChanged(), ticker) { rest, now ->
+    /** 休憩タイマーの表示（1 秒ごとに変わるので、状態とは別に出す）。終わりの知らせ（音・バイブ・通知）は、[RestTimer] が行う。 */
+    val rest: StateFlow<RestUi?> = combine(runningRest, ticker) { rest, now ->
         rest?.let {
             val remaining = (it.endAtMillis - now + 999) / 1000
             if (remaining > 0) {
@@ -264,16 +251,6 @@ class WorkoutViewModel(
                         contexts.update { it + loaded }
                     }
                 }
-        }
-        // 休憩の時間になったら、音とバイブで知らせる
-        viewModelScope.launch {
-            ticker.collect { now ->
-                val rest = local.value.rest
-                if (rest != null && !rest.notified && now >= rest.endAtMillis) {
-                    local.update { it.copy(rest = it.rest?.copy(notified = true)) }
-                    _events.emit(WorkoutEvent.RestFinished)
-                }
-            }
         }
     }
 
@@ -383,10 +360,10 @@ class WorkoutViewModel(
                     selectedSetId = null,
                     // 同じ種目に続きのセットがあれば、その種目のまま進む
                     focusedWorkoutExerciseId = exercise.workoutExercise.id.takeIf { remainingHere > 0 },
-                    rest = restSeconds?.let { seconds -> RestState(clock.millis() + seconds * 1000L, seconds) },
                     lastCompletedId = exercise.workoutExercise.id,
                 )
             }
+            if (restSeconds != null) restTimer.start(workoutId, restSeconds) else restTimer.clear(workoutId)
         }
     }
 
@@ -432,22 +409,9 @@ class WorkoutViewModel(
     // ---- 休憩タイマー ----
 
     /** 休憩の延長・短縮（「±10 秒」「＋30 秒」）。終わったあとに延ばすと、そこからもう一度数える。 */
-    fun adjustRest(deltaSeconds: Int) {
-        val now = clock.millis()
-        local.update { state ->
-            val rest = state.rest ?: return@update state
-            if (now >= rest.endAtMillis) {
-                if (deltaSeconds <= 0) state else state.copy(rest = RestState(now + deltaSeconds * 1000L, deltaSeconds))
-            } else {
-                val end = max(now, rest.endAtMillis + deltaSeconds * 1000L)
-                state.copy(rest = rest.copy(endAtMillis = end, totalSec = max(1, rest.totalSec + deltaSeconds), notified = false))
-            }
-        }
-    }
+    fun adjustRest(deltaSeconds: Int) = restTimer.adjust(workoutId, deltaSeconds)
 
-    fun dismissRest() {
-        local.update { it.copy(rest = null) }
-    }
+    fun dismissRest() = restTimer.clear(workoutId)
 
     // ---- 種目の詳細（ギア・数え方・メモ） ----
 
@@ -596,7 +560,7 @@ class WorkoutViewModel(
     fun setQuickEntry(quickEntry: Boolean) {
         viewModelScope.launch {
             workouts.setQuickEntry(workoutId, quickEntry)
-            if (quickEntry) local.update { it.copy(rest = null) }
+            if (quickEntry) restTimer.clear(workoutId)
         }
     }
 
@@ -626,7 +590,7 @@ class WorkoutViewModel(
             closing = true
             val kept = workouts.finishWorkout(workoutId, clock.instant())
             if (kept) closing = false
-            local.update { it.copy(rest = null) }
+            restTimer.clear(workoutId)
             _events.emit(if (kept) WorkoutEvent.Finished(workoutId) else WorkoutEvent.Discarded)
         }
     }

@@ -5,7 +5,6 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import io.github.otato.traininglog.platform.AppForeground
 import io.github.otato.traininglog.platform.RestNotifier
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -81,7 +80,6 @@ import io.github.otato.traininglog.designsystem.theme.AppTheme
 import io.github.otato.traininglog.domain.model.RepMode
 import io.github.otato.traininglog.domain.model.WeightMode
 import io.github.otato.traininglog.ui.common.PreviousUi
-import io.github.otato.traininglog.ui.common.RestAlert
 import io.github.otato.traininglog.ui.common.appViewModel
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -112,6 +110,7 @@ fun WorkoutRoute(
             settingsRepository = container.data.settings,
             addSetUseCase = container.addSet,
             clock = container.clock,
+            restTimer = container.restTimer,
         )
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -120,16 +119,10 @@ fun WorkoutRoute(
     val formSheet by viewModel.formSheet.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val context = LocalContext.current
-    val latest by rememberUpdatedState(state)
     // 戻る（画面のボタンも、端末の戻る操作も）は、ViewModel を通す。種目のない空の記録を、残さないため
     BackHandler(onBack = viewModel::leave)
 
-    // 休憩の終わりを、アプリが後ろにあるときも通知で知らせる（F-TM-03）。休憩が始まったら仕掛け、やめたら取り消す
-    val restEndAt by viewModel.restEndAtMillis.collectAsStateWithLifecycle()
-    LaunchedEffect(restEndAt) {
-        val end = restEndAt
-        if (end != null && end > System.currentTimeMillis()) RestNotifier.schedule(context, end) else if (end == null) RestNotifier.cancel(context)
-    }
+    // 休憩の終わりの知らせ（音・バイブ・通知）は、アプリ全体の休憩タイマー（RestTimer）が行う。
     // 通知の許可（Android 13 以上）は、記録画面を開いたときに 1 回たずねる。断っても、画面の中の音とバイブは使える
     val askNotification = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     LaunchedEffect(Unit) {
@@ -142,8 +135,6 @@ fun WorkoutRoute(
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
-                // アプリが後ろにあるときは、通知が知らせる
-                WorkoutEvent.RestFinished -> if (AppForeground.isForeground) RestAlert.notify(context, latest.soundOn, latest.vibrationOn)
                 // 案内は別に出す（出している間も、休憩の合図などの出来事を受け取り続ける）
                 is WorkoutEvent.Undoable -> launch {
                     snackbar.currentSnackbarData?.dismiss()

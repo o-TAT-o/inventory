@@ -27,6 +27,7 @@ import kotlinx.coroutines.withTimeout
 class ViewModelTestHarness {
     private val viewModels = mutableListOf<ViewModel>()
     private val jobs = mutableListOf<Job>()
+    private val scopes = mutableListOf<CoroutineScope>()
 
     fun setUp() {
         Dispatchers.setMain(Dispatchers.Unconfined)
@@ -35,8 +36,12 @@ class ViewModelTestHarness {
     fun tearDown() {
         jobs.forEach { it.cancel() }
         viewModels.forEach { it.viewModelScope.cancel() }
+        scopes.forEach { it.cancel() }
         Dispatchers.resetMain()
     }
+
+    /** ViewModel より長く生きる処理（アプリ全体で 1 つの休憩タイマーなど）を動かす場所。テストが終わったら止める。 */
+    fun newScope(): CoroutineScope = CoroutineScope(Dispatchers.Unconfined + Job()).also { scopes += it }
 
     /** 作った ViewModel を、あとで止めるために覚えておく。 */
     fun <T : ViewModel> track(viewModel: T): T = viewModel.also { viewModels += it }
