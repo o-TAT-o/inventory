@@ -100,7 +100,7 @@
     "watch": "tsc -watch -p ./",
     "pet:sample": "node skills/pixel-pet-creator/scripts/build-pet.js skills/pixel-pet-creator/examples/mochi --out pets/mochi",
     "icon": "node scripts/make-icon.js",
-    "package": "vsce package --no-dependencies --baseContentUrl https://github.com/o-TAT-o/inventory/blob/main/lab/typescript/vscode-grogu --baseImagesUrl https://github.com/o-TAT-o/inventory/raw/main/lab/typescript/vscode-grogu",
+    "package": "vsce package --no-dependencies --baseContentUrl https://github.com/p-ota-q/inventory/blob/main/lab/typescript/vscode-grogu --baseImagesUrl https://github.com/p-ota-q/inventory/raw/main/lab/typescript/vscode-grogu",
     "demo": "node scripts/make-demo-gif.js"
   },
   "devDependencies": {
@@ -112,7 +112,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/o-TAT-o/inventory.git",
+    "url": "https://github.com/p-ota-q/inventory.git",
     "directory": "lab/typescript/vscode-grogu"
   },
   "icon": "media/icon.png",
