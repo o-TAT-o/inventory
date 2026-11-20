@@ -1,7 +1,9 @@
-name: idol-tracker pages
+name: pages
 
 # モノレポなので Pages の「Deploy from a branch（/docs）」は使えない。
-# apps/idol-tracker/docs だけをアーティファクトとして Pages に配信する。
+# 公開するディレクトリを _site に集め、1つのアーティファクトとして Pages に配信する。
+#   /                         ← apps/idol-tracker/docs
+#   /zt-shiftleft-lecture/    ← learning/azure/zt-shiftleft-lecture
 # Settings → Pages → Source を「GitHub Actions」にしておくこと。
 # （configure-pages の enablement での自動有効化は GITHUB_TOKEN の権限では不可）
 
@@ -10,7 +12,8 @@ on:
     branches: [main]
     paths:
       - "apps/idol-tracker/docs/**"
-      - ".github/workflows/idol-tracker-pages.yml"
+      - "learning/azure/zt-shiftleft-lecture/**"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -31,8 +34,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - name: 配信するファイルを _site に集める
+        run: |
+          mkdir -p _site/zt-shiftleft-lecture
+          cp -R apps/idol-tracker/docs/. _site/
+          cp learning/azure/zt-shiftleft-lecture/index.html _site/zt-shiftleft-lecture/
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: apps/idol-tracker/docs
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
