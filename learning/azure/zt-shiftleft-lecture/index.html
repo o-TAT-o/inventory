@@ -1,0 +1,2372 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="クラウドネイティブ勉強会（セキュリティとネットワーク）の座学資料。ゼロトラストとシフトレフトを、動く図で確かめる。">
+<meta name="theme-color" content="#F2F4F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D141B" media="(prefers-color-scheme: dark)">
+<title>ゼロトラストとシフトレフト</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Dela+Gothic+One&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* 勉強会全体を1本の路線に見立てる。章＝駅、各サービス＝関所のある駅。上部に路線案内（章ナビ） */
+  --bg:#F2F4F6;
+  --surface:#FFFFFF;
+  --ink:#14202C;
+  --muted:#5A6977;
+  --rule:#D3DAE1;
+  --line:#0A6FB8;
+  --on-accent:#FFFFFF;
+  --ok:#11806A;
+  --bad:#CC2F3B;
+  --p-verify:#0A6FB8;
+  --p-least:#A86A12;
+  --p-breach:#7448B0;
+  --font-display:"Dela Gothic One","BIZ UDPGothic",sans-serif;
+  --font-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --nav-h:60px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D141B; --surface:#151F29; --ink:#E2E9EF; --muted:#94A4B3; --rule:#2B3946;
+    --line:#4AB0EE; --on-accent:#0D141B; --ok:#38C79C; --bad:#FF6672;
+    --p-verify:#4AB0EE; --p-least:#E2AE4E; --p-breach:#B494EA;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D141B; --surface:#151F29; --ink:#E2E9EF; --muted:#94A4B3; --rule:#2B3946;
+  --line:#4AB0EE; --on-accent:#0D141B; --ok:#38C79C; --bad:#FF6672;
+  --p-verify:#4AB0EE; --p-least:#E2AE4E; --p-breach:#B494EA;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:calc(var(--nav-h) + 12px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.75}
+a{color:var(--line)}
+button{font-family:inherit}
+button:focus-visible,a:focus-visible{outline:3px solid var(--line);outline-offset:2px}
+.wrap{max-width:1320px;margin:0 auto;padding:0 clamp(16px,3vw,36px) 64px;display:grid;gap:28px}
+
+/* 章ナビ */
+.topnav{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--rule)}
+.topnav-in{max-width:1320px;margin:0 auto;padding:10px clamp(16px,3vw,36px);display:flex;align-items:center;gap:12px;min-height:var(--nav-h)}
+.navlinks{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+.navlinks::-webkit-scrollbar{display:none}
+.navlinks a{flex:none;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--muted);font-size:13px;font-weight:700;padding:5px 12px 5px 5px;border-radius:999px;border:1.5px solid transparent;white-space:nowrap}
+.navlinks a .n{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;border:2px solid var(--rule);font-family:var(--font-mono);font-size:11px;color:var(--muted);background:var(--surface)}
+.navlinks a .m{font-family:var(--font-mono);font-size:11px;font-weight:400}
+.navlinks a[aria-current="true"]{color:var(--ink);border-color:var(--line);background:var(--surface)}
+.navlinks a[aria-current="true"] .n{border-color:var(--line);background:var(--line);color:var(--on-accent)}
+.notes-toggle{flex:none;appearance:none;border:1.5px dashed var(--p-least);background:var(--surface);color:var(--p-least);font-weight:700;font-size:12.5px;border-radius:999px;padding:6px 14px;cursor:pointer;white-space:nowrap}
+.notes-toggle[aria-pressed="true"]{background:var(--p-least);color:var(--on-accent);border-style:solid}
+
+/* 表紙 */
+.cover{padding:40px 0 8px;display:grid;gap:12px}
+.eyebrow{margin:0;font-size:13px;font-weight:700;color:var(--line);letter-spacing:.04em}
+h1{margin:0;font-family:var(--font-display);font-weight:400;font-size:clamp(36px,6vw,64px);line-height:1.12;letter-spacing:.03em;text-wrap:balance}
+.lead{margin:0;max-width:62ch;color:var(--muted);font-size:16px}
+
+/* 章 */
+.chapter{display:grid;gap:22px;padding-top:28px;border-top:2px solid var(--rule)}
+.ch-head{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.ch-no{flex:none;display:grid;place-items:center;width:68px;height:68px;border-radius:50%;border:6px solid var(--line);background:var(--surface);font-family:var(--font-display);font-size:24px;color:var(--line)}
+.ch-title{display:grid;gap:4px;min-width:0;flex:1}
+.ch-title h2{margin:0;font-size:clamp(24px,3vw,32px);line-height:1.3;text-wrap:balance}
+.ch-title p{margin:0;color:var(--muted);max-width:66ch}
+.ch-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mins{font-family:var(--font-mono);font-size:12.5px;font-weight:600;padding:2px 10px;border-radius:999px;background:var(--ink);color:var(--bg)}
+.sub{display:grid;gap:14px}
+.sub-head{display:grid;gap:2px}
+.sub-head .sn{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--line)}
+.sub-head h3{margin:0;font-size:20px;line-height:1.4;text-wrap:balance}
+.sub-head p{margin:0;color:var(--muted);max-width:68ch}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:16px;padding:18px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.grid2,.grid3{grid-template-columns:1fr}.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.grid4{grid-template-columns:1fr}}
+.label{font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin:0}
+.note{font-size:13px;color:var(--muted);margin:0}
+.ptag{display:inline-flex;align-items:center;font-weight:700;font-size:12.5px;line-height:1.5;padding:1px 10px;border-radius:999px;border:1.5px solid currentColor;white-space:nowrap}
+.ptag.verify{color:var(--p-verify)}
+.ptag.least{color:var(--p-least)}
+.ptag.breach{color:var(--p-breach)}
+.sctag{font-size:12px;line-height:1.5;padding:2px 10px;border-radius:999px;background:var(--bg);border:1px solid var(--rule);color:var(--muted);font-weight:700;white-space:nowrap}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+
+/* 講師メモ */
+.tnote{border:1.5px dashed var(--p-least);background:color-mix(in srgb,var(--p-least) 7%,var(--surface));border-radius:12px;padding:12px 16px;display:grid;gap:6px;font-size:14px}
+.tnote .tl{font-size:12px;font-weight:700;color:var(--p-least);letter-spacing:.05em}
+.tnote ul{margin:0;padding-left:1.2em;display:grid;gap:2px}
+.tnote .skip{display:inline-block;font-size:11.5px;font-weight:700;color:var(--p-least);border:1px solid var(--p-least);border-radius:6px;padding:0 6px;margin-right:4px}
+body.notes-off .tnote{display:none}
+
+/* 共通部品 */
+.chip{appearance:none;font:inherit;font-size:13px;font-weight:700;line-height:1.3;color:var(--ink);background:var(--bg);border:1.5px solid var(--rule);border-radius:999px;padding:4px 12px 4px 4px;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.chip .no{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 4px;border-radius:999px;background:var(--surface);border:2px solid var(--line);color:var(--line);font-size:12px;font-family:var(--font-mono);font-weight:600}
+.chip[aria-pressed="true"]{border-color:var(--line);background:color-mix(in srgb,var(--line) 12%,var(--surface))}
+.chip[aria-pressed="true"] .no{background:var(--line);color:var(--on-accent)}
+.chip.red .no{border-color:var(--bad);color:var(--bad)}
+.chip.red[aria-pressed="true"]{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--surface))}
+.chip.red[aria-pressed="true"] .no{background:var(--bad);color:var(--on-accent)}
+.chip.plain{padding:6px 14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--rule);border-radius:999px;padding:4px;gap:2px;flex-wrap:wrap}
+.seg button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;font-size:14px;padding:7px 18px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.btn{appearance:none;font:inherit;font-weight:700;font-size:14px;border-radius:10px;padding:8px 16px;cursor:pointer;border:1.5px solid var(--rule);background:var(--surface);color:var(--ink)}
+.btn.primary{background:var(--line);border-color:var(--line);color:var(--on-accent)}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:var(--on-accent)}
+.btn.small{font-size:12.5px;padding:5px 12px}
+.btn:disabled{opacity:.4;cursor:default}
+.navbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.navbtns .grow{margin-left:auto}
+.badge{display:inline-block;font-size:13px;font-weight:700;padding:2px 12px;border-radius:999px;color:var(--on-accent)}
+.badge.ok{background:var(--ok)}
+.badge.ng{background:var(--bad)}
+.badge.warn{background:var(--p-least)}
+.respcode{font-family:var(--font-mono);font-size:13px;font-weight:600}
+figure.code{margin:0;border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+figure.code figcaption{font-size:12px;font-weight:700;color:var(--muted);padding:6px 12px;background:var(--bg);border-bottom:1px solid var(--rule)}
+pre{margin:0;padding:12px;overflow-x:auto;font-family:var(--font-mono);font-size:12px;line-height:1.65;background:var(--surface);color:var(--ink);tab-size:2}
+.lesson{border-left:4px solid var(--line);padding:4px 0 4px 12px;margin:0}
+.lesson b{display:block;font-size:12.5px;color:var(--line)}
+.result{border-radius:12px;padding:12px 14px;display:grid;gap:6px;border:1.5px solid}
+.result p{margin:0}
+.result.blocked{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 9%,var(--surface))}
+.result.breached{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 9%,var(--surface))}
+.result.warn{border-color:var(--p-least);background:color-mix(in srgb,var(--p-least) 9%,var(--surface))}
+.status{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-weight:700}
+.diagram-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+svg.fig{display:block;width:100%;height:auto;font-family:var(--font-body)}
+
+/* スイッチ */
+.defs{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.switch{position:relative;display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 8px;border-radius:10px;background:var(--bg)}
+.switch input{position:absolute;opacity:0;width:1px;height:1px;margin:0}
+.track{flex:none;width:40px;height:22px;border-radius:999px;background:var(--bad);position:relative;transition:background .15s}
+.track::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--surface);transition:transform .15s}
+.switch input:checked + .track{background:var(--ok)}
+.switch input:checked + .track::after{transform:translateX(18px)}
+.switch input:focus-visible + .track{outline:3px solid var(--line);outline-offset:2px}
+.switch .t{display:grid;line-height:1.4;font-size:13.5px;font-weight:700}
+.switch small{color:var(--muted);font-size:11.5px;font-weight:400}
+.switch .st{margin-left:auto;font-size:11.5px;font-weight:700;font-family:var(--font-mono)}
+.switch .st.on{color:var(--ok)}
+.switch .st.off{color:var(--bad)}
+.switch.neutral .track{background:var(--rule)}
+.switch.neutral input:checked + .track{background:var(--line)}
+
+/* SVG共通 */
+.zone-label{fill:var(--muted);font-size:12px;font-weight:700}
+.vnet{fill:color-mix(in srgb,var(--line) 6%,transparent);stroke:var(--line);stroke-width:1.5;stroke-dasharray:6 5}
+.vnet-label{fill:var(--line);font-size:12px;font-weight:700;paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
+.edge{fill:none;stroke:var(--rule);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.edge.dashed{stroke-dasharray:1 9;stroke-width:4}
+.edge-label{fill:var(--muted);font-size:11px;paint-order:stroke;stroke:var(--surface);stroke-width:4px;stroke-linejoin:round}
+.node rect{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.node .lbl{font-size:14px;font-weight:700;fill:var(--ink)}
+.node .sub{font-size:11px;fill:var(--muted)}
+.node.active rect{stroke:var(--line);stroke-width:3.5;fill:color-mix(in srgb,var(--line) 11%,var(--surface))}
+.node.attacker rect,.node.ghost rect{stroke:var(--bad)}
+.node.attacker .lbl,.node.ghost .lbl{fill:var(--bad)}
+.node.ghost rect{stroke-dasharray:5 4}
+.node.compromised rect{stroke:var(--bad);stroke-width:3.5;fill:color-mix(in srgb,var(--bad) 10%,var(--surface))}
+.node.blocked rect{stroke:var(--ok);stroke-width:4}
+.node.breached rect{stroke:var(--bad);fill:var(--bad)}
+.node.breached text{fill:var(--on-accent)}
+.node.hidden{display:none}
+.trail{fill:none;stroke:var(--line);stroke-width:7;stroke-linecap:round;stroke-linejoin:round}
+.trail.attack{stroke:var(--bad);stroke-width:5;stroke-dasharray:11 7}
+.preview{fill:none;stroke:var(--bad);stroke-width:3;stroke-dasharray:3 7;opacity:.4;stroke-linecap:round;stroke-linejoin:round}
+.dot{fill:var(--line);stroke:var(--surface);stroke-width:3}
+.dot.attack{fill:var(--bad)}
+.dot.stopped{opacity:.35}
+.pill text{font-size:11.5px;font-weight:700}
+.pill.pass rect{fill:var(--ok)}
+.pill.pass text{fill:var(--on-accent)}
+.pill.block rect{fill:var(--bad)}
+.pill.block text{fill:var(--on-accent)}
+.pill.off rect{fill:var(--surface);stroke:var(--bad);stroke-width:1.5}
+.pill.off text{fill:var(--bad)}
+.xmark circle{fill:var(--bad);stroke:var(--surface);stroke-width:2}
+.xmark text{fill:var(--on-accent);font-size:14px;font-weight:700}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:10px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend svg{flex:none}
+
+/* 00 はじめに */
+.goals{list-style:none;margin:0;padding:0;display:grid;gap:12px;grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){.goals{grid-template-columns:1fr}}
+.goals li{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.goals .gn{flex:none;font-family:var(--font-display);font-size:22px;color:var(--line);line-height:1.2}
+.agenda{display:flex;width:100%;border-radius:12px;overflow:hidden;border:1px solid var(--rule)}
+.agenda a{display:grid;gap:0;padding:10px 10px;text-decoration:none;color:var(--ink);background:var(--surface);border-right:1px solid var(--rule);min-width:0}
+.agenda a:last-child{border-right:0}
+.agenda a.hl{background:color-mix(in srgb,var(--line) 12%,var(--surface))}
+.agenda .an{font-family:var(--font-mono);font-size:11px;color:var(--line);font-weight:600}
+.agenda .at{font-size:13px;font-weight:700;line-height:1.35;overflow:hidden;text-overflow:ellipsis}
+.agenda .am{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+@media (max-width:700px){.agenda{flex-direction:column}.agenda a{flex:1 1 auto !important;border-right:0;border-bottom:1px solid var(--rule);grid-template-columns:auto 1fr auto;align-items:center;gap:10px}}
+.trailmap{list-style:none;margin:0;padding:8px 0 0;display:grid;grid-template-columns:repeat(10,minmax(0,1fr));position:relative}
+.trailmap::before{content:"";position:absolute;left:5%;right:5%;top:22px;height:6px;border-radius:3px;background:var(--rule)}
+.trailmap li{position:relative;display:grid;justify-items:center;gap:6px;text-align:center;font-size:11.5px;line-height:1.35;color:var(--muted);padding:0 2px}
+.trailmap .st{width:30px;height:30px;border-radius:50%;background:var(--surface);border:4px solid var(--rule);display:grid;place-items:center;font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--muted);position:relative}
+.trailmap li.near .st{border-color:color-mix(in srgb,var(--line) 55%,var(--rule));color:var(--line)}
+.trailmap li.main{color:var(--ink);font-weight:700}
+.trailmap li.main .st{width:40px;height:40px;margin-top:-5px;border-color:var(--line);background:var(--line);color:var(--on-accent);font-size:13px}
+@media (max-width:760px){
+  .trailmap{grid-template-columns:1fr;gap:8px;padding:0}
+  .trailmap::before{left:14px;right:auto;top:6px;bottom:6px;width:4px;height:auto}
+  .trailmap li{grid-template-columns:30px 1fr;justify-items:start;align-items:center;text-align:left;gap:10px}
+  .trailmap li.main .st{margin:0 0 0 -5px}
+}
+table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+table.tbl th,table.tbl td{padding:8px 10px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+table.tbl th{font-size:12px;color:var(--muted);font-weight:700;background:var(--bg)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--rule);border-radius:12px;background:var(--surface)}
+
+/* 01 */
+.zt-side{display:grid;gap:10px;align-content:start}
+.zt-count{font-size:15px;font-weight:700}
+.zt-count .big{font-family:var(--font-display);font-size:30px;font-weight:400;margin:0 4px}
+.zt-count.bad .big{color:var(--bad)}
+.zt-count.good .big{color:var(--ok)}
+.log{list-style:none;margin:0;padding:0;display:grid;gap:6px;counter-reset:lg}
+.log li{display:grid;grid-template-columns:auto 1fr;gap:8px;font-size:13.5px;align-items:start}
+.log .mk{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:12px;font-weight:700;color:var(--on-accent);margin-top:2px}
+.log .mk.ok{background:var(--bad)}
+.log .mk.ng{background:var(--ok)}
+.log .mk.pend{background:var(--rule);color:var(--muted)}
+.log li.pending{color:var(--muted)}
+.log b{display:block}
+.zt-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+@media (max-width:1060px){.zt-layout{grid-template-columns:1fr}}
+.wall{stroke:var(--ink);stroke-width:8;stroke-linecap:round}
+.wall.thin{stroke:var(--rule);stroke-width:3;stroke-dasharray:6 6}
+.office{fill:color-mix(in srgb,var(--ink) 4%,transparent);stroke:var(--rule);stroke-width:1.5}
+.pcard{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:16px;display:grid;gap:8px;align-content:start;border-top:5px solid}
+.pcard.verify{border-top-color:var(--p-verify)}
+.pcard.least{border-top-color:var(--p-least)}
+.pcard.breach{border-top-color:var(--p-breach)}
+.pcard h4{margin:0;font-size:17px}
+.pcard p{margin:0;font-size:14px}
+.pcard ul{margin:0;padding-left:1.2em;font-size:13.5px;display:grid;gap:2px}
+.srm th button{appearance:none;border:1.5px solid var(--rule);background:var(--surface);color:var(--ink);font:inherit;font-weight:700;font-size:12.5px;border-radius:999px;padding:3px 10px;cursor:pointer;white-space:nowrap}
+.srm th button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.srm td.c,.srm td.s,.srm td.m{text-align:center;font-size:12px;font-weight:700;white-space:nowrap}
+.srm td.c{background:color-mix(in srgb,var(--line) 16%,var(--surface));color:var(--line)}
+.srm td.s{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--line) 14%,var(--surface)) 0 6px,var(--surface) 6px 12px);color:var(--ink)}
+.srm td.m{background:var(--bg);color:var(--muted)}
+.srm .dim{opacity:.35}
+.srm tr.always th{color:var(--ink)}
+.srm-desc{display:grid;gap:6px}
+.sl-stages{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;position:relative}
+.sl-stages button{appearance:none;font:inherit;font-size:13px;font-weight:700;color:var(--ink);background:var(--bg);border:1.5px solid var(--rule);border-radius:10px;padding:8px 6px;cursor:pointer;line-height:1.35}
+.sl-stages button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+@media (max-width:640px){.sl-stages{grid-template-columns:1fr}}
+.sl-out{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:760px){.sl-out{grid-template-columns:1fr}}
+.blocks{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0}
+.blocks i{display:block;width:22px;height:22px;border-radius:5px;background:var(--p-least)}
+.blocks i.e{background:var(--rule)}
+
+/* 02 */
+.concepts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:1000px){.concepts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.concepts{grid-template-columns:1fr}}
+.concept{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:14px 16px;display:grid;gap:4px;align-content:start}
+.concept h4{margin:0;font-size:16px}
+.concept .an{font-size:12.5px;font-weight:700;color:var(--line)}
+.concept p{margin:0;font-size:13.5px}
+.dns-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:960px){.dns-layout{grid-template-columns:1fr}}
+.ctl{display:grid;gap:6px}
+.ctl .seg button{font-size:13px;padding:6px 14px}
+.dns-door rect{stroke-width:2.5}
+.door-open rect{fill:var(--surface);stroke:var(--ink)}
+.door-closed rect{fill:color-mix(in srgb,var(--bad) 10%,var(--surface));stroke:var(--bad)}
+.door-none rect{fill:none;stroke:var(--rule);stroke-dasharray:5 4}
+.door-none text{fill:var(--muted)}
+.dpath{fill:none;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.dpath.priv{stroke:var(--line)}
+.dpath.pub{stroke:var(--p-least);stroke-dasharray:10 6}
+.dpath.ng{stroke:var(--bad);stroke-dasharray:4 6}
+.nsg-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
+@media (max-width:960px){.nsg-layout{grid-template-columns:1fr}}
+.nsg td,.nsg th{white-space:nowrap}
+.nsg td.act-allow{color:var(--ok);font-weight:700}
+.nsg td.act-deny{color:var(--bad);font-weight:700}
+.nsg tr.def td{color:var(--muted)}
+.nsg tr.def td.act-allow,.nsg tr.def td.act-deny{opacity:.75}
+.nsg tr.skip td{opacity:.35}
+.nsg tr.nomatch td{opacity:.6}
+.nsg tr.match{background:color-mix(in srgb,var(--line) 14%,var(--surface))}
+.nsg tr.match td{opacity:1}
+.nsg tr.match.deny{background:color-mix(in srgb,var(--bad) 13%,var(--surface))}
+.nsg tr.match.allow{background:color-mix(in srgb,var(--ok) 13%,var(--surface))}
+.nsg tr.off td{text-decoration:line-through;opacity:.35}
+.nsg .ev{font-size:12px;font-weight:700;color:var(--muted)}
+.mono{font-family:var(--font-mono);font-size:12.5px}
+
+/* 03 リクエストの旅 */
+.modebar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.howto{margin:0;font-size:13px;color:var(--muted)}
+.howto b{color:var(--ink)}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,400px);gap:20px;align-items:start}
+@media (max-width:1060px){.stage{grid-template-columns:1fr}}
+#journey-chips{margin-bottom:12px}
+#map{min-width:720px}
+.panel{position:sticky;top:calc(var(--nav-h) + 12px);max-height:calc(100vh - var(--nav-h) - 24px);overflow:auto;display:grid;gap:12px;align-content:start}
+@media (max-width:1060px){.panel{position:static;max-height:none}}
+.panel h2{margin:0;font-size:20px;line-height:1.45;text-wrap:balance}
+.panel h3{margin:4px 0 0;font-size:12.5px;color:var(--muted);letter-spacing:.05em}
+.panel p{margin:0}
+.panel ul{margin:0;padding-left:1.2em;display:grid;gap:4px}
+.phead{display:flex;gap:12px;align-items:center}
+.bigno{flex:none;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;border:4px solid var(--line);font-family:var(--font-display);font-size:18px;color:var(--line);background:var(--surface)}
+.bigno.red{border-color:var(--bad);color:var(--bad)}
+.kicker{font-size:12.5px;font-weight:700;color:var(--muted)}
+.layers{font-size:13.5px;font-weight:700}
+.jwt-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}
+@media (max-width:900px){.jwt-grid{grid-template-columns:1fr}}
+.col{display:grid;gap:12px;align-content:start}
+.token{font-family:var(--font-mono);font-size:12px;word-break:break-all;line-height:1.6;padding:12px;border-radius:10px;background:var(--bg);border:1px solid var(--rule);margin:0}
+.token .h{color:var(--muted)}
+.token .p{color:var(--line)}
+.token .s{color:var(--p-least)}
+.token .sep{color:var(--ink);font-weight:600}
+.payload .k{color:var(--p-breach)}
+.payload .chg{background:color-mix(in srgb,var(--bad) 20%,transparent);border-radius:3px}
+.payload .anno{color:var(--muted);font-family:var(--font-body)}
+.tamper .track{background:var(--rule)}
+.tamper .switch input:checked + .track{background:var(--bad)}
+.checks{list-style:none;padding:0;margin:0;display:grid;gap:4px}
+.checks li{display:flex;gap:8px;align-items:center;font-size:14px}
+.checks .why{color:var(--muted);font-size:12.5px}
+.mark{flex:none;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:12px;font-weight:700;color:var(--on-accent)}
+.mark.ok{background:var(--ok)}
+.mark.ng{background:var(--bad)}
+.policy .ln{display:block;padding:0 6px;margin:0 -6px;border-radius:4px}
+.policy .ln.ng{background:color-mix(in srgb,var(--bad) 18%,transparent)}
+.jwt-result{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.jwt-result .respcode{font-size:15px}
+
+/* 04 */
+.pipe-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
+@media (max-width:1060px){.pipe-layout{grid-template-columns:1fr}}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.vcard{appearance:none;text-align:left;font:inherit;background:var(--bg);border:1.5px solid var(--rule);border-radius:12px;padding:10px 12px;cursor:pointer;display:grid;gap:2px;color:var(--ink)}
+.vcard .vk{font-family:var(--font-mono);font-size:11px;color:var(--bad);font-weight:600}
+.vcard .vn{font-size:13.5px;font-weight:700;line-height:1.4}
+.vcard[aria-pressed="true"]{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 9%,var(--surface))}
+.station circle{fill:var(--surface);stroke:var(--ink);stroke-width:4}
+.station .snum{font-family:var(--font-mono);font-size:13px;font-weight:600;fill:var(--ink)}
+.station .sname{font-size:13px;font-weight:700;fill:var(--ink)}
+.station.caught circle{stroke:var(--ok);stroke-width:6}
+.station.missed circle{fill:var(--bad);stroke:var(--bad)}
+.station.missed .snum{fill:var(--on-accent)}
+.tool{font-size:11.5px;fill:var(--muted)}
+.tool.off{fill:var(--bad);text-decoration:line-through}
+.tool.hit{fill:var(--ok);font-weight:700}
+.pipeline-line{stroke:var(--rule);stroke-width:8;stroke-linecap:round}
+.cycle{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;counter-reset:cy}
+@media (max-width:1000px){.cycle{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:560px){.cycle{grid-template-columns:1fr}}
+.cycle li{counter-increment:cy;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:12px;display:grid;gap:4px;align-content:start;font-size:13.5px;position:relative}
+.cycle li::before{content:counter(cy);display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--line);color:var(--on-accent);font-family:var(--font-mono);font-size:12px;font-weight:600}
+.cycle li b{font-size:14px}
+
+/* 05 */
+.check2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:860px){.check2{grid-template-columns:1fr}}
+.checklist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.checklist li{display:grid;grid-template-columns:22px 1fr;gap:10px;font-size:14px;align-items:start}
+.checklist li::before{content:"";width:18px;height:18px;margin-top:4px;border-radius:5px;border:2px solid var(--line)}
+.checklist.env li::before{background:var(--line)}
+.checklist small{display:block;color:var(--muted);font-size:12.5px}
+.quiz{display:grid;gap:12px}
+.qcard{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:16px;display:grid;gap:10px}
+.qcard .qn{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--line)}
+.qcard .qt{margin:0;font-size:15.5px;font-weight:700;line-height:1.55}
+.qopts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:700px){.qopts{grid-template-columns:1fr}}
+.qopt{appearance:none;font:inherit;text-align:left;font-size:14px;padding:9px 12px;border-radius:10px;border:1.5px solid var(--rule);background:var(--bg);color:var(--ink);cursor:pointer;display:flex;gap:8px;align-items:flex-start}
+.qopt .ql{font-family:var(--font-mono);font-weight:600;color:var(--muted)}
+.qopt.correct{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--surface))}
+.qopt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--surface))}
+.qopt:disabled{cursor:default}
+.qexp{margin:0;font-size:13.5px;border-left:4px solid var(--line);padding:2px 0 2px 12px}
+.qscore{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-weight:700}
+.domains{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.domain{border:1px solid var(--rule);border-radius:12px;padding:12px 14px;display:grid;gap:6px;align-content:start;background:var(--surface)}
+.domain h4{margin:0;font-size:14.5px;line-height:1.45}
+.domain .w{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.domain p{margin:0;font-size:13.5px}
+.domain .chs{font-size:12px;color:var(--line);font-weight:700}
+.domain.out p{color:var(--muted)}
+.labs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.labs{grid-template-columns:1fr}}
+.lab{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:14px 16px;display:grid;gap:6px;align-content:start}
+.lab .lt{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.lab h4{margin:0;font-size:16px}
+.lab p{margin:0;font-size:13.5px}
+.links{margin:0;padding-left:1.2em;display:grid;gap:4px;font-size:14px}
+footer{font-size:12.5px;color:var(--muted);padding-top:12px;border-top:1px solid var(--rule)}
+footer p{margin:0}
+
+/* 横幅のはみ出し防止（グリッドの子が図の最小幅に引っ張られないように） */
+.wrap,.chapter,.sub,.cover,.card,.panel,.col,.zt-side,.ctl,.srm-desc{grid-template-columns:minmax(0,1fr)}
+.stage>*,.zt-layout>*,.dns-layout>*,.nsg-layout>*,.pipe-layout>*,.grid2>*,.grid3>*,.check2>*,.jwt-grid>*,.sl-out>*{min-width:0}
+
+/* スマホ */
+.scroll-hint{display:none;font-size:12px;color:var(--muted);margin:6px 0 0;text-align:center}
+.srm-seg{display:none}
+@media (max-width:760px){
+  .scroll-hint{display:block}
+}
+@media (max-width:600px){
+  :root{--nav-h:52px}
+  .wrap{gap:22px}
+  .cover{padding:28px 0 4px}
+  .lead{font-size:15px}
+  .chapter{gap:18px;padding-top:22px}
+  .ch-head{gap:12px}
+  .ch-no{width:52px;height:52px;border-width:5px;font-size:19px}
+  .ch-title h2{font-size:23px}
+  .ch-meta{width:100%}
+  .sub{gap:12px}
+  .sub-head h3{font-size:18px}
+  .card{padding:14px;border-radius:14px}
+  .topnav-in{padding:8px 12px;gap:8px}
+  .navlinks a{padding:3px 8px 3px 3px;font-size:12.5px;gap:5px}
+  .navlinks a .n{width:24px;height:24px}
+  .navlinks a .m{display:none}
+  .notes-toggle{padding:5px 10px;font-size:12px}
+  .notes-toggle .nt-long{display:none}
+  .chips.scrollx{flex-wrap:nowrap;overflow-x:auto;padding-bottom:6px;margin-left:-2px;padding-left:2px}
+  .chips.scrollx .chip{flex:none}
+  .seg button{padding:7px 14px;font-size:13.5px}
+  .modebar{gap:8px}
+  .howto{font-size:12.5px}
+  .tnote{font-size:13.5px;padding:12px}
+  .panel h2{font-size:18px}
+  pre{font-size:11.5px}
+  .goals li{padding:12px 14px}
+  .pcard{padding:14px}
+  .zt-count .big{font-size:26px}
+  /* 図の文字を大きく */
+  svg.fig .lbl{font-size:16px}
+  svg.fig .sub{font-size:12.5px}
+  svg.fig .edge-label{font-size:12.5px}
+  svg.fig .zone-label{font-size:13.5px}
+  svg.fig .vnet-label{font-size:13.5px}
+  svg.fig .pill text{font-size:13px}
+  svg.fig .tool{font-size:13px}
+  svg.fig .sname{font-size:15px}
+  /* 表 */
+  table.tbl{font-size:13px}
+  table.tbl th,table.tbl td{padding:7px 8px}
+  table.stack thead{display:none}
+  table.stack,table.stack tbody,table.stack tr,table.stack td{display:block;width:100%}
+  table.stack tr{padding:10px 12px;border-bottom:1px solid var(--rule)}
+  table.stack tr:last-child{border-bottom:0}
+  table.stack td{border:0;padding:1px 0}
+  table.stack td::before{content:attr(data-label);display:block;font-size:11.5px;font-weight:700;color:var(--muted)}
+  table.stack td:first-child{font-weight:700}
+  table.stack td:first-child::before{display:none}
+  .srm-seg{display:flex;margin-bottom:10px}
+  .srm td.dim,.srm th.dimh{display:none}
+  .srm th button{pointer-events:none;border-color:transparent;background:transparent;color:var(--ink);padding:0}
+  .srm td.c,.srm td.s,.srm td.m{font-size:13px}
+  .nsg thead{display:none}
+  .nsg,.nsg tbody{display:block;width:100%}
+  .nsg tr{display:grid;grid-template-columns:58px minmax(0,1fr) auto;gap:2px 10px;padding:10px 12px;border-bottom:1px solid var(--rule)}
+  .nsg tr:last-child{border-bottom:0}
+  table.tbl.nsg td{border:0;padding:0;white-space:normal}
+  .nsg td:nth-child(1){grid-column:1;grid-row:1}
+  .nsg td:nth-child(2){grid-column:2;grid-row:1;overflow-wrap:anywhere}
+  .nsg td:nth-child(5){grid-column:3;grid-row:1}
+  .nsg td:nth-child(3){grid-column:1 / 3;grid-row:2;font-size:12.5px}
+  .nsg td:nth-child(3) br{display:none}
+  .nsg td:nth-child(3) .note{margin-left:6px}
+  .nsg td:nth-child(4){grid-column:3;grid-row:2;font-size:12px;text-align:right;white-space:nowrap}
+  .nsg td:nth-child(4)::before{content:"ポート ";color:var(--muted);font-family:var(--font-body)}
+  .nsg td:nth-child(6){grid-column:1 / 4;grid-row:3}
+  .nsg td:nth-child(6):empty{display:none}
+  .qcard{padding:14px}
+  .qcard .qt{font-size:15px}
+  .lab,.domain,.concept{padding:12px 14px}
+}
+
+@media (prefers-reduced-motion: reduce){*{transition:none !important;scroll-behavior:auto !important}}
+</style>
+</head>
+<body>
+<nav class="topnav" aria-label="章">
+  <div class="topnav-in">
+    <div class="navlinks" id="navlinks">
+      <a href="#ch0" data-ch="ch0"><span class="n">00</span>はじめに<span class="m">3分</span></a>
+      <a href="#ch1" data-ch="ch1"><span class="n">01</span>なぜ必要か<span class="m">10分</span></a>
+      <a href="#ch2" data-ch="ch2"><span class="n">02</span>ネットワーク<span class="m">12分</span></a>
+      <a href="#ch3" data-ch="ch3"><span class="n">03</span>リクエストの旅<span class="m">18分</span></a>
+      <a href="#ch4" data-ch="ch4"><span class="n">04</span>コードの旅<span class="m">10分</span></a>
+      <a href="#ch5" data-ch="ch5"><span class="n">05</span>まとめ<span class="m">7分</span></a>
+    </div>
+    <button type="button" class="notes-toggle" id="notes-toggle" aria-pressed="true">講師メモ<span class="nt-long"> 表示中</span></button>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<header class="cover">
+  <p class="eyebrow">クラウドネイティブ勉強会 ・ セキュリティとネットワーク（座学 60分）</p>
+  <h1>ゼロトラストと<br>シフトレフト</h1>
+  <p class="lead">モダナイズ環境は、なぜこの形をしているのか。図を動かしながら、その理由を確かめていきます。</p>
+</header>
+
+<!-- ============ 00 はじめに ============ -->
+<section class="chapter" id="ch0" aria-labelledby="ch0-t">
+  <div class="ch-head">
+    <span class="ch-no">00</span>
+    <div class="ch-title">
+      <h2 id="ch0-t">はじめに</h2>
+      <p>今日のゴールと、勉強会シリーズの中での位置づけ。</p>
+    </div>
+    <div class="ch-meta"><span class="mins">3分</span></div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">0-1</span><h3>今日のゴール</h3></div>
+    <ol class="goals">
+      <li><span class="gn">1</span><span>ゼロトラストとシフトレフトを、自分の言葉で説明できる</span></li>
+      <li><span class="gn">2</span><span>モダナイズ環境の部品が、それぞれ何を守っているのかが分かる</span></li>
+      <li><span class="gn">3</span><span>新しいアプリをモダナイズ環境に載せるとき、自分たちがやることが分かる</span></li>
+    </ol>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">0-2</span><h3>時間配分（60分）</h3></div>
+    <div class="agenda" aria-label="時間配分">
+      <a href="#ch0" style="flex:3"><span class="an">00</span><span class="at">はじめに</span><span class="am">3分</span></a>
+      <a href="#ch1" style="flex:10"><span class="an">01</span><span class="at">なぜ必要か</span><span class="am">10分</span></a>
+      <a href="#ch2" style="flex:12"><span class="an">02</span><span class="at">ネットワークの基本</span><span class="am">12分</span></a>
+      <a href="#ch3" style="flex:18" class="hl"><span class="an">03</span><span class="at">リクエストの旅</span><span class="am">18分</span></a>
+      <a href="#ch4" style="flex:10"><span class="an">04</span><span class="at">コードの旅</span><span class="am">10分</span></a>
+      <a href="#ch5" style="flex:7"><span class="an">05</span><span class="at">まとめ</span><span class="am">7分</span></a>
+    </div>
+    <p class="note">03章が今日の中心です。次回のハンズオン（60分）では、ここで見た仕組みを実際に作って確かめます。</p>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">0-3</span><h3>トレイルマップのどこにいるか</h3>
+      <p>CNCFのトレイルマップでは、今日はStep 6「Networking, Policy &amp; Security」が中心です。CI/CD（Step 2）とレジストリ（Step 9）にも少し触れます。</p></div>
+    <div class="card">
+      <ol class="trailmap" aria-label="クラウドネイティブ・トレイルマップ">
+        <li><span class="st">1</span>Containerization</li>
+        <li class="near"><span class="st">2</span>CI/CD</li>
+        <li><span class="st">3</span>Orchestration</li>
+        <li><span class="st">4</span>Observability</li>
+        <li><span class="st">5</span>Service Mesh</li>
+        <li class="main"><span class="st">6</span>Networking, Policy &amp; Security</li>
+        <li><span class="st">7</span>Database &amp; Storage</li>
+        <li><span class="st">8</span>Streaming &amp; Messaging</li>
+        <li class="near"><span class="st">9</span>Registry &amp; Runtime</li>
+        <li><span class="st">10</span>Software Distribution</li>
+      </ol>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tbl stack">
+        <thead><tr><th>やりたいこと</th><th>トレイルマップのOSS</th><th>モダナイズ環境（Azure）では</th></tr></thead>
+        <tbody>
+          <tr><td data-label="やりたいこと">ポリシーでルールを強制する</td><td data-label="トレイルマップのOSS">OPA / Gatekeeper</td><td data-label="モダナイズ環境（Azure）では">Azure Policy for AKS（中身はGatekeeper）</td></tr>
+          <tr><td data-label="やりたいこと">Pod同士の通信を絞る</td><td data-label="トレイルマップのOSS">Calico / Cilium</td><td data-label="モダナイズ環境（Azure）では">AKSのネットワークポリシー</td></tr>
+          <tr><td data-label="やりたいこと">実行中の不審な動きを見つける</td><td data-label="トレイルマップのOSS">Falco</td><td data-label="モダナイズ環境（Azure）では">Defender for Containers</td></tr>
+          <tr><td data-label="やりたいこと">コンテナイメージを安全に保管する</td><td data-label="トレイルマップのOSS">Harbor</td><td data-label="モダナイズ環境（Azure）では">Azure Container Registry</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tnote"><span class="tl">講師メモ</span>
+    <ul>
+      <li>冒頭で「モダナイズ環境に載せれば、今日の話の多くは環境側が面倒を見てくれる。ただし全部ではない」と伝え、05章のチェックリストへの伏線にする</li>
+      <li>トレイルマップは前回までの回とつなげる程度でよい（1分以内）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 01 なぜ必要か ============ -->
+<section class="chapter" id="ch1" aria-labelledby="ch1-t">
+  <div class="ch-head">
+    <span class="ch-no">01</span>
+    <div class="ch-title">
+      <h2 id="ch1-t">なぜゼロトラスト？ なぜシフトレフト？</h2>
+      <p>「社内だから安全」が通用しなくなった理由と、守る場所を前に寄せる理由。</p>
+    </div>
+    <div class="ch-meta"><span class="mins">10分</span><span class="sctag">SC-500 ・ ID・アクセス・ガバナンス</span></div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">1-1</span><h3>「社内だから安全」はもう通用しない</h3>
+      <p>社員のPCが1台乗っ取られたとき、被害はどこまで広がるか。2つの考え方で比べてみましょう。</p></div>
+    <div class="zt-layout">
+      <div class="card">
+        <div class="navbtns" style="margin-bottom:10px">
+          <div class="seg" role="group" aria-label="考え方">
+            <button type="button" id="zt-m-perimeter" aria-pressed="true">境界型</button>
+            <button type="button" id="zt-m-zero" aria-pressed="false">ゼロトラスト</button>
+          </div>
+          <button type="button" class="btn danger grow" id="zt-run">攻撃を開始</button>
+        </div>
+        <div class="diagram-scroll">
+          <svg id="zt-map" class="fig" viewBox="0 0 960 300" style="min-width:640px" role="img" aria-label="攻撃者、社員のPC、ファイルサーバー、業務システム、顧客DBの図。乗っ取られたPCから被害がどこまで広がるかを示す。"></svg>
+        </div>
+        <p class="scroll-hint" aria-hidden="true">← 図は横にスクロールできます →</p>
+      </div>
+      <div class="card zt-side">
+        <p class="zt-count" id="zt-count" aria-live="polite"></p>
+        <p class="note" id="zt-desc"></p>
+        <ol class="log" id="zt-log"></ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">1-2</span><h3>ゼロトラストの3原則</h3>
+      <p>「何も信用しない」ではなく、「毎回確かめてから、必要な分だけ信用する」考え方です。モダナイズ環境の部品は、どれもこの3つのどれかを担っています。</p></div>
+    <div class="grid3">
+      <div class="pcard verify"><span class="ptag verify">明示的に検証</span><h4>毎回、確かめる</h4>
+        <p>誰が・どの端末から・何をしようとしているのかを、アクセスのたびに確認する。</p>
+        <ul><li>Easy AuthとEntra IDでのログイン（MFA）</li><li>APIMでのトークン検証</li><li>Front Door IDの確認</li></ul></div>
+      <div class="pcard least"><span class="ptag least">最小権限</span><h4>必要な分だけ渡す</h4>
+        <p>権限は、必要な操作だけを、必要な範囲にだけ渡す。</p>
+        <ul><li>Managed IDに「読むだけ」のロール</li><li>Key Vault単位でのロール割り当て</li><li>DBユーザーは読み書きのみ</li></ul></div>
+      <div class="pcard breach"><span class="ptag breach">侵害を前提</span><h4>破られても広げない</h4>
+        <p>どこかが破られる前提で、被害が広がらないよう区切り、見張る。</p>
+        <ul><li>VNetで閉じる・Private Endpoint</li><li>NSGやネットワークポリシーで区切る</li><li>実行中の監視（Defender）</li></ul></div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">1-3</span><h3>クラウドでも、守るのは自分たち</h3>
+      <p>責任共有モデル。クラウドに任せられる範囲は使い方で変わりますが、データ・アカウント・端末はどのモデルでも利用者の責任です。列の見出しを押すと説明が出ます。</p></div>
+    <div class="grid2">
+      <div>
+      <div class="seg srm-seg" id="srm-seg" role="group" aria-label="モデルを選ぶ"></div>
+      <div class="tbl-wrap">
+        <table class="tbl srm" id="srm"></table>
+      </div>
+      </div>
+      <div class="card srm-desc" id="srm-desc"></div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">1-4</span><h3>シフトレフト：見つけるのは早いほどいい</h3>
+      <p>開発の流れを左から右に並べたとき、問題を見つける場所をできるだけ左（早い段階）に寄せる考え方です。同じ脆弱性でも、どこで見つけたかで後始末が変わります。</p></div>
+    <div class="card" style="display:grid;gap:14px">
+      <div class="sl-stages" id="sl-stages" role="group" aria-label="脆弱性を見つけた場所"></div>
+      <div class="sl-out" id="sl-out" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="tnote"><span class="tl">講師メモ</span>
+    <ul>
+      <li>1-1（4分）：境界型で実行 → ゼロトラストに切り替えて実行。「どちらも最初のPCは乗っ取られる」点を強調する</li>
+      <li>1-2（2分）：3原則は、この後の章で何度も出てくるタグとして紹介するだけでよい</li>
+      <li>1-3（2分）：「App ServiceはPaaSだから安全」ではなく、ネットワークの設定やIDは自分たちの責任だと伝える。<span class="skip">省略可</span>時間が押したら口頭で一言にする</li>
+      <li>1-4（2分）：「本番」を選んで、やることの多さを見せる。問いかけ「本番で脆弱性が見つかったら、誰が何をする？」</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 02 ネットワーク ============ -->
+<section class="chapter" id="ch2" aria-labelledby="ch2-t">
+  <div class="ch-head">
+    <span class="ch-no">02</span>
+    <div class="ch-title">
+      <h2 id="ch2-t">ネットワークの基本</h2>
+      <p>モダナイズ環境が「VNetに閉じている」とはどういうことか。一番つまずきやすい名前解決まで。</p>
+    </div>
+    <div class="ch-meta"><span class="mins">12分</span><span class="sctag">SC-500 ・ ストレージ・DB・ネットワーク</span></div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">2-1</span><h3>4つの言葉</h3></div>
+    <div class="concepts">
+      <div class="concept"><span class="an">自社専用の敷地</span><h4>VNet</h4><p>クラウドの中に作る、自分たち専用のネットワーク。外からは見えない。</p></div>
+      <div class="concept"><span class="an">敷地の中の区画</span><h4>サブネット</h4><p>VNetを用途ごとに区切ったもの。APIM用、AKS用、Private Endpoint用など。</p></div>
+      <div class="concept"><span class="an">区画の入口の関所</span><h4>NSG</h4><p>サブネットに出入りする通信を、ルールで許可・拒否する。</p></div>
+      <div class="concept"><span class="an">専用の出入口</span><h4>Private Endpoint</h4><p>Key VaultやDBなどのサービスへの入口を、VNetの中にプライベートIPで作る。</p></div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">2-2</span><h3>Private Endpointと名前解決</h3>
+      <p>同じ kv-orders.vault.azure.net でも、どこから・どんな設定で引くかで、返ってくるIPアドレスが変わります。設定を切り替えて確かめてみましょう。</p></div>
+    <div class="dns-layout">
+      <div class="card ctl" id="dns-ctl"></div>
+      <div class="card" style="display:grid;gap:12px">
+        <div class="diagram-scroll">
+          <svg id="dns-map" class="fig" viewBox="0 0 760 270" style="min-width:560px" role="img" aria-label="接続元からKey Vaultへの経路。パブリックの入口とPrivate Endpointのどちらを通るかを示す。"></svg>
+        </div>
+        <p class="scroll-hint" aria-hidden="true">← 図は横にスクロールできます →</p>
+        <figure class="code"><figcaption>接続元で nslookup した結果</figcaption><pre id="dns-ns"></pre></figure>
+        <div id="dns-result" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">2-3</span><h3>NSGのルールは、優先度の小さい順に評価される</h3>
+      <p>AKSのサブネットに付けたNSGの受信ルールの例です。届く通信を選ぶと、上から順に評価して、最初に一致したルールで許可・拒否が決まります。既定のルールでは、VNet内からの通信はすべて許可されている点に注意してください。</p></div>
+    <div class="nsg-layout">
+      <div class="tbl-wrap">
+        <table class="tbl nsg" id="nsg-table"></table>
+      </div>
+      <div class="card ctl" id="nsg-ctl"></div>
+    </div>
+  </div>
+
+  <div class="tnote"><span class="tl">講師メモ</span>
+    <ul>
+      <li>2-1（2分）：敷地のたとえで十分。細かいアドレス設計には入らない</li>
+      <li>2-2（6分）：「VNet内・PEあり・DNSリンクなし・パブリック無効」で拒否されるのを見せる。運用で一番多い問い合わせなので時間をかける</li>
+      <li>2-3（4分）：「別サブネットのVMから」を、拒否ルールなし → ありで比べる。<span class="skip">省略可</span>時間が押したら「優先度は小さい順」「VNet内は既定で許可」の2点だけ口頭で</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 03 リクエストの旅 ============ -->
+<section class="chapter" id="ch3" aria-labelledby="ch3-t">
+  <div class="ch-head">
+    <span class="ch-no">03</span>
+    <div class="ch-title">
+      <h2 id="ch3-t">リクエストの旅</h2>
+      <p>ブラウザで画面を開いてから、DBのデータが返ってくるまで。モダナイズ環境の関所を1つずつ通ります。そのあと攻撃する側に回ります。</p>
+    </div>
+    <div class="ch-meta"><span class="mins">18分</span><span class="sctag">SC-500 ・ コンピューティング</span><span class="sctag">ID・アクセス・ガバナンス</span></div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">3-1</span><h3>正常な旅と、攻撃</h3></div>
+    <div class="modebar">
+      <div class="seg" role="group" aria-label="表示モード">
+        <button type="button" id="mode-journey" aria-pressed="true">正常な旅を見る</button>
+        <button type="button" id="mode-attack" aria-pressed="false">攻撃してみる</button>
+      </div>
+      <p class="howto"><b>使い方</b>　① 正常な旅を1から順に見る　② 攻撃を実行する　③ 防御をOFFにして、次の層が止めるか試す</p>
+    </div>
+    <div class="stage">
+      <div class="card">
+        <div id="journey-chips" class="chips scrollx"></div>
+        <div class="diagram-scroll">
+          <svg id="map" class="fig" viewBox="0 0 960 485" role="img" aria-label="ブラウザ、Front Door、App Service、Entra ID、API Management、AKS、Key Vault、DBをつなぐ構成図。リクエストが通る経路と、各サービスで行う確認を示す。"></svg>
+        </div>
+        <p class="scroll-hint" aria-hidden="true">← 図は横にスクロールできます →</p>
+        <div class="legend" aria-hidden="true">
+          <span><svg width="34" height="10"><line x1="3" y1="5" x2="31" y2="5" stroke="var(--line)" stroke-width="6" stroke-linecap="round"/></svg>正常なリクエスト</span>
+          <span><svg width="34" height="10"><line x1="3" y1="5" x2="31" y2="5" stroke="var(--bad)" stroke-width="4" stroke-dasharray="8 5"/></svg>攻撃</span>
+          <span><svg width="20" height="12"><rect x="1" y="1" width="18" height="10" rx="5" fill="var(--ok)"/></svg>確認して通過</span>
+          <span><svg width="20" height="12"><rect x="1" y="1" width="18" height="10" rx="5" fill="var(--bad)"/></svg>遮断・突破</span>
+          <span><svg width="34" height="14"><rect x="1" y="1" width="32" height="12" rx="4" fill="none" stroke="var(--line)" stroke-dasharray="4 3"/></svg>VNet（閉域）</span>
+        </div>
+      </div>
+      <aside id="panel" class="card panel"></aside>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">3-2</span><h3>トークンを改ざんしてみる</h3>
+      <p>APIを呼ぶときに付けるアクセストークン（JWT）は、Base64でエンコードされているだけなので誰でも中身を読めます。では書き換えたらどうなるか。右のスイッチで試してみましょう。</p></div>
+    <div class="card">
+      <div class="jwt-grid">
+        <div class="col">
+          <p class="label">アクセストークン（ヘッダー.ペイロード.署名）</p>
+          <p class="token" id="jwt-token"></p>
+          <p class="label">ペイロードの中身</p>
+          <figure class="code"><pre class="payload" id="jwt-payload"></pre></figure>
+        </div>
+        <div class="col">
+          <p class="label">攻撃のしかた</p>
+          <ul class="defs tamper" id="jwt-tamper"></ul>
+          <p class="label">APIMの判定</p>
+          <div class="jwt-result" id="jwt-result" aria-live="polite"></div>
+          <ul class="checks" id="jwt-checks"></ul>
+          <figure class="code"><figcaption>validate-jwt ポリシー（赤い行で失敗）</figcaption><pre class="policy" id="jwt-policy"></pre></figure>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tnote"><span class="tl">講師メモ</span>
+    <ul>
+      <li>3-1 正常な旅（8分）：「▶ 通しで再生」で全体を見せてから、ステップごとに戻って解説する。←→キーでも進められる</li>
+      <li>3-1 攻撃（7分）：A2・A3・A6を実演。実行前に「どこで止まると思う？」と予想させる。A3は「サービスタグだけでは不十分」が要点</li>
+      <li>多層防御は、A6で「パブリックアクセス無効」をOFFにして、パスワードレスが止めるところを見せると伝わりやすい</li>
+      <li>3-2（3分）：「中身を書き換える」だけ見せる。<span class="skip">省略可</span>時間が押したら、ハンズオンLab3で体験してもらう</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 04 コードの旅 ============ -->
+<section class="chapter" id="ch4" aria-labelledby="ch4-t">
+  <div class="ch-head">
+    <span class="ch-no">04</span>
+    <div class="ch-title">
+      <h2 id="ch4-t">コードの旅</h2>
+      <p>コードがコミットされてから本番で動くまでにも、関所があります。脆弱性を流して、どこで捕まるかを見てみましょう。</p>
+    </div>
+    <div class="ch-meta"><span class="mins">10分</span><span class="sctag">SC-500 ・ コンピューティング</span><span class="sctag">態勢の管理・監視</span></div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">4-1</span><h3>パイプラインの関所</h3>
+      <p>脆弱性のカードを選んで流します。ツールをOFFにすると、次の関所が捕まえるか、本番まで素通りするかが分かります。</p></div>
+    <div class="card" style="display:grid;gap:14px">
+      <div class="diagram-scroll">
+        <svg id="pipe-map" class="fig" viewBox="0 0 1000 230" style="min-width:680px" role="img" aria-label="コミットから本番までのパイプライン。PR、ビルド、デプロイ、本番の4つの関所と、それぞれで動くツールを示す。"></svg>
+      </div>
+      <p class="scroll-hint" aria-hidden="true">← 図は横にスクロールできます →</p>
+      <div class="pipe-layout">
+        <div style="display:grid;gap:8px;align-content:start">
+          <p class="label">流す脆弱性</p>
+          <div class="cards" id="pipe-cards"></div>
+        </div>
+        <div class="card" id="pipe-panel" style="display:grid;gap:12px;align-content:start;background:var(--bg)"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">4-2</span><h3>脆弱性対応を習慣にする</h3>
+      <p>ツールは見つけてくれるだけです。直す流れを決まったリズムで回して、初めてシフトレフトになります。</p></div>
+    <ol class="cycle">
+      <li><b>PRが届く</b>Dependabotが、更新が必要なライブラリのPRを作る</li>
+      <li><b>CIで確かめる</b>テスト、SAST、Trivyが自動で走る</li>
+      <li><b>レビューしてマージ</b>放置しない。週に1回など、見る日を決める</li>
+      <li><b>再ビルド</b>コードが変わらなくても、ベースイメージの更新のために定期的に</li>
+      <li><b>デプロイ</b>ACRにプッシュし、App ServiceとAKSへ</li>
+      <li><b>本番を見張る</b>新しい脆弱性や不審な動きを監視し、次のPRへ</li>
+    </ol>
+  </div>
+
+  <div class="tnote"><span class="tl">講師メモ</span>
+    <ul>
+      <li>4-1（7分）：「古いライブラリ」「APIキーの直書き」を流す。最後に「本番での不審な動き」を流し、シフトレフトは右側（実行中の監視）を捨てることではないと伝える</li>
+      <li>「SQLの文字列連結」はSASTを切ると本番のWAFで止まる。03章のA1とつながる</li>
+      <li>4-2（3分）：チームで実際に回しているリズム（曜日や担当）を一言添える</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 05 まとめ ============ -->
+<section class="chapter" id="ch5" aria-labelledby="ch5-t">
+  <div class="ch-head">
+    <span class="ch-no">05</span>
+    <div class="ch-title">
+      <h2 id="ch5-t">まとめ</h2>
+      <p>モダナイズ環境に載せるときのチェックリスト、確認クイズ、資格とのつながり、次回のハンズオン。</p>
+    </div>
+    <div class="ch-meta"><span class="mins">7分</span></div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">5-1</span><h3>モダナイズ環境に載せるときのチェックリスト</h3>
+      <p>環境が用意してくれるものと、アプリを作る人がやることは分かれています。右側を忘れると、せっかくの関所に穴が空きます。</p></div>
+    <div class="check2">
+      <div class="card" style="display:grid;gap:10px;align-content:start">
+        <p class="label">モダナイズ環境が用意しているもの</p>
+        <ul class="checklist env">
+          <li><span>入口はFront Door＋WAFの1か所<small>01・03章</small></span></li>
+          <li><span>APIMでのFront Door IDとトークンの検証<small>03章</small></span></li>
+          <li><span>VNet、Private Endpoint、Private DNS<small>02章</small></span></li>
+          <li><span>Dependabot・SAST・Trivyを組み込んだCI<small>04章</small></span></li>
+        </ul>
+      </div>
+      <div class="card" style="display:grid;gap:10px;align-content:start">
+        <p class="label">アプリを作る人がやること</p>
+        <ul class="checklist">
+          <li><span>秘密情報はKey Vaultへ。接続はManaged IDで、パスワードを持たない<small>03章 A6</small></span></li>
+          <li><span>ロールは必要なものだけを、必要な範囲に割り当てる<small>03章 A7</small></span></li>
+          <li><span>API側でもトークンを検証する（多層防御）<small>03章 A5</small></span></li>
+          <li><span>新しいリソースは、パブリックアクセス無効＋Private Endpointで作る<small>02章</small></span></li>
+          <li><span>コンテナをrootで動かさない<small>04章</small></span></li>
+          <li><span>DependabotのPRを放置しない。ベースイメージも定期的に更新する<small>04章</small></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">5-2</span><h3>確認クイズ</h3>
+      <p>SC-500の出題に近い、シナリオ形式の問題です。</p></div>
+    <div class="quiz" id="quiz"></div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">5-3</span><h3>SC-500の出題分野との対応</h3>
+      <p>AZ-500は2026年8月31日で終了し、後継はSC-500（Cloud and AI Security Engineer Associate）です。SC-500はAzure運用の実務経験がある人向けなので、まずはAZ-900やSC-900で基礎を固めるのがおすすめです。</p></div>
+    <div class="domains">
+      <div class="domain"><span class="w">20–25%</span><h4>ID・アクセス・ガバナンス</h4><p>Entra IDとEasy Auth（アプリ登録）、Managed ID・Workload ID、Key Vault、RBACによる最小権限</p><span class="chs">01・03章</span></div>
+      <div class="domain"><span class="w">25–30%</span><h4>ストレージ・DB・ネットワーク</h4><p>VNet、NSG、Private Endpoint、Private DNS、DBのパブリックアクセス無効化</p><span class="chs">02・03章</span></div>
+      <div class="domain"><span class="w">20–25%</span><h4>コンピューティング</h4><p>WAF、API Managementのポリシー、App Serviceのアクセス制限、AKSとACRのセキュリティ</p><span class="chs">03・04章</span></div>
+      <div class="domain"><span class="w">20–25%</span><h4>態勢の管理・監視</h4><p>Defender for Cloud・Defender for Containersに触れる程度。Sentinelなどは今回は扱いません</p><span class="chs">04章（一部）</span></div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">5-4</span><h3>次回のハンズオン（60分）</h3>
+      <p>今日見た仕組みを、自分の手で作って壊してみます。リソースは事前に用意しておくので、当日はCloud Shellだけで進められます。</p></div>
+    <div class="labs">
+      <div class="lab"><div class="lt"><h4>Lab1 シフトレフト</h4><span class="mins">15分</span></div><p>脆弱なベースイメージ入りのリポジトリをTrivyにかけて、CIを失敗させる。ベースイメージを直して通す。</p><span class="note">04章</span></div>
+      <div class="lab"><div class="lt"><h4>Lab2 ゼロトラストな接続</h4><span class="mins">30分</span></div><p>App ServiceからKey Vaultへ。秘密情報の直書き → Managed IDに置き換え → パブリックアクセスを閉じて、PE経由だけでつながることを確かめる。</p><span class="note">02・03章</span></div>
+      <div class="lab"><div class="lt"><h4>Lab3 本物を攻撃</h4><span class="mins">10分</span></div><p>dev環境のモダナイズ環境にcurlを打ち、403・401・200が返る場所を確かめる。</p><span class="note">03章</span></div>
+    </div>
+    <div class="card" style="display:grid;gap:6px">
+      <p class="label">事前準備</p>
+      <ul class="links">
+        <li>会社用のGitHubアカウントでログインできること</li>
+        <li>Azureポータルにログインし、Cloud Shellを一度開いておくこと</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sub">
+    <div class="sub-head"><span class="sn">5-5</span><h3>もっと学ぶ</h3></div>
+    <ul class="links">
+      <li><a href="https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/sc-500">SC-500 学習ガイド（Microsoft Learn）</a></li>
+      <li><a href="https://learn.microsoft.com/certifications/resources/study-guides/sc-900">SC-900 学習ガイド（Microsoft Learn）</a></li>
+      <li><a href="https://learn.microsoft.com/certifications/resources/study-guides/az-900">AZ-900 学習ガイド（Microsoft Learn）</a></li>
+      <li><a href="https://github.com/cncf/trailmap">CNCF Cloud Native Trail Map（GitHub）</a></li>
+    </ul>
+  </div>
+
+  <div class="tnote"><span class="tl">講師メモ</span>
+    <ul>
+      <li>5-1（2分）：右の列を読み上げる。「この6つは環境が代わりにやってくれない」</li>
+      <li>5-2（3分）：挙手で答えてもらう。全問やると時間が足りないので、Q1・Q3・Q5の3問を選ぶ</li>
+      <li>5-3〜5-5（2分）：資格は「興味がある人へ」の紹介にとどめる。事前準備だけは必ず伝える</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p>ホスト名・ID・IPアドレスは説明用の例です。図とシナリオのデータは、このHTMLの中の STEPS・ATTACKS・CARDS などにまとめてあるので、モダナイズ環境の実際の値に置き換えて使えます。</p>
+</footer>
+</div>
+<script>
+(() => {
+'use strict';
+/* ================= 共通 ================= */
+const NS = 'http://www.w3.org/2000/svg';
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const reduceMotion = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch (e) { /* 保存できなくても動く */ } }
+};
+function mk(tag, attrs, text){
+  const el = document.createElementNS(NS, tag);
+  if (attrs) for (const k in attrs) el.setAttribute(k, attrs[k]);
+  if (text != null) el.textContent = text;
+  return el;
+}
+function tween(dur, fn){
+  return new Promise(res => {
+    const t0 = performance.now();
+    function f(now){
+      const t = Math.min(1, (now - t0) / dur);
+      if (fn(t) === false) return res(false);
+      if (t < 1) requestAnimationFrame(f); else res(true);
+    }
+    requestAnimationFrame(f);
+  });
+}
+function pill(parent, x, y, text, cls){
+  const g = mk('g', {class:'pill ' + cls});
+  const r = mk('rect', {rx:10, ry:10, height:20});
+  const t = mk('text', {x, y:y + 4, 'text-anchor':'middle'}, text);
+  g.append(r, t);
+  parent.append(g);
+  let w = 0;
+  try { w = t.getComputedTextLength(); } catch (e) { w = 0; }
+  if (!w) w = text.length * 11;
+  w += 18;
+  r.setAttribute('x', x - w/2); r.setAttribute('y', y - 10); r.setAttribute('width', w);
+  return g;
+}
+const setPoly = (el, arr) => el.setAttribute('points', arr.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' '));
+function followX(svgEl, x){
+  const sc = svgEl && svgEl.parentElement;
+  if (!sc || sc.scrollWidth <= sc.clientWidth + 2) return;
+  const vb = svgEl.viewBox && svgEl.viewBox.baseVal;
+  if (!vb || !vb.width) return;
+  sc.scrollLeft = x * svgEl.clientWidth / vb.width - sc.clientWidth / 2;
+}
+const setDot = (dot, p) => { dot.setAttribute('cx', p[0]); dot.setAttribute('cy', p[1]); followX(dot.ownerSVGElement, p[0]); };
+async function moveAlong(trail, dot, pts, alive, instant){
+  const drawn = [pts[0]];
+  setPoly(trail, drawn); setDot(dot, pts[0]);
+  for (let i = 1; i < pts.length; i++){
+    const a = pts[i-1], b = pts[i];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (!instant && len > 0){
+      const ok = await tween(Math.max(180, len / 0.42), t => {
+        if (!alive()) return false;
+        const p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+        setPoly(trail, drawn.concat([p])); setDot(dot, p);
+      });
+      if (!ok || !alive()) return false;
+    }
+    drawn.push(b); setPoly(trail, drawn); setDot(dot, b);
+  }
+  return true;
+}
+function drawNodes(group, nodes, els){
+  for (const [id, n] of Object.entries(nodes)){
+    const g = mk('g', {class:'node' + (n.cls ? ' ' + n.cls : '')});
+    g.append(mk('rect', {x:n.x - n.w/2, y:n.y - n.h/2, width:n.w, height:n.h, rx:10}));
+    g.append(mk('text', {x:n.x, y:n.sub ? n.y - 3 : n.y + 5, 'text-anchor':'middle', class:'lbl'}, n.label));
+    if (n.sub) g.append(mk('text', {x:n.x, y:n.y + 15, 'text-anchor':'middle', class:'sub'}, n.sub));
+    group.append(g);
+    els[id] = g;
+  }
+}
+
+/* ================= 章ナビと講師メモ ================= */
+let activeChapter = 'ch0';
+function initNav(){
+  const links = [...document.querySelectorAll('#navlinks a')];
+  const setActive = id => {
+    activeChapter = id;
+    links.forEach(a => {
+      const on = a.dataset.ch === id;
+      a.setAttribute('aria-current', String(on));
+      if (on && a.scrollIntoView && a.parentElement.scrollWidth > a.parentElement.clientWidth){
+        const p = a.parentElement;
+        p.scrollLeft = a.offsetLeft - p.clientWidth / 2 + a.clientWidth / 2;
+      }
+    });
+  };
+  setActive('ch0');
+  if (!('IntersectionObserver' in window)) return;
+  const seen = new Map();
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => seen.set(e.target.id, e.isIntersecting ? e.boundingClientRect.top : null));
+    let best = null, bestTop = -Infinity;
+    for (const [id, top] of seen){ if (top !== null && top < window.innerHeight * 0.45 && top > bestTop){ best = id; bestTop = top; } }
+    if (!best){ for (const [id, top] of seen){ if (top !== null){ best = id; break; } } }
+    if (best && best !== activeChapter) setActive(best);
+  }, {rootMargin:'-60px 0px -40% 0px', threshold:[0, 0.01]});
+  document.querySelectorAll('.chapter').forEach(s => io.observe(s));
+}
+let notesOn = true;
+function applyNotes(){
+  document.body.classList.toggle('notes-off', !notesOn);
+  const b = $('#notes-toggle');
+  b.setAttribute('aria-pressed', String(notesOn));
+  b.innerHTML = '講師メモ<span class="nt-long">' + (notesOn ? ' 表示中' : ' 非表示') + '</span>';
+}
+function initNotes(){
+  const saved = store.get('zt-lecture-notes');
+  if (saved === 'off') notesOn = false;
+  applyNotes();
+  $('#notes-toggle').addEventListener('click', () => { notesOn = !notesOn; store.set('zt-lecture-notes', notesOn ? 'on' : 'off'); applyNotes(); });
+}
+
+/* ================= 03 リクエストの旅：データ（座標は viewBox 960×485 基準） ================= */
+const NODES = {
+  user:    {x:90,  y:235, w:130, h:54, label:'ブラウザ',        sub:'利用者'},
+  attacker:{x:90,  y:400, w:130, h:54, label:'攻撃者',          sub:'インターネット', cls:'attacker'},
+  fd:      {x:270, y:235, w:150, h:54, label:'Front Door',      sub:'WAF'},
+  app:     {x:470, y:105, w:150, h:54, label:'App Service',     sub:'Easy Auth・画面配信'},
+  entra:   {x:690, y:105, w:150, h:54, label:'Entra ID',        sub:'ログイン・トークン発行'},
+  apim:    {x:470, y:335, w:150, h:54, label:'API Management',  sub:'APIの玄関'},
+  aks:     {x:670, y:335, w:150, h:54, label:'AKS',             sub:'API・BFF'},
+  kv:      {x:865, y:285, w:130, h:54, label:'Key Vault',       sub:'Private Endpoint'},
+  db:      {x:865, y:395, w:130, h:54, label:'DB',              sub:'Private Endpoint'},
+  ghostFd: {x:270, y:400, w:150, h:54, label:'他人のFront Door', sub:'攻撃者が用意', cls:'ghost'},
+  ghostKv: {x:865, y:175, w:130, h:54, label:'Key Vault',       sub:'別アプリ用', cls:'ghost'}
+};
+const P = k => [NODES[k].x, NODES[k].y];
+const U = P('user'), FD = P('fd'), APP = P('app'), ENTRA = P('entra'), APIM = P('apim'),
+      AKS = P('aks'), KV = P('kv'), DB = P('db'), ATK = P('attacker'), GFD = P('ghostFd'), GKV = P('ghostKv');
+
+const EDGES = [
+  {pts:[[155,235],[195,235]]},
+  {pts:[[270,208],[270,105],[395,105]], label:{x:332, y:94, text:'Front Door経由のみ'}},
+  {pts:[[545,105],[615,105]], label:{x:580, y:94, text:'ログイン'}},
+  {pts:[[270,262],[270,335],[395,335]], label:{x:282, y:324, text:'トークン付き', anchor:'start'}},
+  {pts:[[545,335],[595,335]]},
+  {pts:[[745,335],[772,335],[772,285],[800,285]]},
+  {pts:[[772,335],[772,395],[800,395]]},
+  {pts:[[670,308],[670,132]], dashed:true, label:{x:678, y:206, text:'Workload ID', anchor:'start'}}
+];
+
+const PRINCIPLES = {verify:'明示的に検証', least:'最小権限', breach:'侵害を前提'};
+const SC = {identity:'ID・アクセス・ガバナンス', data:'ストレージ・DB・ネットワーク', compute:'コンピューティング', posture:'態勢の管理・監視'};
+
+const CTRL = {
+  waf:        {name:'WAF',                              place:'Front Door',     node:'fd',   short:'WAF',      code:'403 Forbidden'},
+  appRestrict:{name:'アクセス制限（Front Door経由のみ）',   place:'App Service',    node:'app',  short:'制限',      code:'403 Forbidden'},
+  easyAuth:   {name:'Easy Auth（ログイン必須）',           place:'App Service',    node:'app',  short:'Easy Auth', code:'302 ログイン画面へ'},
+  fdid:       {name:'Front Door IDのチェック',             place:'API Management', node:'apim', short:'FDID',     code:'403 Forbidden'},
+  jwt:        {name:'トークン検証（validate-jwt）',         place:'API Management', node:'apim', short:'JWT',      code:'401 Unauthorized'},
+  vnet:       {name:'APIにパブリックIPを付けない',           place:'AKS',            node:'aks',  short:'閉域',      code:'応答なし（タイムアウト）'},
+  rbac:       {name:'最小権限のロール割り当て',              place:'Managed ID',     node:'aks',  short:'最小権限',  code:'403 Forbidden'},
+  pe:         {name:'パブリックアクセス無効（PEのみ）',       place:'DB',             node:'db',   short:'PE',       code:'接続拒否'},
+  pwless:     {name:'パスワードレス（Entra認証のみ）',        place:'DB',             node:'db',   short:'PWレス',    code:'ログイン失敗'}
+};
+
+const STEPS = [
+  {
+    chip:'入口', title:'入口はFront Doorの1か所だけ', nodes:['user','fd'],
+    what:'利用者がブラウザで https://orders.contoso.jp を開きます。最初に届く先はApp ServiceではなくFront Doorです。',
+    checks:['WAFが攻撃パターン（SQLインジェクションなど）を検査する','HTTPSを強制して、通信を暗号化する','公開する入口をここ1か所に絞る'],
+    p:['verify'], sc:['compute'],
+    code:{title:'WAFポリシー（Bicep・抜粋）', body:
+`resource waf 'Microsoft.Network/FrontDoorWebApplicationFirewallPolicies@2022-05-01' = {
+  name: 'wafOrders'
+  location: 'Global'
+  sku: {
+    name: 'Premium_AzureFrontDoor'
+  }
+  properties: {
+    policySettings: {
+      enabledState: 'Enabled'
+      mode: 'Prevention'   // Detection = 記録だけ / Prevention = 遮断
+    }
+    managedRules: {
+      managedRuleSets: [
+        {
+          ruleSetType: 'Microsoft_DefaultRuleSet'
+          ruleSetVersion: '2.1'
+          ruleSetAction: 'Block'
+        }
+      ]
+    }
+  }
+}`},
+    route:{pts:[U, FD], cps:{1:{anchor:'fd', pass:[{label:'HTTPS ✓'},{label:'WAF ✓'}]}}}
+  },
+  {
+    chip:'App Service', title:'App Serviceは「Front Door経由」しか受け付けない', nodes:['fd','app'],
+    what:'Front DoorがApp Serviceへリクエストを転送します。App Serviceは、送り元を確かめてから受け付けます。',
+    checks:['送り元がFront Doorか（サービスタグ AzureFrontDoor.Backend）','それが自社のFront Doorか（X-Azure-FDID ヘッダー）','サービスタグには他社のFront Doorも含まれるので、ヘッダーの確認とセットで使う'],
+    p:['verify'], sc:['compute'],
+    code:{title:'アクセス制限の設定（Azure CLI）', body:
+`az webapp config access-restriction add \\
+  --resource-group rg-orders --name app-orders \\
+  --rule-name allow-frontdoor --priority 100 \\
+  --service-tag AzureFrontDoor.Backend \\
+  --http-header x-azure-fdid=<自社Front DoorのID>`},
+    route:{pts:[FD,[270,105],APP], cps:{2:{anchor:'app', pass:[{label:'自社のFDID ✓'},{label:'Front Doorから ✓'}]}}}
+  },
+  {
+    chip:'ログイン', title:'Easy AuthでEntra IDにログイン', nodes:['app','entra'],
+    what:'まだログインしていなければ、App Serviceの認証機能（Easy Auth）がEntra IDのログイン画面へ案内します。アプリ側にログイン処理を書く必要はありません。',
+    checks:['IDとパスワードに加えて、MFAで本人確認する','条件付きアクセス（場所や端末の状態など）はEntra ID側で判定する','ログイン後、フロントアプリはAPIを呼ぶためのアクセストークン（JWT）を受け取る'],
+    p:['verify'], sc:['identity'],
+    code:{title:'ログインしていないときの応答（ブラウザが受け取る）', body:
+`HTTP/1.1 302 Found
+Location: https://login.microsoftonline.com/{tenant-id}/oauth2/v2.0/authorize
+  ?client_id={frontend-client-id}
+  &scope=openid profile api://orders-api/Orders.Read
+  ...`},
+    route:{pts:[APP, ENTRA, APP], cps:{1:{anchor:'entra', pass:[{label:'MFA ✓'},{label:'パスワード ✓'}]}, 2:{anchor:'app', pass:[{label:'トークン受け取り'}]}}}
+  },
+  {
+    chip:'API呼び出し', title:'トークンを付けてAPIを呼ぶ', nodes:['user','fd','apim'],
+    what:'画面の中のフロントアプリがAPIを呼びます。API呼び出しも同じFront Doorを通るので、WAFの検査を受けます。',
+    checks:['Authorizationヘッダーにアクセストークン（Bearer）を付ける','APIへの呼び出しもWAFで検査する','Front DoorはAPIMへ転送するとき、自分のIDを X-Azure-FDID ヘッダーに入れる'],
+    p:['verify'], sc:['compute'],
+    code:{title:'APIを呼ぶリクエスト', body:
+`GET /api/orders HTTP/1.1
+Host: orders.contoso.jp
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3Mi...
+
+# Front Door が APIM へ転送するときに付けるヘッダー
+X-Azure-FDID: 1a2b3c4d-5e6f-...`},
+    route:{pts:[U, FD, [270,335], APIM], cps:{1:{anchor:'fd', pass:[{label:'WAF ✓'}]}}}
+  },
+  {
+    chip:'APIMで検証', title:'APIMで2つのチェック', nodes:['apim'],
+    what:'APIの玄関であるAPI Managementが、通してよいリクエストかを確かめます。どちらかに失敗すると、AKSには届きません。',
+    checks:['① 自社のFront Door経由か（X-Azure-FDID。違えば 403）','② トークンが本物で、このAPI宛てで、期限内で、必要な権限を持っているか（validate-jwt。違えば 401）'],
+    p:['verify'], sc:['compute'],
+    code:{title:'APIMのポリシー（inbound・抜粋）', body:
+`<inbound>
+  <!-- ① 自社の Front Door 経由か -->
+  <check-header name="X-Azure-FDID" failed-check-httpcode="403"
+      failed-check-error-message="Forbidden" ignore-case="true">
+    <value>{{front-door-id}}</value>
+  </check-header>
+  <!-- ② トークンが正しいか -->
+  <validate-jwt header-name="Authorization" failed-validation-httpcode="401">
+    <openid-config url="https://login.microsoftonline.com/{tenant-id}/v2.0/.well-known/openid-configuration" />
+    <audiences>
+      <audience>{orders-api-client-id}</audience>
+    </audiences>
+    <required-claims>
+      <claim name="scp" match="any" separator=" ">
+        <value>Orders.Read</value>
+      </claim>
+    </required-claims>
+  </validate-jwt>
+</inbound>`},
+    route:{pts:[APIM, APIM], cps:{1:{anchor:'apim', pass:[{label:'② トークン ✓'},{label:'① FDID ✓'}]}}}
+  },
+  {
+    chip:'VNetの中へ', title:'ここから先はVNetの中だけ', nodes:['apim','aks'],
+    what:'APIMからAKS上のAPIへ転送します。APIは内部ロードバランサーで公開していて、パブリックIPを持ちません。インターネットから直接たどり着く道はありません。',
+    checks:['APIにパブリックIPを付けない（内部ロードバランサー）','NSGやKubernetesのネットワークポリシーで、必要な通信だけを許可する','どこかが破られても、横に広がりにくくしておく'],
+    p:['breach'], sc:['data','compute'],
+    code:{title:'APIを内部ロードバランサーで公開（Kubernetes）', body:
+`apiVersion: v1
+kind: Service
+metadata:
+  name: orders-api
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+spec:
+  type: LoadBalancer
+  selector:
+    app: orders-api
+  ports:
+    - port: 80
+      targetPort: 8080`},
+    route:{pts:[APIM, AKS], cps:{1:{anchor:'aks', pass:[{label:'VNet内のみ ✓'}]}}}
+  },
+  {
+    chip:'Key Vault', title:'パスワードなしでKey Vaultへ', nodes:['aks','entra','kv'],
+    what:'APIはWorkload ID（AKSで使うManaged ID）でEntra IDからトークンをもらい、Key Vaultを読みます。コードにも設定ファイルにも、秘密情報は置きません。',
+    checks:['割り当てるロールは「Key Vault Secrets User」（読むだけ）','通信はPrivate Endpoint経由。名前解決すると10.x.x.xのプライベートIPが返る（02章）','Key Vaultのパブリックアクセスは無効にする'],
+    p:['least'], sc:['identity','data'],
+    code:{title:'ロールの割り当てと名前解決', body:
+`# このKey Vaultだけを「読むだけ」
+az role assignment create \\
+  --assignee <APIのマネージドID（クライアントID）> \\
+  --role "Key Vault Secrets User" \\
+  --scope <Key VaultのリソースID>
+
+# VNetの中から名前解決すると、プライベートIPが返る
+$ nslookup kv-orders.vault.azure.net
+kv-orders.vault.azure.net
+  canonical name = kv-orders.privatelink.vaultcore.azure.net
+Address: 10.20.3.4`},
+    route:{pts:[AKS,[670,118],AKS,[772,335],[772,285],KV], cps:{1:{anchor:'entra', pass:[{label:'トークン発行'}]}, 5:{anchor:'kv', pass:[{label:'PE経由 ✓'},{label:'ロール ✓'}]}}}
+  },
+  {
+    chip:'DBと応答', title:'DBもパスワードレス。そして結果が返る', nodes:['aks','db','user'],
+    what:'APIはManaged IDでDBに接続します。接続文字列にパスワードは入っていません。結果はAPIM、Front Doorを通ってブラウザに返ります。',
+    checks:['Entra認証のみ（パスワードでのログインは無効）','パブリックアクセスは無効。Private Endpointからだけ受け付ける','DBユーザーの権限は読み書きだけ（テーブル削除などはできない）'],
+    p:['least','breach'], sc:['data','identity'],
+    code:{title:'DBの接続文字列（パスワードの項目がない）', body:
+`Server=tcp:sql-orders.database.windows.net,1433;
+Database=orders;
+Authentication=Active Directory Default;
+Encrypt=True;`},
+    route:{pts:[AKS,[772,335],[772,395],DB,[772,395],[772,335],AKS,APIM,[270,335],FD,U],
+           cps:{3:{anchor:'db', pass:[{label:'PE経由 ✓'},{label:'Entra認証 ✓'}]}, 10:{anchor:'user', pass:[{label:'200 OK'}]}}}
+  }
+];
+
+const ATTACKS = [
+  {
+    id:'sqli', chip:'SQLインジェクション', title:'SQLインジェクション', who:'ログイン済みの悪意ある利用者', origin:'attacker', end:'db',
+    desc:'本物のトークンを持った利用者が、検索欄に \' OR 1=1 -- を入れてAPIを呼びます。',
+    stopText:{waf:'Front DoorのWAFが、リクエストに含まれるSQLインジェクションのパターンを見つけて遮断しました。'},
+    breach:'トークンは本物なので、APIMは通してしまいます。DBまで届いたあとに被害が出るかどうかは、アプリ側の対策（パラメータ化クエリ）次第です。',
+    lesson:'正しい利用者でも、送ってくる中身が安全とは限らない。WAFはアプリ側の対策の代わりではなく、手前で攻撃を減らすためのもの（04章のSASTとセット）。',
+    p:['verify'], sc:['compute'],
+    route:{pts:[ATK, FD, [270,335], APIM, AKS, [772,335], [772,395], DB],
+           cps:{1:{anchor:'fd', stop:['waf']}, 3:{anchor:'apim', pass:[{ctrl:'jwt', label:'トークン ✓ 本物'},{ctrl:'fdid', label:'FDID ✓'}]}}}
+  },
+  {
+    id:'direct-app', chip:'App Service直アクセス', title:'App Serviceに直接アクセス', who:'攻撃者', origin:'attacker', end:'app',
+    desc:'既定のホスト名（app-orders.azurewebsites.net）を見つけて、Front Doorを通らずに直接開きます。',
+    stopText:{
+      appRestrict:'アクセス制限が、Front Door以外からの通信を 403 で拒否しました。',
+      easyAuth:'アクセス制限は外れていましたが、Easy Authがログインを求めたので画面の中身は見えません。ただしWAFの検査は受けずに素通りしています。'
+    },
+    breach:'Front Doorを迂回して、WAFの検査もログインもなしに画面を取得できてしまいました。',
+    lesson:'入口を1つに絞ったら、ほかの入口は必ず閉じる。',
+    p:['verify'], sc:['compute'],
+    route:{pts:[ATK, [175,400], [175,170], [470,170], APP], cps:{4:{anchor:'app', stop:['appRestrict','easyAuth']}}}
+  },
+  {
+    id:'other-fd', chip:'他人のFront Door', title:'他人のFront Doorを経由してAPIを呼ぶ', who:'攻撃者', origin:'attacker', end:'db',
+    desc:'攻撃者が自分のAzureでFront Doorを作り、転送先にこちらのAPIMを指定します。送り元は本物のFront Doorなので、サービスタグの確認だけなら通ってしまいます。',
+    stopText:{
+      fdid:'X-Azure-FDIDの値が自社のFront DoorのIDと違うので、APIMが 403 で拒否しました。',
+      jwt:'Front Door IDのチェックは外れていましたが、正しいトークンを持っていないので 401 で拒否されました。'
+    },
+    breach:'Front DoorのIDもトークンも確認されず、APIから注文データを取得できてしまいました。',
+    lesson:'サービスタグには世界中のFront Doorが含まれる。「自社の」Front Doorかどうかまで確かめる。',
+    p:['verify'], sc:['compute'],
+    route:{pts:[ATK, GFD, [360,400], [360,335], APIM, AKS, [772,335], [772,395], DB], cps:{4:{anchor:'apim', stop:['fdid','jwt']}}}
+  },
+  {
+    id:'no-token', chip:'トークンなし', title:'トークンなしでAPIを呼ぶ', who:'攻撃者', origin:'attacker', end:'db',
+    desc:'APIのURLを知った攻撃者が、ログインせずに /api/orders を呼びます。中身は普通のリクエストなので、WAFは通過します。',
+    stopText:{jwt:'Authorizationヘッダーにトークンがないので、validate-jwt が 401 で拒否しました。'},
+    breach:'ログインしていない誰もが、注文データを取得できてしまいました。',
+    lesson:'正しい経路で来たことだけでは信用しない。毎回、誰からのリクエストかを確かめる。',
+    p:['verify'], sc:['compute','identity'],
+    route:{pts:[ATK, FD, [270,335], APIM, AKS, [772,335], [772,395], DB],
+           cps:{1:{anchor:'fd', pass:[{ctrl:'waf', label:'WAF 通過'}]}, 3:{anchor:'apim', pass:[{ctrl:'fdid', label:'FDID ✓'}], stop:['jwt']}}}
+  },
+  {
+    id:'direct-aks', chip:'AKS直アクセス', title:'AKSのAPIに直接アクセス', who:'攻撃者', origin:'attacker', end:'aks',
+    desc:'APIのIPアドレスを推測して、APIMを通らずに直接呼びます。',
+    stopText:{vnet:'APIはパブリックIPを持たないので、VNetの外からはたどり着く経路がありません。'},
+    breach:'APIMのトークン検証を迂回してAPIに届きました。API自身でもトークンを検証していれば、ここでもう一度止められます。',
+    lesson:'玄関（APIM）以外に入口を作らない。そのうえでAPI自身もトークンを確かめておくと、もう1層になる。',
+    p:['breach'], sc:['data'],
+    route:{pts:[ATK, [90,445], [470,445], [670,445], AKS], cps:{2:{anchor:[470,445], stop:['vnet']}}}
+  },
+  {
+    id:'leaked-conn', chip:'漏れた接続文字列', title:'漏れた接続文字列で外からDBへ', who:'攻撃者', origin:'attacker', end:'db',
+    desc:'古い設定ファイルから、パスワード入りの接続文字列が漏れました。攻撃者が外からDBへの接続を試みます。',
+    stopText:{
+      pe:'DBのパブリックアクセスが無効なので、Private Endpoint以外からの接続は拒否されました。',
+      pwless:'ネットワークは通ってしまいましたが、DBはEntra認証のみです。パスワードでのログインは受け付けません。'
+    },
+    breach:'漏れたパスワードで、外からDBにログインできてしまいました。',
+    lesson:'漏れて困るパスワードを、そもそも持たない。',
+    p:['verify','breach'], sc:['data','identity'],
+    route:{pts:[ATK, [90,470], [865,470], [865,457], DB], cps:{3:{anchor:[865,457], stop:['pe']}, 4:{anchor:'db', stop:['pwless']}}}
+  },
+  {
+    id:'compromised', chip:'乗っ取られたAPI', title:'乗っ取られたAPIが別アプリの秘密を読む', who:'乗っ取られたAPIのPod', origin:'aks', end:'ghostKv',
+    desc:'使っているライブラリの脆弱性を突かれ、APIのPodが乗っ取られました。攻撃者はPodのIDを使って、別アプリのKey Vaultを読もうとします。',
+    stopText:{rbac:'このIDに割り当てたのは、自分のKey Vaultを「読むだけ」の権限です。別アプリのKey Vaultには権限がないので 403 になりました。'},
+    breach:'サブスクリプション全体のような広い範囲にロールを割り当てていたため、別アプリの秘密情報まで読めてしまいました。',
+    lesson:'破られる前提で、被害の範囲を小さくしておく。脆弱性そのものを減らすのは、04章「コードの旅（シフトレフト）」の役目。',
+    p:['least','breach'], sc:['identity'],
+    route:{pts:[AKS, [720,335], [720,175], GKV], cps:{3:{anchor:'ghostKv', stop:['rbac']}}}
+  }
+];
+
+/* ================= 03 リクエストの旅：動き ================= */
+const allOn = () => Object.fromEntries(Object.keys(CTRL).map(k => [k, true]));
+const J = { mode:'journey', step:0, attack:0, def:allOn(), result:null };
+let jRunId = 0;
+let autoplay = false;
+let jCurrent = Promise.resolve(null);
+const jsvg = $('#map');
+const gZone = mk('g'), gEdge = mk('g'), gTrail = mk('g'), gDot = mk('g'), gNode = mk('g'), gBadge = mk('g'), gMark = mk('g');
+jsvg.append(gZone, gEdge, gTrail, gDot, gNode, gBadge, gMark);
+const nodeEls = {};
+
+function buildJourneyMap(){
+  gZone.append(mk('text', {x:20, y:28, class:'zone-label'}, 'インターネット'));
+  gZone.append(mk('rect', {x:470, y:232, width:475, height:225, rx:16, class:'vnet'}));
+  gZone.append(mk('text', {x:560, y:252, class:'vnet-label'}, 'VNet（閉域ネットワーク）'));
+  for (const e of EDGES) gEdge.append(mk('polyline', {points:e.pts.map(p => p.join(',')).join(' '), class:'edge' + (e.dashed ? ' dashed' : '')}));
+  for (const e of EDGES) if (e.label) gEdge.append(mk('text', {x:e.label.x, y:e.label.y, 'text-anchor':e.label.anchor || 'middle', class:'edge-label'}, e.label.text));
+  drawNodes(gNode, NODES, nodeEls);
+}
+
+let stacks = {};
+function addMarker(anchor, text, cls){
+  const key = JSON.stringify(anchor);
+  const i = stacks[key] || 0;
+  stacks[key] = i + 1;
+  let x, y;
+  if (typeof anchor === 'string'){ const n = NODES[anchor]; x = n.x; y = n.y - n.h/2 - 14 - i*23; }
+  else { x = anchor[0]; y = anchor[1] - 22 - i*23; }
+  pill(gMark, x, y, text, cls);
+}
+function markStopped(anchor){
+  if (typeof anchor === 'string'){ nodeEls[anchor].classList.add('blocked'); return; }
+  const g = mk('g', {class:'xmark'});
+  g.append(mk('circle', {cx:anchor[0], cy:anchor[1], r:11}));
+  g.append(mk('text', {x:anchor[0], y:anchor[1] + 5, 'text-anchor':'middle'}, '×'));
+  gMark.append(g);
+}
+function jClear(){
+  jRunId++;
+  gTrail.textContent = ''; gDot.textContent = ''; gMark.textContent = '';
+  stacks = {};
+  for (const el of Object.values(nodeEls)) el.classList.remove('active', 'blocked', 'breached', 'compromised');
+}
+function jVisibility(){
+  const a = J.mode === 'attack' ? ATTACKS[J.attack] : null;
+  nodeEls.attacker.classList.toggle('hidden', !(a && a.origin === 'attacker'));
+  nodeEls.ghostFd.classList.toggle('hidden', !(a && a.id === 'other-fd'));
+  nodeEls.ghostKv.classList.toggle('hidden', !(a && a.id === 'compromised'));
+}
+function jBadges(){
+  gBadge.textContent = '';
+  if (J.mode !== 'attack') return;
+  const by = {};
+  for (const [k, c] of Object.entries(CTRL)) if (!J.def[k]) (by[c.node] = by[c.node] || []).push(c.short);
+  for (const [node, list] of Object.entries(by)){
+    const n = NODES[node];
+    pill(gBadge, n.x, n.y + n.h/2 + 15, 'OFF：' + list.join('・'), 'off');
+  }
+}
+function checkpoint(cp, kind){
+  for (const p of (cp.pass || [])) if (!p.ctrl || J.def[p.ctrl]) addMarker(cp.anchor, p.label, 'pass');
+  if (kind === 'attack'){
+    for (const c of (cp.stop || [])){
+      if (J.def[c]){ addMarker(cp.anchor, '× ' + CTRL[c].code, 'block'); markStopped(cp.anchor); return c; }
+    }
+  }
+  return null;
+}
+function runRoute(route, kind, opts){
+  const my = jRunId;
+  const instant = (opts && opts.instant) || reduceMotion();
+  const pts = route.pts;
+  const trail = mk('polyline', {class:'trail' + (kind === 'attack' ? ' attack' : '')});
+  const dot = mk('circle', {r:9, class:'dot' + (kind === 'attack' ? ' attack' : '')});
+  gTrail.append(trail); gDot.append(dot);
+  const drawn = [pts[0]];
+  setPoly(trail, drawn); setDot(dot, pts[0]);
+  return (async () => {
+    for (let i = 0; i < pts.length; i++){
+      if (i > 0){
+        const ok = await moveAlongSeg(trail, dot, drawn, pts[i-1], pts[i], () => my === jRunId, instant);
+        if (!ok) return null;
+      }
+      const cp = route.cps && route.cps[i];
+      if (cp){
+        const hit = checkpoint(cp, kind);
+        if (hit){ dot.classList.add('stopped'); return {stopped:true, ctrl:hit}; }
+        if (!instant){ await wait(420); if (my !== jRunId) return null; }
+      }
+    }
+    return {stopped:false};
+  })();
+}
+async function moveAlongSeg(trail, dot, drawn, a, b, alive, instant){
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  if (!instant && len > 0){
+    const ok = await tween(Math.max(180, len / 0.42), t => {
+      if (!alive()) return false;
+      const p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+      setPoly(trail, drawn.concat([p])); setDot(dot, p);
+    });
+    if (!ok || !alive()) return false;
+  }
+  drawn.push(b); setPoly(trail, drawn); setDot(dot, b);
+  return true;
+}
+function stoppersOf(a){
+  const out = [];
+  Object.keys(a.route.cps).map(Number).sort((x, y) => x - y)
+    .forEach(i => (a.route.cps[i].stop || []).forEach(c => { if (!out.includes(c)) out.push(c); }));
+  return out;
+}
+
+const ptag = k => `<span class="ptag ${k}">${esc(PRINCIPLES[k])}</span>`;
+const sctag = k => `<span class="sctag">SC-500 ・ ${esc(SC[k])}</span>`;
+const codeFig = c => `<figure class="code"><figcaption>${esc(c.title)}</figcaption><pre><code>${esc(c.body)}</code></pre></figure>`;
+
+function jChips(){
+  const box = $('#journey-chips');
+  if (J.mode === 'journey'){
+    box.innerHTML = STEPS.map((s, i) =>
+      `<button type="button" class="chip" data-step="${i}" aria-pressed="${i === J.step}"><span class="no">${i + 1}</span>${esc(s.chip)}</button>`
+    ).join('') + `<button type="button" class="chip plain" id="playall" aria-pressed="${autoplay}">${autoplay ? '■ 停止' : '▶ 通しで再生'}</button>`;
+    box.querySelectorAll('[data-step]').forEach(b => b.addEventListener('click', () => { autoplay = false; showStep(+b.dataset.step); }));
+    $('#playall').addEventListener('click', () => { if (autoplay){ autoplay = false; jChips(); } else playAll(); });
+  } else {
+    box.innerHTML = ATTACKS.map((a, i) =>
+      `<button type="button" class="chip red" data-attack="${i}" aria-pressed="${i === J.attack}"><span class="no">A${i + 1}</span>${esc(a.chip)}</button>`
+    ).join('');
+    box.querySelectorAll('[data-attack]').forEach(b => b.addEventListener('click', () => selectAttack(+b.dataset.attack)));
+  }
+}
+
+function jPanel(){
+  const el = $('#panel');
+  if (J.mode === 'journey'){
+    const s = STEPS[J.step], n = STEPS.length;
+    el.innerHTML = `
+      <div class="phead"><span class="bigno">${J.step + 1}</span>
+        <div><p class="kicker">正常な旅 ・ ステップ ${J.step + 1} / ${n}</p><h2>${esc(s.title)}</h2></div></div>
+      <p>${esc(s.what)}</p>
+      <h3>ここで確認していること</h3>
+      <ul>${s.checks.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+      <div class="tags">${s.p.map(ptag).join('')}${s.sc.map(sctag).join('')}</div>
+      ${codeFig(s.code)}
+      <div class="navbtns">
+        <button type="button" class="btn" id="prev" ${J.step === 0 ? 'disabled' : ''}>← 前へ</button>
+        <button type="button" class="btn" id="replay">もう一度</button>
+        <button type="button" class="btn primary grow" id="next" ${J.step === n - 1 ? 'disabled' : ''}>次へ →</button>
+      </div>`;
+    $('#prev').addEventListener('click', () => { autoplay = false; showStep(J.step - 1); });
+    $('#next').addEventListener('click', () => { autoplay = false; showStep(J.step + 1); });
+    $('#replay').addEventListener('click', () => { autoplay = false; showStep(J.step); });
+    return;
+  }
+  const a = ATTACKS[J.attack];
+  const stops = stoppersOf(a);
+  const layerText = stops.length > 1
+    ? `この攻撃に効く防御は${stops.length}層。1つ外しても、次の層が止めます。`
+    : 'この攻撃に効く防御は1層だけ。ここを外すと後がありません。';
+  let res = '';
+  if (J.result){
+    if (J.result.stopped){
+      const c = CTRL[J.result.ctrl];
+      const offBefore = stops.slice(0, stops.indexOf(J.result.ctrl)).filter(k => !J.def[k]);
+      res = `<div class="result blocked">
+        <p class="status"><span class="badge ok">遮断できた</span><span>${esc(c.place)} ・ ${esc(c.name)}</span></p>
+        <p class="respcode">${esc(c.code)}</p>
+        <p>${esc(a.stopText[J.result.ctrl])}</p>
+        ${offBefore.length ? `<p class="note">${offBefore.map(k => esc(CTRL[k].name)).join('、')} はOFFでしたが、次の層で止まりました。</p>` : ''}
+      </div>
+      <p class="lesson"><b>学び</b>${esc(a.lesson)}</p>`;
+    } else {
+      res = `<div class="result breached">
+        <p class="status"><span class="badge ng">突破された</span></p>
+        <p>${esc(a.breach)}</p>
+        <p class="note">止められる防御：${stops.map(k => esc(CTRL[k].name)).join('、')}（いまはOFF）</p>
+      </div>
+      <p class="lesson"><b>学び</b>${esc(a.lesson)}</p>`;
+    }
+  }
+  el.innerHTML = `
+    <div id="resultbox" aria-live="polite" style="display:grid;gap:12px">${res}</div>
+    <div class="phead"><span class="bigno red">A${J.attack + 1}</span>
+      <div><p class="kicker">攻撃シナリオ ・ 仕掛ける人：${esc(a.who)}</p><h2>${esc(a.title)}</h2></div></div>
+    <p>${esc(a.desc)}</p>
+    <h3>この攻撃を止められる防御</h3>
+    <ul class="defs">${stops.map(k => `
+      <li><label class="switch" for="def-${k}">
+        <input type="checkbox" id="def-${k}" data-ctrl="${k}" ${J.def[k] ? 'checked' : ''}>
+        <span class="track" aria-hidden="true"></span>
+        <span class="t">${esc(CTRL[k].name)}<small>${esc(CTRL[k].place)}</small></span>
+        <span class="st ${J.def[k] ? 'on' : 'off'}">${J.def[k] ? 'ON' : 'OFF'}</span>
+      </label></li>`).join('')}
+    </ul>
+    <p class="layers">${layerText}</p>
+    <div class="navbtns">
+      <button type="button" class="btn danger" id="run">攻撃を実行</button>
+      <button type="button" class="btn small grow" id="resetdef">防御をすべてONに戻す</button>
+    </div>
+    <div class="tags">${a.p.map(ptag).join('')}${a.sc.map(sctag).join('')}</div>`;
+  el.querySelectorAll('[data-ctrl]').forEach(inp => inp.addEventListener('change', () => {
+    J.def[inp.dataset.ctrl] = inp.checked;
+    selectAttack(J.attack);
+    const again = document.getElementById(inp.id);
+    if (again) again.focus();
+  }));
+  $('#run').addEventListener('click', runAttack);
+  $('#resetdef').addEventListener('click', () => { J.def = allOn(); selectAttack(J.attack); });
+}
+
+function showStep(i, opts){
+  if (i < 0 || i >= STEPS.length) return jCurrent;
+  J.step = i; J.result = null;
+  jClear(); jVisibility(); jBadges(); jChips();
+  STEPS[i].nodes.forEach(k => nodeEls[k].classList.add('active'));
+  jPanel();
+  jCurrent = runRoute(STEPS[i].route, 'journey', opts);
+  return jCurrent;
+}
+async function playAll(){
+  autoplay = true;
+  for (let i = 0; i < STEPS.length; i++){
+    if (!autoplay) break;
+    const r = await showStep(i);
+    if (!autoplay || r === null) break;
+    await wait(1500);
+  }
+  autoplay = false;
+  if (J.mode === 'journey') jChips();
+}
+function drawPreview(a){ gTrail.append(mk('polyline', {points:a.route.pts.map(p => p.join(',')).join(' '), class:'preview'})); }
+function markOrigin(a){ if (a.origin === 'aks'){ nodeEls.aks.classList.add('compromised'); addMarker('aks', '乗っ取られたPod', 'block'); } }
+function selectAttack(i){
+  J.attack = i; J.result = null;
+  jClear(); jVisibility(); jBadges(); jChips();
+  const a = ATTACKS[i];
+  drawPreview(a); markOrigin(a);
+  jPanel();
+}
+async function runAttack(){
+  const a = ATTACKS[J.attack];
+  J.result = null;
+  jClear(); drawPreview(a); markOrigin(a);
+  const btn = $('#run'); if (btn) btn.disabled = true;
+  const r = await (jCurrent = runRoute(a.route, 'attack'));
+  if (!r) return;
+  if (!r.stopped){ nodeEls[a.end].classList.add('breached'); addMarker(a.end, '突破された', 'block'); }
+  J.result = r.stopped ? {stopped:true, ctrl:r.ctrl} : {stopped:false};
+  jPanel();
+  const panel = $('#panel');
+  panel.scrollTop = 0;
+  if (panel.getBoundingClientRect().top < 0) panel.scrollIntoView({block:'start', behavior: reduceMotion() ? 'auto' : 'smooth'});
+}
+function setJourneyMode(m){
+  autoplay = false;
+  J.mode = m;
+  $('#mode-journey').setAttribute('aria-pressed', String(m === 'journey'));
+  $('#mode-attack').setAttribute('aria-pressed', String(m === 'attack'));
+  if (m === 'journey') showStep(J.step, {instant:true}); else selectAttack(J.attack);
+}
+function initJourney(){
+  buildJourneyMap();
+  $('#mode-journey').addEventListener('click', () => setJourneyMode('journey'));
+  $('#mode-attack').addEventListener('click', () => setJourneyMode('attack'));
+  document.addEventListener('keydown', e => {
+    if (J.mode !== 'journey' || activeChapter !== 'ch3') return;
+    const tag = (e.target && e.target.tagName) || '';
+    if (/INPUT|TEXTAREA|SELECT/.test(tag)) return;
+    if (e.key === 'ArrowRight'){ autoplay = false; showStep(J.step + 1); }
+    if (e.key === 'ArrowLeft'){ autoplay = false; showStep(J.step - 1); }
+  });
+  setJourneyMode(J.mode);
+}
+
+/* ================= 03 トークン改ざん ================= */
+const JWT = {sig:false, iss:false, aud:false, exp:false, scp:false};
+const TAMPER = [
+  {k:'sig', name:'中身を書き換える', desc:'name を「管理者」に変えてなりすます。署名は作り直せない'},
+  {k:'iss', name:'偽の発行者', desc:'攻撃者が自分の鍵で作ったトークン'},
+  {k:'aud', name:'宛先違い', desc:'請求API向けに発行された本物のトークンを流用'},
+  {k:'exp', name:'期限切れ', desc:'3日前に盗まれた古いトークン'},
+  {k:'scp', name:'権限不足', desc:'注文を読む権限（Orders.Read）が入っていない'}
+];
+const POLICY = [
+  ['',    '<validate-jwt header-name="Authorization"'],
+  ['',    '    failed-validation-httpcode="401">'],
+  ['exp', '  <!-- 有効期限 (exp) は既定で確認される -->'],
+  ['sig', '  <!-- 署名を確かめる公開鍵はここから取得 -->'],
+  ['sig', '  <openid-config url="https://login.microsoftonline.com/{tenant-id}/v2.0/.well-known/openid-configuration" />'],
+  ['',    '  <issuers>'],
+  ['iss', '    <issuer>https://login.microsoftonline.com/{tenant-id}/v2.0</issuer>'],
+  ['',    '  </issuers>'],
+  ['',    '  <audiences>'],
+  ['aud', '    <audience>{orders-api-client-id}</audience>'],
+  ['',    '  </audiences>'],
+  ['',    '  <required-claims>'],
+  ['',    '    <claim name="scp" match="any" separator=" ">'],
+  ['scp', '      <value>Orders.Read</value>'],
+  ['',    '    </claim>'],
+  ['',    '  </required-claims>'],
+  ['',    '</validate-jwt>']
+];
+const NOW = Math.floor(Date.now() / 1000);
+function b64u(str){
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  bytes.forEach(b => { bin += String.fromCharCode(b); });
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function fakeSign(input, key){
+  const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  let h = 2166136261 >>> 0;
+  const s = key + '|' + input;
+  for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  let out = '';
+  for (let i = 0; i < 43; i++){ h ^= (i * 2654435761) >>> 0; h = Math.imul(h, 16777619) >>> 0; out += A[h & 63]; h = ((h >>> 6) | ((h & 63) << 26)) >>> 0; }
+  return out;
+}
+function payloadOf(f){
+  return {
+    iss: f.iss ? 'https://evil-issuer.example/' : 'https://login.microsoftonline.com/{tenant-id}/v2.0',
+    aud: f.aud ? '{billing-api-client-id}' : '{orders-api-client-id}',
+    exp: f.exp ? NOW - 3 * 86400 : NOW + 52 * 60,
+    scp: f.scp ? 'Profile.Read' : 'Orders.Read',
+    name: f.sig ? '管理者' : '山田 花子'
+  };
+}
+const fmtTime = sec => new Date(sec * 1000).toLocaleString('ja-JP', {timeZone:'Asia/Tokyo', month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
+function initJwt(){
+  $('#jwt-tamper').innerHTML = TAMPER.map(t => `
+    <li><label class="switch" for="tm-${t.k}">
+      <input type="checkbox" id="tm-${t.k}" data-tamper="${t.k}" ${JWT[t.k] ? 'checked' : ''}>
+      <span class="track" aria-hidden="true"></span>
+      <span class="t">${esc(t.name)}<small>${esc(t.desc)}</small></span>
+    </label></li>`).join('');
+  document.querySelectorAll('[data-tamper]').forEach(inp => inp.addEventListener('change', () => { JWT[inp.dataset.tamper] = inp.checked; renderJwt(); }));
+  renderJwt();
+}
+function renderJwt(){
+  const f = JWT;
+  const p = payloadOf(f);
+  const header = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9';
+  const body = b64u(JSON.stringify(p));
+  const original = b64u(JSON.stringify(payloadOf(Object.assign({}, f, {sig:false}))));
+  const sig = f.iss ? fakeSign(body, 'attacker') : fakeSign(f.sig ? original : body, 'entra');
+  $('#jwt-token').innerHTML = `<span class="h">${header}</span><span class="sep">.</span><span class="p">${body}</span><span class="sep">.</span><span class="s">${sig}</span>`;
+  const rows = [
+    ['iss', JSON.stringify(p.iss), f.iss, f.iss ? '攻撃者が用意した発行者' : 'Entra IDが発行'],
+    ['aud', JSON.stringify(p.aud), f.aud, f.aud ? '請求API宛て' : '注文API宛て'],
+    ['exp', String(p.exp), f.exp, fmtTime(p.exp) + (f.exp ? ' に期限切れ' : ' まで有効')],
+    ['scp', JSON.stringify(p.scp), f.scp, f.scp ? '注文を読む権限がない' : '注文を読む権限'],
+    ['name', JSON.stringify(p.name), f.sig, f.sig ? '書き換えた' : '']
+  ];
+  $('#jwt-payload').innerHTML = '{\n' + rows.map((r, i) =>
+    `  <span class="k">"${r[0]}"</span>: <span class="v${r[2] ? ' chg' : ''}">${esc(r[1])}</span>${i < rows.length - 1 ? ',' : ''}${r[3] ? `  <span class="anno">← ${esc(r[3])}</span>` : ''}`
+  ).join('\n') + '\n}';
+  const ok = {sig:!f.sig && !f.iss, iss:!f.iss, aud:!f.aud, exp:!f.exp, scp:!f.scp};
+  const checks = [
+    ['sig', '署名', ok.sig ? 'Entra IDの鍵で署名されている' : (f.iss ? '知らない鍵で署名されている' : '中身と署名が一致しない')],
+    ['iss', '発行者（iss）', ok.iss ? '信頼している発行者' : '信頼リストにない発行者'],
+    ['aud', '宛先（aud）', ok.aud ? 'このAPI宛て' : '別のAPI宛て'],
+    ['exp', '有効期限（exp）', ok.exp ? '期限内' : '期限切れ'],
+    ['scp', '権限（scp）', ok.scp ? 'Orders.Read あり' : 'Orders.Read がない']
+  ];
+  $('#jwt-checks').innerHTML = checks.map(c =>
+    `<li><span class="mark ${ok[c[0]] ? 'ok' : 'ng'}" aria-hidden="true">${ok[c[0]] ? '✓' : '×'}</span><span>${esc(c[1])}</span><span class="why">${esc(c[2])}</span></li>`
+  ).join('');
+  const pass = Object.values(ok).every(Boolean);
+  $('#jwt-result').innerHTML = pass
+    ? '<span class="badge ok">通過</span><span class="respcode">200 OK</span><span class="note">AKSのAPIへ転送される</span>'
+    : '<span class="badge ng">拒否</span><span class="respcode">401 Unauthorized</span><span class="note">AKSには届かない</span>';
+  $('#jwt-policy').innerHTML = POLICY.map(([k, line]) => `<span class="ln${k && !ok[k] ? ' ng' : ''}">${esc(line)}</span>`).join('');
+}
+
+
+/* ================= 01-1 境界型とゼロトラスト ================= */
+const ZT_NODES = {
+  attacker:{x:90,  y:150, w:120, h:50, label:'攻撃者', sub:'インターネット', cls:'attacker'},
+  pc:      {x:360, y:150, w:130, h:50, label:'社員のPC', sub:'営業部'},
+  file:    {x:600, y:70,  w:150, h:50, label:'ファイルサーバー', sub:'共有フォルダ'},
+  app:     {x:600, y:230, w:150, h:50, label:'業務システム', sub:'受発注'},
+  db:      {x:840, y:150, w:130, h:50, label:'顧客DB', sub:'個人情報'}
+};
+const ZT_STEPS = [
+  {title:'フィッシングメール', to:'pc', pts:{perimeter:[[90,150],[360,150]], zero:[[90,150],[360,150]]},
+    perimeter:{ok:true, text:'メールの添付ファイルを開いて、PCが乗っ取られた。メールは壁を越えて届く。'},
+    zero:{ok:true, text:'ゼロトラストでも、最初の乗っ取りは防ぎきれない。だから次の一手を止める。'}},
+  {title:'ファイルサーバーへ', to:'file', pts:{perimeter:[[360,150],[360,70],[600,70]], zero:[[360,150],[360,70],[600,70]]},
+    perimeter:{ok:true, text:'社内からなので、共有フォルダをそのまま開けた。'},
+    zero:{ok:false, text:'端末の状態が不審と判定され、条件付きアクセスで拒否された。', p:'verify'}},
+  {title:'業務システムへ', to:'app', pts:{perimeter:[[360,150],[360,230],[600,230]], zero:[[360,150],[360,230],[600,230]]},
+    perimeter:{ok:true, text:'社内からはログイン不要の設定だった。'},
+    zero:{ok:false, text:'アクセスのたびにMFAを求められ、攻撃者はログインできない。', p:'verify'}},
+  {title:'顧客DBへ', to:'db', pts:{perimeter:[[600,230],[840,230],[840,150]], zero:[[360,150],[840,150]]},
+    perimeter:{ok:true, text:'業務システムの設定ファイルにあった共有パスワードで、顧客DBに接続できた。'},
+    zero:{ok:false, text:'DBへはPrivate Endpointからしか入れず、このユーザーには権限もない。', p:'least'}}
+];
+const ZT = {model:'perimeter', runId:0, results:[]};
+const ztSvg = $('#zt-map');
+const ztG = {zone:mk('g'), edge:mk('g'), trail:mk('g'), dot:mk('g'), node:mk('g'), mark:mk('g')};
+const ztEls = {};
+let ztWall, ztWallLabel, ztOfficeLabel, ztPcDb;
+
+function buildZt(){
+  ztSvg.append(ztG.zone, ztG.edge, ztG.trail, ztG.dot, ztG.node, ztG.mark);
+  ztG.zone.append(mk('rect', {x:230, y:14, width:716, height:272, rx:16, class:'office'}));
+  ztOfficeLabel = mk('text', {x:246, y:36, class:'zone-label'}, '社内ネットワーク');
+  ztG.zone.append(ztOfficeLabel);
+  ztWall = mk('line', {x1:205, y1:20, x2:205, y2:280, class:'wall'});
+  ztG.zone.append(ztWall);
+  ztWallLabel = mk('text', {x:215, y:278, class:'zone-label'}, '← 境界のファイアウォール');
+  ztG.zone.append(ztWallLabel);
+  const edges = [[[150,150],[295,150]], [[360,123],[360,70],[525,70]], [[360,177],[360,230],[525,230]], [[675,230],[840,230],[840,177]]];
+  edges.forEach(e => ztG.edge.append(mk('polyline', {points:e.map(p => p.join(',')).join(' '), class:'edge'})));
+  ztPcDb = mk('polyline', {points:'425,150 775,150', class:'edge dashed'});
+  ztG.edge.append(ztPcDb);
+  drawNodes(ztG.node, ZT_NODES, ztEls);
+}
+function ztReset(){
+  ZT.runId++;
+  ZT.results = [];
+  ztG.trail.textContent = ''; ztG.dot.textContent = ''; ztG.mark.textContent = '';
+  Object.values(ztEls).forEach(el => el.classList.remove('breached', 'blocked'));
+  const zero = ZT.model === 'zero';
+  ztWall.setAttribute('class', zero ? 'wall thin' : 'wall');
+  ztWallLabel.textContent = zero ? '← 境界だけには頼らない' : '← 境界のファイアウォール';
+  ztOfficeLabel.textContent = zero ? '社内ネットワーク（でも信用しない）' : '社内ネットワーク（中は信用する）';
+  ztPcDb.style.display = zero ? '' : 'none';
+  $('#zt-m-perimeter').setAttribute('aria-pressed', String(!zero));
+  $('#zt-m-zero').setAttribute('aria-pressed', String(zero));
+  $('#zt-run').disabled = false;
+  ztRenderSide();
+}
+function ztRenderSide(){
+  const zero = ZT.model === 'zero';
+  const n = ZT.results.filter(r => r && r.ok).length;
+  const done = ZT.results.length === ZT_STEPS.length;
+  const c = $('#zt-count');
+  c.className = 'zt-count' + (ZT.results.length ? (n > 1 ? ' bad' : ' good') : '');
+  c.innerHTML = ZT.results.length
+    ? `乗っ取られた範囲<span class="big">${n}</span>/ 4台${done ? (zero ? '（PC1台で止まった）' : '（すべて）') : ''}`
+    : '乗っ取られた範囲<span class="big">–</span>/ 4台';
+  $('#zt-desc').textContent = zero
+    ? 'ゼロトラスト：社内からでも信用しない。アクセスのたびに、ID・端末・権限を確かめる。'
+    : '境界型：壁の内側は信用する。社内ネットワークに入られると、どこへでも行ける。';
+  $('#zt-log').innerHTML = ZT_STEPS.map((s, i) => {
+    const r = ZT.results[i];
+    if (!r) return `<li class="pending"><span class="mk pend">${i + 1}</span><span><b>${esc(s.title)}</b>まだ</span></li>`;
+    const o = s[ZT.model];
+    return `<li><span class="mk ${o.ok ? 'ok' : 'ng'}" aria-hidden="true">${o.ok ? '!' : '×'}</span><span><b>${esc(s.title)}：${o.ok ? '成功' : '拒否'}</b>${esc(o.text)}${o.p ? ` <span class="ptag ${o.p}">${esc(PRINCIPLES[o.p])}</span>` : ''}</span></li>`;
+  }).join('');
+}
+async function ztRun(){
+  ztReset();
+  const my = ZT.runId;
+  $('#zt-run').disabled = true;
+  const instant = reduceMotion();
+  for (let i = 0; i < ZT_STEPS.length; i++){
+    const s = ZT_STEPS[i], o = s[ZT.model];
+    const trail = mk('polyline', {class:'trail attack'});
+    const dot = mk('circle', {r:9, class:'dot attack'});
+    ztG.trail.append(trail); ztG.dot.append(dot);
+    const ok = await moveAlong(trail, dot, s.pts[ZT.model], () => my === ZT.runId, instant);
+    if (!ok) return;
+    const n = ZT_NODES[s.to];
+    if (o.ok){ ztEls[s.to].classList.add('breached'); pill(ztG.mark, n.x, n.y - n.h/2 - 14, '乗っ取られた', 'block'); }
+    else { ztEls[s.to].classList.add('blocked'); dot.classList.add('stopped'); pill(ztG.mark, n.x, n.y - n.h/2 - 14, '× 拒否', 'block'); }
+    ZT.results[i] = {ok:o.ok};
+    ztRenderSide();
+    if (!instant){ await wait(500); if (my !== ZT.runId) return; }
+  }
+  $('#zt-run').disabled = false;
+}
+function initZt(){
+  buildZt();
+  $('#zt-m-perimeter').addEventListener('click', () => { ZT.model = 'perimeter'; ztReset(); });
+  $('#zt-m-zero').addEventListener('click', () => { ZT.model = 'zero'; ztReset(); });
+  $('#zt-run').addEventListener('click', ztRun);
+  ztReset();
+}
+
+/* ================= 01-3 責任共有モデル ================= */
+const SRM_COLS = [
+  {k:'onprem', name:'オンプレ', sub:'自社サーバー', text:'すべて自分たちで守る。建物の鍵からOSの更新まで。'},
+  {k:'iaas', name:'IaaS', sub:'VMなど', text:'物理はMicrosoftが守る。OSの更新、ネットワークの設定、アプリは利用者の仕事。'},
+  {k:'paas', name:'PaaS', sub:'App Service・APIMなど', text:'OSと物理はMicrosoftが守る。アプリ、ネットワークの設定（アクセス制限やPrivate Endpoint）、IDの基盤は利用者と分担する。モダナイズ環境の多くはここ。'},
+  {k:'saas', name:'SaaS', sub:'Microsoft 365など', text:'アプリの運用までMicrosoftが担う。それでも、データ・アカウント・端末は利用者の責任。'}
+];
+const SRM_ROWS = [
+  ['情報とデータ', 'cccc', true],
+  ['端末（PC・スマホ）', 'cccc', true],
+  ['アカウントとID', 'cccc', true],
+  ['IDの基盤（ディレクトリ）', 'ccss'],
+  ['アプリケーション', 'ccsm'],
+  ['ネットワークの制御', 'ccsm'],
+  ['OS', 'ccmm'],
+  ['物理（ホスト・ネットワーク・建物）', 'cmmm']
+];
+const SRM_LABEL = {c:'利用者', s:'共有', m:'Microsoft'};
+let srmSel = 2;
+function renderSrm(){
+  const t = $('#srm');
+  $('#srm-seg').innerHTML = SRM_COLS.map((c, i) => `<button type="button" data-srm="${i}" aria-pressed="${i === srmSel}">${esc(c.name)}</button>`).join('');
+  t.innerHTML = `<thead><tr><th scope="col">守るもの</th>${SRM_COLS.map((c, i) =>
+    `<th scope="col" class="${i === srmSel ? '' : 'dimh'}"><button type="button" data-srm="${i}" aria-pressed="${i === srmSel}">${esc(c.name)}</button></th>`).join('')}</tr></thead>
+    <tbody>${SRM_ROWS.map(r => `<tr class="${r[2] ? 'always' : ''}"><th scope="row">${esc(r[0])}</th>${[...r[1]].map((v, i) =>
+      `<td class="${v}${i === srmSel ? '' : ' dim'}">${SRM_LABEL[v]}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  document.querySelectorAll('[data-srm]').forEach(b => b.addEventListener('click', () => {
+    const inSeg = !!b.closest('#srm-seg');
+    srmSel = +b.dataset.srm; renderSrm();
+    const again = document.querySelector((inSeg ? '#srm-seg' : '#srm') + ` [data-srm="${srmSel}"]`);
+    if (again) again.focus();
+  }));
+  const c = SRM_COLS[srmSel];
+  $('#srm-desc').innerHTML = `
+    <p class="label">${esc(c.sub)}</p>
+    <h4 style="margin:0;font-size:18px">${esc(c.name)}</h4>
+    <p style="margin:0">${esc(c.text)}</p>
+    <p class="note">上の3行（データ・端末・アカウント）は、どのモデルでも利用者の責任です。</p>
+    <p class="lesson" style="margin-top:4px"><b>AKSは？</b>IaaSとPaaSの中間です。コントロールプレーンはMicrosoftが管理し、ノードの更新の設定や、Pod・マニフェストの中身は利用者が責任を持ちます。</p>`;
+}
+
+/* ================= 01-4 シフトレフト ================= */
+const SL_STAGES = [
+  {name:'書いている時', who:['書いた本人'], tasks:['その場で直す'], msg:'エディタの警告や、手元のチェックで気づく。誰にも影響しない。'},
+  {name:'PRのレビュー', who:['書いた本人','レビュアー'], tasks:['直してコミットし直す','もう一度レビューしてもらう'], msg:'Dependabot、シークレットスキャン、SASTがPRの時点で教えてくれる（04章）。'},
+  {name:'CIのビルド', who:['書いた本人','レビュアー'], tasks:['直してコミットし直す','もう一度レビューしてもらう','もう一度ビルド・テストする'], msg:'Trivyなどでビルドが失敗する。まだ本番には出ていない。'},
+  {name:'ステージング', who:['開発チーム','テスト担当'], tasks:['直してコミットし直す','もう一度レビューしてもらう','もう一度ビルド・テストする','結合テストをやり直す','リリース日を調整する'], msg:'検証環境で見つかる。テストのやり直しと、リリース日の調整が発生する。'},
+  {name:'本番', who:['開発チーム','運用担当','セキュリティ担当','関係部署'], tasks:['悪用されていないかログを調べる','影響範囲を調べる','緊急で直してリリースする','関係者・お客さまに連絡する','再発防止策をまとめる','（通常の修正・レビュー・テストも）'], msg:'利用者に影響が出ているかもしれない。調査・連絡・緊急対応が一度に発生する。'}
+];
+let slSel = 4;
+function renderSl(){
+  $('#sl-stages').innerHTML = SL_STAGES.map((s, i) =>
+    `<button type="button" data-sl="${i}" aria-pressed="${i === slSel}">${i === 0 ? '← 左 ' : ''}${esc(s.name)}${i === SL_STAGES.length - 1 ? ' 右 →' : ''}</button>`).join('');
+  document.querySelectorAll('[data-sl]').forEach(b => b.addEventListener('click', () => { slSel = +b.dataset.sl; renderSl(); }));
+  const s = SL_STAGES[slSel];
+  const max = Math.max(...SL_STAGES.map(x => x.tasks.length));
+  $('#sl-out').innerHTML = `
+    <div style="display:grid;gap:8px;align-content:start">
+      <p class="label">「${esc(s.name)}」で見つかったとき</p>
+      <p style="margin:0;font-size:15px">${esc(s.msg)}</p>
+      <p class="label" style="margin-top:6px">関わる人</p>
+      <div class="tags">${s.who.map(w => `<span class="sctag">${esc(w)}</span>`).join('')}</div>
+    </div>
+    <div style="display:grid;gap:6px;align-content:start">
+      <p class="label">やること（${s.tasks.length}項目）</p>
+      <div class="blocks" aria-hidden="true">${Array.from({length:max}, (_, i) => `<i class="${i < s.tasks.length ? '' : 'e'}"></i>`).join('')}</div>
+      <ul style="margin:0;padding-left:1.2em;display:grid;gap:2px;font-size:14px">${s.tasks.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+    </div>`;
+}
+function initCh1(){ initZt(); renderSrm(); renderSl(); }
+
+
+/* ================= 02-2 Private Endpointと名前解決 ================= */
+const D = {from:'aks', pe:true, link:true, pub:false};
+const DNS_NODES = {
+  home:   {x:110, y:60,  w:140, h:50, label:'自宅のPC', sub:'インターネット'},
+  aks:    {x:110, y:200, w:140, h:50, label:'AKSのPod', sub:'VNetの中'},
+  pubDoor:{x:430, y:60,  w:150, h:50, label:'パブリックの入口', sub:'20.x.x.x'},
+  peDoor: {x:430, y:200, w:150, h:50, label:'Private Endpoint', sub:'10.20.3.4'},
+  kv:     {x:650, y:130, w:150, h:56, label:'Key Vault', sub:'kv-orders'}
+};
+const dnsSvg = $('#dns-map');
+const dnsG = {zone:mk('g'), edge:mk('g'), path:mk('g'), node:mk('g'), mark:mk('g')};
+const dnsEls = {};
+function buildDns(){
+  dnsSvg.append(dnsG.zone, dnsG.edge, dnsG.path, dnsG.node, dnsG.mark);
+  dnsG.zone.append(mk('rect', {x:20, y:150, width:560, height:108, rx:14, class:'vnet'}));
+  dnsG.zone.append(mk('text', {x:34, y:170, class:'vnet-label'}, 'VNet'));
+  dnsG.edge.append(mk('polyline', {points:'505,60 650,60 650,102', class:'edge'}));
+  dnsG.edge.append(mk('polyline', {points:'505,200 650,200 650,158', class:'edge', id:'dns-pl'}));
+  dnsG.edge.append(mk('text', {x:600, y:192, 'text-anchor':'middle', class:'edge-label', id:'dns-pl-label'}, 'Private Link'));
+  drawNodes(dnsG.node, DNS_NODES, dnsEls);
+  dnsEls.pubDoor.classList.add('dns-door');
+  dnsEls.peDoor.classList.add('dns-door');
+}
+function dnsOutcome(){
+  const inV = D.from === 'aks';
+  const priv = inV && D.pe && D.link;
+  const conn = priv ? 'private' : (D.pub ? 'public' : 'denied');
+  let verdict, text;
+  if (!inV){
+    if (D.pub){ verdict = 'bad'; text = '自宅からでも入口まで来られる状態です。鍵（認証情報）が漏れていれば、外から読めてしまいます。'; }
+    else { verdict = 'good'; text = 'VNetの外からは入れません。パブリックアクセスを無効にした効果です。'; }
+  } else if (priv){
+    if (D.pub){ verdict = 'warn'; text = 'VNetの中からはPrivate Endpoint経由で正しくつながります。ただしパブリックの入口も開いたままなので、外からも入口まで来られます。'; }
+    else { verdict = 'good'; text = '目指す形です。名前解決でプライベートIPが返り、通信はVNetの中だけを通ります。'; }
+  } else if (D.pe){
+    if (D.pub){ verdict = 'warn'; text = 'つながりますが、パブリックの入口を通っています。Private DNSゾーンがVNetにリンクされていないため、パブリックIPが返っています。動いてしまうので気づきにくい状態です。'; }
+    else { verdict = 'trouble'; text = 'よくあるハマりどころです。Private Endpointを作ったのに、Private DNSゾーンがVNetにリンクされていないのでパブリックIPが返り、閉じているパブリックの入口に行って拒否されます。'; }
+  } else {
+    if (D.pub){ verdict = 'warn'; text = 'Private Endpointがないので、インターネット側の入口を使っています。モダナイズ環境では使わない形です。'; }
+    else { verdict = 'trouble'; text = 'Private Endpointもパブリックの入口もないので、どこからもつながりません。'; }
+  }
+  return {inV, priv, conn, verdict, text};
+}
+function renderDnsCtl(){
+  const sw = (id, on, name, small) => `
+    <li><label class="switch neutral" for="${id}">
+      <input type="checkbox" id="${id}" ${on ? 'checked' : ''}>
+      <span class="track" aria-hidden="true"></span>
+      <span class="t">${name}<small>${small}</small></span>
+      <span class="st">${on ? 'ON' : 'OFF'}</span>
+    </label></li>`;
+  $('#dns-ctl').innerHTML = `
+    <p class="label">接続元</p>
+    <div class="seg" role="group" aria-label="接続元">
+      <button type="button" id="dns-from-aks" aria-pressed="${D.from === 'aks'}">VNet内のAKS</button>
+      <button type="button" id="dns-from-home" aria-pressed="${D.from === 'home'}">自宅のPC</button>
+    </div>
+    <p class="label" style="margin-top:8px">Key Vault側の設定</p>
+    <ul class="defs">
+      ${sw('dns-pe', D.pe, 'Private Endpointを作る', 'VNetの中に専用の入口を作る')}
+      ${sw('dns-link', D.link, 'Private DNSゾーンをVNetにリンク', 'privatelink.vaultcore.azure.net')}
+      ${sw('dns-pub', D.pub, 'パブリックアクセスを許可', 'インターネット側の入口')}
+    </ul>
+    <p class="label" style="margin-top:8px">よくある形</p>
+    <div class="chips">
+      <button type="button" class="chip plain" data-preset="good">目指す形</button>
+      <button type="button" class="chip plain" data-preset="trap">よくあるハマり</button>
+      <button type="button" class="chip plain" data-preset="bad">危ない形</button>
+    </div>`;
+  $('#dns-from-aks').addEventListener('click', () => { D.from = 'aks'; renderDns(); });
+  $('#dns-from-home').addEventListener('click', () => { D.from = 'home'; renderDns(); });
+  [['dns-pe','pe'],['dns-link','link'],['dns-pub','pub']].forEach(([id, k]) =>
+    $('#' + id).addEventListener('change', e => { D[k] = e.target.checked; renderDns(); const el = $('#' + id); if (el) el.focus(); }));
+  document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+    const p = {good:{from:'aks', pe:true, link:true, pub:false}, trap:{from:'aks', pe:true, link:false, pub:false}, bad:{from:'home', pe:false, link:false, pub:true}}[b.dataset.preset];
+    Object.assign(D, p); renderDns();
+  }));
+}
+function renderDns(){
+  renderDnsCtl();
+  const o = dnsOutcome();
+  dnsEls.home.style.opacity = o.inV ? '.35' : '1';
+  dnsEls.aks.style.opacity = o.inV ? '1' : '.35';
+  dnsEls.home.classList.toggle('active', !o.inV);
+  dnsEls.aks.classList.toggle('active', o.inV);
+  dnsEls.pubDoor.classList.remove('door-open', 'door-closed', 'door-none');
+  dnsEls.pubDoor.classList.add(D.pub ? 'door-open' : 'door-closed');
+  dnsEls.pubDoor.querySelector('.sub').textContent = D.pub ? '20.x.x.x（開いている）' : '20.x.x.x（閉じている）';
+  dnsEls.peDoor.classList.remove('door-open', 'door-closed', 'door-none');
+  dnsEls.peDoor.classList.add(D.pe ? 'door-open' : 'door-none');
+  dnsEls.peDoor.querySelector('.sub').textContent = D.pe ? '10.20.3.4' : '（作っていない）';
+  $('#dns-pl').style.opacity = D.pe ? '1' : '.3';
+  $('#dns-pl-label').style.opacity = D.pe ? '1' : '.3';
+
+  dnsG.path.textContent = ''; dnsG.mark.textContent = '';
+  const from = o.inV ? DNS_NODES.aks : DNS_NODES.home;
+  const fx = from.x + from.w/2;
+  let pts, door;
+  if (o.priv){ pts = [[fx,200],[355,200]]; door = DNS_NODES.peDoor; }
+  else if (o.inV){ pts = [[fx,200],[262,200],[262,60],[355,60]]; door = DNS_NODES.pubDoor; }
+  else { pts = [[fx,60],[355,60]]; door = DNS_NODES.pubDoor; }
+  const cls = o.conn === 'private' ? 'priv' : (o.conn === 'public' ? 'pub' : 'ng');
+  dnsG.path.append(mk('polyline', {points:pts.map(p => p.join(',')).join(' '), class:'dpath ' + cls}));
+  if (o.conn !== 'denied'){
+    const end = door === DNS_NODES.peDoor ? '650,200 650,158' : '650,60 650,102';
+    dnsG.path.append(mk('polyline', {points:`505,${door.y} ${end}`, class:'dpath ' + cls}));
+  } else {
+    const g = mk('g', {class:'xmark'});
+    g.append(mk('circle', {cx:355, cy:door.y, r:12}));
+    g.append(mk('text', {x:355, y:door.y + 5, 'text-anchor':'middle'}, '×'));
+    dnsG.mark.append(g);
+  }
+  pill(dnsG.mark, (fx + 355) / 2 + (o.inV && !o.priv ? 40 : 0), (o.priv ? 200 : 60) - 18, o.priv ? '10.20.3.4 へ' : '20.x.x.x へ', o.conn === 'denied' ? 'block' : 'pass');
+
+  const lines = ['$ nslookup kv-orders.vault.azure.net', 'kv-orders.vault.azure.net'];
+  if (D.pe) lines.push('  canonical name = kv-orders.privatelink.vaultcore.azure.net');
+  if (o.priv) lines.push('Address: 10.20.3.4          # プライベートIP（Private DNSゾーンが答えた）');
+  else {
+    lines.push('  canonical name = （Key Vaultのパブリックなホスト名）');
+    const why = !o.inV ? 'VNetの外からはPrivate DNSゾーンが見えない' : (D.pe ? 'Private DNSゾーンがVNetにリンクされていない' : 'Private Endpointがない');
+    lines.push('Address: 20.x.x.x           # パブリックIP（' + why + '）');
+  }
+  $('#dns-ns').textContent = lines.join('\n');
+
+  const vb = {good:['ok','目指す形'], warn:['warn','要注意'], trouble:['ng','つながらない'], bad:['ng','危ない']}[o.verdict];
+  const code = o.conn === 'denied' ? '403 Forbidden（パブリックアクセスが無効）' : '200 OK（' + (o.conn === 'private' ? 'Private Endpoint経由' : 'パブリックの入口経由') + '）';
+  const rc = o.verdict === 'good' ? 'blocked' : (o.verdict === 'warn' ? 'warn' : 'breached');
+  $('#dns-result').innerHTML = `<div class="result ${rc}">
+    <p class="status"><span class="badge ${vb[0]}">${vb[1]}</span><span class="respcode">${esc(code)}</span></p>
+    <p>${esc(o.text)}</p></div>`;
+}
+function initDns(){ buildDns(); renderDns(); }
+
+/* ================= 02-3 NSG ================= */
+const NSG_RULES = [
+  {pri:100,   name:'Allow-APIM-8080',               src:'APIMサブネット', srcNote:'10.20.1.0/24', keys:['apim'], port:'8080', act:'Allow'},
+  {pri:4000,  name:'Deny-Mgmt-Subnet',              src:'管理用サブネット', srcNote:'10.20.9.0/24', keys:['mgmt'], port:'*', act:'Deny', optional:true},
+  {pri:65000, name:'AllowVnetInBound',              src:'VirtualNetwork', srcNote:'既定', keys:['apim','mgmt','same'], port:'*', act:'Allow', def:true},
+  {pri:65001, name:'AllowAzureLoadBalancerInBound', src:'AzureLoadBalancer', srcNote:'既定', keys:['lb'], port:'*', act:'Allow', def:true},
+  {pri:65500, name:'DenyAllInBound',                src:'すべて', srcNote:'既定', keys:['apim','mgmt','same','lb','internet'], port:'*', act:'Deny', def:true}
+];
+const NSG_PACKETS = [
+  {k:'apim',  port:'8080', name:'APIMから 8080（API呼び出し）', exp:() => '想定どおり。APIMからのAPI呼び出しは優先度100で許可されます。'},
+  {k:'apim',  port:'22',   name:'APIMから 22（SSH）', exp:() => '優先度100は8080だけを許可しているのに、SSHも通ってしまいます。既定ルール AllowVnetInBound が、VNet内からの通信をすべて許可しているためです。'},
+  {k:'mgmt',  port:'8080', name:'管理用サブネットのVMから 8080', exp:on => on ? '優先度4000で拒否。管理用サブネットからAPIへの直接の通信を止めています。' : '拒否ルールがないと、既定ルールでVNet内はすべて許可されるので、管理用サブネットのVMからAPIに直接届いてしまいます。'},
+  {k:'internet', port:'443', name:'インターネットから 443', exp:() => 'どのルールにも一致せず、最後の DenyAllInBound で拒否されます。'},
+  {k:'lb',    port:'*',    name:'ロードバランサーの正常性プローブ', exp:() => '既定ルールで許可されます。これを拒否すると、APIが落ちていると判定されてしまいます。'},
+  {k:'same',  port:'*',    name:'同じサブネットのノード同士', exp:() => 'AKSのノード同士の通信は既定ルールで許可されます。「VNet全体を拒否」のような広いルールを作ると、ここまで止まってしまうので注意。'}
+];
+const N = {packet:2, deny:true, runId:0};
+function nsgEval(){
+  const p = NSG_PACKETS[N.packet];
+  const rows = NSG_RULES.map(r => ({r, state:'idle'}));
+  let hit = null;
+  for (const row of rows){
+    if (row.r.optional && !N.deny){ row.state = 'off'; continue; }
+    if (hit){ row.state = 'skip'; continue; }
+    const m = row.r.keys.includes(p.k) && (row.r.port === '*' || row.r.port === p.port);
+    if (m){ row.state = 'match'; hit = row.r; } else row.state = 'nomatch';
+  }
+  return {rows, hit, p};
+}
+function nsgTable(rows, upto){
+  const label = {nomatch:'一致しない', skip:'評価されない', off:'（ルールなし）', idle:''};
+  $('#nsg-table').innerHTML = `<thead><tr><th>優先度</th><th>名前</th><th>送信元</th><th>ポート</th><th>処理</th><th>評価</th></tr></thead><tbody>${
+    rows.map((x, i) => {
+      const r = x.r;
+      const st = i <= upto ? x.state : (x.state === 'off' ? 'off' : 'idle');
+      const cls = [r.def ? 'def' : '', st === 'match' ? 'match ' + r.act.toLowerCase() : st].join(' ');
+      const ev = st === 'match' ? `<span style="color:var(--${r.act === 'Allow' ? 'ok' : 'bad'})">一致 → ${r.act === 'Allow' ? '許可' : '拒否'}</span>` : esc(label[st] || '');
+      return `<tr class="${cls}"><td class="mono">${r.pri}</td><td class="mono">${esc(r.name)}</td><td>${esc(r.src)}<br><span class="note mono">${esc(r.srcNote)}</span></td><td class="mono">${esc(r.port)}</td><td class="act-${r.act.toLowerCase()}">${r.act === 'Allow' ? '許可' : '拒否'}</td><td class="ev">${ev}</td></tr>`.replace('<td class="ev"></td>', '<td class="ev"></td>');
+    }).join('')}</tbody>`;
+}
+function renderNsgCtl(res){
+  const hit = res && res.hit;
+  $('#nsg-ctl').innerHTML = `
+    <p class="label">届く通信</p>
+    <div class="chips" style="flex-direction:column;align-items:stretch">
+      ${NSG_PACKETS.map((p, i) => `<button type="button" class="chip plain" data-pk="${i}" aria-pressed="${i === N.packet}" style="justify-content:flex-start">${esc(p.name)}</button>`).join('')}
+    </div>
+    <ul class="defs" style="margin-top:6px">
+      <li><label class="switch neutral" for="nsg-deny">
+        <input type="checkbox" id="nsg-deny" ${N.deny ? 'checked' : ''}>
+        <span class="track" aria-hidden="true"></span>
+        <span class="t">優先度4000の拒否ルール<small>管理用サブネットからの通信を拒否</small></span>
+        <span class="st">${N.deny ? 'ON' : 'OFF'}</span>
+      </label></li>
+    </ul>
+    <div id="nsg-result" aria-live="polite">${hit ? `<div class="result ${hit.act === 'Allow' ? 'blocked' : 'breached'}">
+      <p class="status"><span class="badge ${hit.act === 'Allow' ? 'ok' : 'ng'}">${hit.act === 'Allow' ? '許可' : '拒否'}</span><span class="mono">優先度 ${hit.pri} ${esc(hit.name)}</span></p>
+      <p>${esc(res.p.exp(N.deny))}</p></div>` : ''}</div>`;
+  document.querySelectorAll('[data-pk]').forEach(b => b.addEventListener('click', () => { N.packet = +b.dataset.pk; runNsg(); }));
+  $('#nsg-deny').addEventListener('change', e => { N.deny = e.target.checked; runNsg(); });
+}
+function nsgRefocus(f){
+  if (!f) return;
+  const el = f.pk != null ? document.querySelector(`[data-pk="${f.pk}"]`) : (f.deny ? $('#nsg-deny') : null);
+  if (el) el.focus();
+}
+async function runNsg(opts){
+  const my = ++N.runId;
+  const res = nsgEval();
+  const instant = (opts && opts.instant) || reduceMotion();
+  const af = document.activeElement;
+  const f = af && af.closest && af.closest('#nsg-ctl') ? {pk: af.dataset ? af.dataset.pk : null, deny: af.id === 'nsg-deny'} : null;
+  renderNsgCtl(null); nsgRefocus(f);
+  const last = res.rows.findIndex(x => x.state === 'match');
+  if (!instant){
+    for (let i = 0; i <= last; i++){
+      nsgTable(res.rows, i);
+      await wait(320);
+      if (my !== N.runId) return;
+    }
+  }
+  nsgTable(res.rows, res.rows.length);
+  renderNsgCtl(res); nsgRefocus(f);
+}
+function initCh2(){ initDns(); runNsg({instant:true}); }
+
+
+/* ================= 04 コードの旅 ================= */
+const PIPE_STAGES = [
+  {x:250, name:'PR', sub:'コードとPR', effort:'PRの段階で見つかりました。書いた本人がその場で直せます。'},
+  {x:450, name:'ビルド', sub:'CI', effort:'ビルドで止まりました。本番には出ていないので、直してもう一度ビルドすれば済みます。'},
+  {x:650, name:'デプロイ', sub:'リリース時', effort:'デプロイの時点で拒否されました。設定やマニフェストを直して、デプロイし直します。'},
+  {x:850, name:'本番', sub:'実行中', effort:'本番で見つかりました。影響範囲の調査、緊急の修正、関係者への連絡が必要になります。'}
+];
+const TOOLS = {
+  dependabot: {name:'Dependabot', stage:0, what:'依存ライブラリの既知の脆弱性'},
+  secret:     {name:'シークレットスキャン', stage:0, what:'pushされる秘密情報（push protection）'},
+  sast:       {name:'SAST（CodeQLなど）', stage:0, what:'コードの危ない書き方'},
+  trivyImage: {name:'Trivy（イメージ）', stage:1, what:'イメージ内のOSパッケージ・ライブラリの脆弱性'},
+  trivyConfig:{name:'Trivy（設定ミス）', stage:1, what:'Dockerfileやマニフェストの設定ミス'},
+  policy:     {name:'Azure Policy', stage:2, what:'ルール違反のリソースやPodを拒否'},
+  defender:   {name:'Defender for Cloud', stage:3, what:'脆弱性の評価、設定の推奨、実行時の脅威検知'},
+  waf:        {name:'WAF', stage:3, what:'攻撃パターンを含むリクエストを遮断（03章）'}
+};
+const CARDS = [
+  {name:'脆弱性のあるライブラリ', desc:'既知の脆弱性（CVE）があるバージョンのライブラリを使っている。', catch:['dependabot','trivyImage','defender'],
+   fix:'修正済みのバージョンに上げる。DependabotがPRを作ってくれる。'},
+  {name:'APIキーの直書き', desc:'外部サービスのAPIキーをソースコードに直接書いて、pushしようとしている。', catch:['secret'],
+   fix:'キーはKey Vaultへ。一度pushされると履歴に残るので、止められなかった場合はキーを無効化して再発行する。'},
+  {name:'SQLの文字列連結', desc:'画面からの入力値を、そのままSQL文に連結している。', catch:['sast','waf'],
+   fix:'パラメータ化クエリに書き換える。WAFは本番での最後の網で、アプリ側の修正の代わりにはならない。'},
+  {name:'古いベースイメージ', desc:'1年前のベースイメージのまま。OSパッケージに脆弱性が溜まっている。', catch:['trivyImage','defender'],
+   fix:'ベースイメージを更新して再ビルドする。アプリのコードが変わらなくても定期的に。'},
+  {name:'rootで動くコンテナ', desc:'DockerfileにUSERの指定がなく、コンテナがrootで動く。', catch:['trivyConfig','policy'],
+   fix:'Dockerfileで一般ユーザーを指定し、マニフェストで runAsNonRoot を設定する。'},
+  {name:'パブリック公開のDB', desc:'IaCでDBを作るとき、パブリックアクセスを有効のままにした。', catch:['policy','defender'],
+   fix:'パブリックアクセスを無効にし、Private Endpointで接続する。Azure Policyで「拒否」にしておけば、そもそも作れない。'},
+  {name:'本番での不審な動き', desc:'本番のPodで、見覚えのないプロセスが外部と通信している。', catch:['defender'],
+   fix:'シフトレフトだけでは防げないものもある。実行中の監視（右側）も必要。'}
+];
+const PL = {card:0, tools:Object.fromEntries(Object.keys(TOOLS).map(k => [k, true])), result:null, runId:0};
+const plSvg = $('#pipe-map');
+const plG = {base:mk('g'), trail:mk('g'), dot:mk('g'), st:mk('g'), mark:mk('g')};
+const plStations = [];
+const plToolText = {};
+function buildPipe(){
+  plSvg.append(plG.base, plG.trail, plG.dot, plG.st, plG.mark);
+  plG.base.append(mk('line', {x1:60, y1:100, x2:960, y2:100, class:'pipeline-line'}));
+  plG.base.append(mk('circle', {cx:60, cy:100, r:10, fill:'var(--ink)'}));
+  plG.base.append(mk('text', {x:60, y:66, 'text-anchor':'middle', class:'zone-label'}, 'コミット'));
+  plG.base.append(mk('text', {x:960, y:66, 'text-anchor':'middle', class:'zone-label'}, '利用者'));
+  plG.base.append(mk('text', {x:60, y:222, class:'zone-label'}, '← 左（早い・安い）'));
+  plG.base.append(mk('text', {x:980, y:222, 'text-anchor':'end', class:'zone-label'}, '右（遅い・高くつく）→'));
+  PIPE_STAGES.forEach((s, i) => {
+    const g = mk('g', {class:'station'});
+    g.append(mk('circle', {cx:s.x, cy:100, r:24}));
+    g.append(mk('text', {x:s.x, y:105, 'text-anchor':'middle', class:'snum'}, String(i + 1)));
+    g.append(mk('text', {x:s.x, y:50, 'text-anchor':'middle', class:'sname'}, s.name));
+    g.append(mk('text', {x:s.x, y:66, 'text-anchor':'middle', class:'zone-label', style:'font-weight:400'}, s.sub));
+    plG.st.append(g);
+    plStations.push(g);
+    Object.entries(TOOLS).filter(([, t]) => t.stage === i).forEach(([k, t], j) => {
+      const tx = mk('text', {x:s.x, y:148 + j * 18, 'text-anchor':'middle', class:'tool'}, t.name);
+      plG.st.append(tx);
+      plToolText[k] = tx;
+    });
+  });
+}
+function plDecorate(){
+  Object.entries(plToolText).forEach(([k, el]) => el.setAttribute('class', 'tool' + (PL.tools[k] ? '' : ' off')));
+  plStations.forEach(s => s.setAttribute('class', 'station'));
+}
+function plClear(){ PL.runId++; plG.trail.textContent = ''; plG.dot.textContent = ''; plG.mark.textContent = ''; plDecorate(); }
+function renderPipeCards(){
+  $('#pipe-cards').innerHTML = CARDS.map((c, i) =>
+    `<button type="button" class="vcard" data-card="${i}" aria-pressed="${i === PL.card}"><span class="vk">V${i + 1}</span><span class="vn">${esc(c.name)}</span></button>`).join('');
+  document.querySelectorAll('[data-card]').forEach(b => b.addEventListener('click', () => { PL.card = +b.dataset.card; PL.result = null; plClear(); renderPipeCards(); renderPipePanel(); }));
+}
+function renderPipePanel(){
+  const c = CARDS[PL.card];
+  let res = '';
+  if (PL.result){
+    if (PL.result.caught){
+      const t = TOOLS[PL.result.tool], st = PIPE_STAGES[t.stage];
+      const offBefore = c.catch.slice(0, c.catch.indexOf(PL.result.tool)).filter(k => !PL.tools[k]);
+      res = `<div class="result ${t.stage <= 1 ? 'blocked' : (t.stage === 2 ? 'warn' : 'breached')}">
+        <p class="status"><span class="badge ${t.stage <= 1 ? 'ok' : (t.stage === 2 ? 'warn' : 'ng')}">${t.stage + 1}. ${esc(st.name)}で検出</span><span>${esc(t.name)}</span></p>
+        <p>${esc(st.effort)}</p>
+        ${offBefore.length ? `<p class="note">${offBefore.map(k => esc(TOOLS[k].name)).join('、')} はOFFだったので、右にずれました。</p>` : ''}
+      </div>`;
+    } else {
+      res = `<div class="result breached"><p class="status"><span class="badge ng">見逃した</span></p><p>どの関所でも見つからず、利用者のところまで届きました。被害が出てから気づくことになります。</p></div>`;
+    }
+    res += `<p class="lesson"><b>直し方</b>${esc(c.fix)}</p>`;
+  }
+  $('#pipe-panel').innerHTML = `
+    <div id="pipe-result" aria-live="polite" style="display:grid;gap:10px">${res}</div>
+    <div class="phead"><span class="bigno red">V${PL.card + 1}</span><div><p class="kicker">流す脆弱性</p><h2 style="margin:0;font-size:19px;line-height:1.45">${esc(c.name)}</h2></div></div>
+    <p style="margin:0">${esc(c.desc)}</p>
+    <p class="label">これを捕まえられる関所</p>
+    <ul class="defs">${c.catch.map(k => `
+      <li><label class="switch" for="tool-${k}">
+        <input type="checkbox" id="tool-${k}" data-tool="${k}" ${PL.tools[k] ? 'checked' : ''}>
+        <span class="track" aria-hidden="true"></span>
+        <span class="t">${esc(TOOLS[k].name)}<small>${TOOLS[k].stage + 1}. ${esc(PIPE_STAGES[TOOLS[k].stage].name)} ・ ${esc(TOOLS[k].what)}</small></span>
+        <span class="st ${PL.tools[k] ? 'on' : 'off'}">${PL.tools[k] ? 'ON' : 'OFF'}</span>
+      </label></li>`).join('')}</ul>
+    <div class="navbtns">
+      <button type="button" class="btn danger" id="pipe-run">流す</button>
+      <button type="button" class="btn small grow" id="pipe-reset">ツールをすべてONに戻す</button>
+    </div>`;
+  document.querySelectorAll('[data-tool]').forEach(inp => inp.addEventListener('change', () => {
+    PL.tools[inp.dataset.tool] = inp.checked; PL.result = null; plClear(); renderPipePanel();
+    const el = document.getElementById(inp.id); if (el) el.focus();
+  }));
+  $('#pipe-run').addEventListener('click', runPipe);
+  $('#pipe-reset').addEventListener('click', () => { Object.keys(PL.tools).forEach(k => { PL.tools[k] = true; }); PL.result = null; plClear(); renderPipePanel(); });
+}
+async function runPipe(){
+  plClear();
+  PL.result = null;
+  renderPipePanel();
+  $('#pipe-run').disabled = true;
+  const my = PL.runId;
+  const c = CARDS[PL.card];
+  const instant = reduceMotion();
+  const trail = mk('polyline', {class:'trail attack'});
+  const dot = mk('circle', {r:9, class:'dot attack'});
+  plG.trail.append(trail); plG.dot.append(dot);
+  const drawn = [[60,100]];
+  setPoly(trail, drawn); setDot(dot, [60,100]);
+  for (let i = 0; i < PIPE_STAGES.length; i++){
+    const s = PIPE_STAGES[i];
+    const ok = await moveAlongSeg(trail, dot, drawn, drawn[drawn.length - 1], [s.x, 100], () => my === PL.runId, instant);
+    if (!ok) return;
+    const hit = c.catch.find(k => TOOLS[k].stage === i && PL.tools[k]);
+    if (hit){
+      plStations[i].setAttribute('class', 'station caught');
+      plToolText[hit].setAttribute('class', 'tool hit');
+      pill(plG.mark, s.x, 18, '× 検出：' + TOOLS[hit].name, 'block');
+      dot.classList.add('stopped');
+      PL.result = {caught:true, tool:hit};
+      renderPipePanel();
+      return;
+    }
+    if (!instant){ await wait(260); if (my !== PL.runId) return; }
+  }
+  const ok = await moveAlongSeg(trail, dot, drawn, drawn[drawn.length - 1], [960,100], () => my === PL.runId, instant);
+  if (!ok) return;
+  pill(plG.mark, 940, 18, '見逃した', 'block');
+  PL.result = {caught:false};
+  renderPipePanel();
+}
+function initPipe(){ buildPipe(); plDecorate(); renderPipeCards(); renderPipePanel(); }
+
+/* ================= 05 クイズ ================= */
+const QUIZ = [
+  {q:'App Serviceへのアクセスを、自社のFront Door経由だけに絞りたい。サービスタグ AzureFrontDoor.Backend の許可に加えて、何を確認するべき？',
+   o:['User-Agent ヘッダー','X-Azure-FDID ヘッダー','送信元の国','Cookie'], a:1,
+   e:'サービスタグには他社のFront Doorも含まれます。X-Azure-FDIDに入っている自社のFront DoorのIDを確かめます（03章 A3）。'},
+  {q:'AKS上のAPIからKey Vaultのシークレットを読みたい。最も適切な方法は？',
+   o:['接続文字列を環境変数に入れる','Workload IDに「Key Vault Administrator」を割り当てる','Workload IDに「Key Vault Secrets User」を、そのKey Vaultの範囲で割り当てる','シークレットをコンテナイメージに含める'], a:2,
+   e:'パスワードを持たずに済むWorkload ID（Managed ID）を使い、読むだけのロールを必要な範囲にだけ割り当てます（最小権限、03章）。'},
+  {q:'Private Endpointを作ったのに、VNet内からKey Vaultの名前を引くとパブリックIPが返ってくる。最も考えられる原因は？',
+   o:['NSGで443が拒否されている','Private DNSゾーンがVNetにリンクされていない','WAFが検知モードになっている','RBACのロールが足りない'], a:1,
+   e:'名前解決の問題です。privatelink.vaultcore.azure.net のPrivate DNSゾーンをVNetにリンクすると、プライベートIPが返ります（02章）。'},
+  {q:'NSGで、優先度100の許可ルールと優先度200の拒否ルールが、同じ通信に一致した。結果は？',
+   o:['許可される','拒否される','両方評価され、拒否が優先される','設定エラーになる'], a:0,
+   e:'NSGは優先度の数字が小さい順に評価し、最初に一致したルールで決まります（02章）。'},
+  {q:'コンテナのベースイメージに含まれるOSパッケージの脆弱性を、デプロイ前に見つけるのに向いているのは？',
+   o:['Front DoorのWAF','APIMのvalidate-jwt','CIでのTrivyによるイメージスキャン','NSG'], a:2,
+   e:'イメージの脆弱性はビルド時にTrivyでスキャンします。本番での検出より手前で止められます（04章）。'},
+  {q:'ゼロトラストの3原則に含まれないものは？',
+   o:['明示的に検証','最小権限','侵害を前提','社内ネットワークは信頼する'], a:3,
+   e:'ゼロトラストは、社内ネットワークからのアクセスでも信用せず、毎回確かめます（01章）。'}
+];
+const Q = {answers:QUIZ.map(() => null)};
+function renderQuiz(){
+  const done = Q.answers.filter(a => a !== null).length;
+  const score = Q.answers.filter((a, i) => a === QUIZ[i].a).length;
+  $('#quiz').innerHTML = `
+    <div class="qscore" aria-live="polite"><span>正解 ${score} / ${QUIZ.length}</span><span class="note">（回答済み ${done}問）</span>
+      <button type="button" class="btn small" id="quiz-reset" ${done ? '' : 'disabled'}>やり直す</button></div>
+    ${QUIZ.map((q, i) => {
+      const ans = Q.answers[i];
+      return `<div class="qcard"><span class="qn">Q${i + 1}</span><p class="qt">${esc(q.q)}</p>
+        <div class="qopts">${q.o.map((o, j) => {
+          const cls = ans === null ? '' : (j === q.a ? ' correct' : (j === ans ? ' wrong' : ''));
+          return `<button type="button" class="qopt${cls}" data-q="${i}" data-o="${j}" ${ans !== null ? 'disabled' : ''}><span class="ql">${'ABCD'[j]}</span><span>${esc(o)}</span></button>`;
+        }).join('')}</div>
+        ${ans !== null ? `<p class="qexp"><b>${ans === q.a ? '正解。' : '不正解。正解は ' + 'ABCD'[q.a] + '。'}</b>${esc(q.e)}</p>` : ''}
+      </div>`;
+    }).join('')}`;
+  document.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => {
+    const qi = +b.dataset.q;
+    Q.answers[qi] = +b.dataset.o;
+    renderQuiz();
+  }));
+  const r = $('#quiz-reset');
+  if (r) r.addEventListener('click', () => { Q.answers = QUIZ.map(() => null); renderQuiz(); });
+}
+
+/* ================= 起動 ================= */
+function snapshot(){
+  return {J:{mode:J.mode, step:J.step, attack:J.attack, def:J.def}, JWT:Object.assign({}, JWT), zt:ZT.model, srm:srmSel, sl:slSel,
+          D:Object.assign({}, D), N:{packet:N.packet, deny:N.deny}, PL:{card:PL.card, tools:PL.tools}, quiz:Q.answers};
+}
+const isInt = (v, max) => Number.isInteger(v) && v >= 0 && v < max;
+function restore(d){
+  if (!d || typeof d !== 'object') return;
+  if (d.J){
+    if (d.J.mode === 'journey' || d.J.mode === 'attack') J.mode = d.J.mode;
+    if (isInt(d.J.step, STEPS.length)) J.step = d.J.step;
+    if (isInt(d.J.attack, ATTACKS.length)) J.attack = d.J.attack;
+    if (d.J.def) for (const k in CTRL) if (typeof d.J.def[k] === 'boolean') J.def[k] = d.J.def[k];
+  }
+  if (d.JWT) for (const k in JWT) if (typeof d.JWT[k] === 'boolean') JWT[k] = d.JWT[k];
+  if (d.zt === 'perimeter' || d.zt === 'zero') ZT.model = d.zt;
+  if (isInt(d.srm, SRM_COLS.length)) srmSel = d.srm;
+  if (isInt(d.sl, SL_STAGES.length)) slSel = d.sl;
+  if (d.D){ if (d.D.from === 'aks' || d.D.from === 'home') D.from = d.D.from; ['pe','link','pub'].forEach(k => { if (typeof d.D[k] === 'boolean') D[k] = d.D[k]; }); }
+  if (d.N){ if (isInt(d.N.packet, NSG_PACKETS.length)) N.packet = d.N.packet; if (typeof d.N.deny === 'boolean') N.deny = d.N.deny; }
+  if (d.PL){ if (isInt(d.PL.card, CARDS.length)) PL.card = d.PL.card; if (d.PL.tools) for (const k in TOOLS) if (typeof d.PL.tools[k] === 'boolean') PL.tools[k] = d.PL.tools[k]; }
+  if (Array.isArray(d.quiz) && d.quiz.length === QUIZ.length) Q.answers = d.quiz.map((a, i) => (isInt(a, QUIZ[i].o.length) ? a : null));
+}
+function start(data){
+  restore(data);
+  initNav();
+  initNotes();
+  initCh1();
+  initCh2();
+  initJourney();
+  initJwt();
+  initPipe();
+  renderQuiz();
+}
+window.claude?.hot?.snapshot(() => snapshot());
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+
+})();
+</script>
+</body>
+</html>
