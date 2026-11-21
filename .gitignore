@@ -53,3 +53,6 @@ htmlcov/
 # Misc
 *.tmp
 *.bak
+
+# GitHub Pages のビルド結果（site/build.py）
+_site/

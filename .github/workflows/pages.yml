@@ -1,18 +1,22 @@
 name: pages
 
 # モノレポなので Pages の「Deploy from a branch（/docs）」は使えない。
-# 公開するディレクトリを _site に集め、1つのアーティファクトとして Pages に配信する。
-#   /                         ← apps/idol-tracker/docs
+# site/pages.json に書いたフォルダを site/build.py で _site に集め、
+# ホームと共通ナビを付けて、1つのアーティファクトとして Pages に配信する。
+#   /                         ← ホーム（site/home.html から生成）
 #   /zt-shiftleft-lecture/    ← learning/azure/zt-shiftleft-lecture
+#   /idol-tracker/            ← apps/idol-tracker/docs
 # Settings → Pages → Source を「GitHub Actions」にしておくこと。
 # （configure-pages の enablement での自動有効化は GITHUB_TOKEN の権限では不可）
 
 on:
   push:
     branches: [main]
+    # site/pages.json にページを足したら、その src もここに足す
     paths:
-      - "apps/idol-tracker/docs/**"
+      - "site/**"
       - "learning/azure/zt-shiftleft-lecture/**"
+      - "apps/idol-tracker/docs/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -34,11 +38,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-      - name: 配信するファイルを _site に集める
-        run: |
-          mkdir -p _site/zt-shiftleft-lecture
-          cp -R apps/idol-tracker/docs/. _site/
-          cp learning/azure/zt-shiftleft-lecture/index.html _site/zt-shiftleft-lecture/
+      - name: サイトを組み立てる
+        run: python3 site/build.py --out _site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

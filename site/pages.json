@@ -1,0 +1,22 @@
+{
+  "site": {
+    "title": "inventory",
+    "description": "個人開発のモノレポ inventory から GitHub Pages で公開しているページです。"
+  },
+  "pages": [
+    {
+      "slug": "zt-shiftleft-lecture",
+      "src": "learning/azure/zt-shiftleft-lecture",
+      "title": "ゼロトラストとシフトレフト",
+      "description": "社内のクラウドネイティブ勉強会（セキュリティとネットワーク回）の座学資料。図を動かしながら、ゼロトラストとシフトレフトを確かめます。",
+      "category": "勉強会資料"
+    },
+    {
+      "slug": "idol-tracker",
+      "src": "apps/idol-tracker/docs",
+      "title": "推し年表",
+      "description": "アイドルのプロフィールと活動記録を、出典つきの表と年表で見るための個人用サイト。",
+      "category": "アプリ"
+    }
+  ]
+}

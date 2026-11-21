@@ -7,7 +7,7 @@ claude.ai のチャットで設計・実装したプロジェクト。経緯と�
 - inventory モノレポの `apps/idol-tracker/` に置いている。リポジトリ全体の規約は直下の `AGENTS.md`（日本語で書く、Conventional Commits、scope はディレクトリ名）に従う
 - パイプラインのパスはこのフォルダ基準なので、コマンドは `apps/idol-tracker` をカレントディレクトリにして実行する
 - ワークフローはリポジトリ直下の `.github/workflows/idol-tracker-{collect,check}.yml`。いずれも `working-directory: apps/idol-tracker` で動く
-- Pages はモノレポのためブランチ配信の `/docs` が使えず、リポジトリ共通の `pages.yml` で `docs/` をサイトのルートにアーティファクト配信する（ほかのディレクトリもサブパスで同じサイトに載る）（Settings → Pages → Source は「GitHub Actions」。enablement による自動有効化は GITHUB_TOKEN の権限では不可）
+- Pages はモノレポのためブランチ配信の `/docs` が使えず、リポジトリ共通の `pages.yml`（`site/build.py`）で `docs/` を `/idol-tracker/` にアーティファクト配信する。配信の設定は `site/pages.json`（Settings → Pages → Source は「GitHub Actions」。enablement による自動有効化は GITHUB_TOKEN の権限では不可）
 
 ## 目的
 - アンジュルムの川名凜さんから始めて、他メンバー・他グループにも広げられる情報収集アプリ

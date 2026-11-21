@@ -36,7 +36,7 @@ AIは「どこを探すか」には使わず、「取得したページから項
 
 このアプリは inventory モノレポの `apps/idol-tracker/` にあります。ワークフローはリポジトリ直下の `.github/workflows/idol-tracker-*.yml` に置いてあり、いずれも `apps/idol-tracker` をカレントディレクトリとして動きます。
 
-1. **Settings → Pages** で Source に「GitHub Actions」を選びます（この操作だけは画面から行う必要があります。`configure-pages` の `enablement` による自動有効化は `GITHUB_TOKEN` の権限では失敗します）。リポジトリ共通の `pages` ワークフローが `apps/idol-tracker/docs` をサイトのルートに配信するので、数分で `https://<ユーザー名>.github.io/inventory/` が開けるようになります（モノレポではブランチ配信の `/docs` が使えないため、この方式です）。
+1. **Settings → Pages** で Source に「GitHub Actions」を選びます（この操作だけは画面から行う必要があります。`configure-pages` の `enablement` による自動有効化は `GITHUB_TOKEN` の権限では失敗します）。リポジトリ共通の `pages` ワークフローが `apps/idol-tracker/docs` を `/idol-tracker/` に配信するので、数分で `https://<ユーザー名>.github.io/inventory/idol-tracker/` が開けるようになります（配信の設定はリポジトリ直下の `site/pages.json`）（モノレポではブランチ配信の `/docs` が使えないため、この方式です）。
 2. **Settings → Secrets and variables → Actions** に登録します（収集を動かすときだけ必要。表示だけなら不要）。
    - `ANTHROPIC_API_KEY`（AI抽出用）
    - `BRAVE_API_KEY`（検索用。Google を使う場合は `GOOGLE_API_KEY` と `GOOGLE_CSE_ID` を登録し、Variables に `SEARCH_PROVIDER=google`）
@@ -117,7 +117,7 @@ tests/      判定ロジックと収集フローのテスト
 ```
 .github/workflows/idol-tracker-collect.yml   収集して収集レポート付きPRを作る（手動・毎週月曜）
 .github/workflows/idol-tracker-check.yml     テストと表示用データの再生成を確認
-.github/workflows/pages.yml                  docs/ を GitHub Pages のルートに配信（リポジトリ共通）
+.github/workflows/pages.yml                  docs/ を GitHub Pages の /idol-tracker/ に配信（リポジトリ共通。site/ を参照）
 ```
 
 ## 注意

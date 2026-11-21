@@ -8,7 +8,7 @@
 - GitHub Pages：https://p-ota-q.github.io/inventory/zt-shiftleft-lecture/
 - 手元で見る：`index.html` をブラウザで開く
 
-`main` にpushすると、リポジトリ共通の `.github/workflows/pages.yml` が配信します。
+`main` にpushすると、リポジトリ共通の `.github/workflows/pages.yml` が配信します（公開の設定は `site/pages.json`）。
 
 ## 構成
 
